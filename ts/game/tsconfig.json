@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "system",
+        "target": "es5",
+        "noImplicitAny": false,
+        "declaration": false,
+        "sourceMap": false,
+        "outFile": "../../js/game.js"
+    },
+    "files": [
+        "../engine/engine-0.3.1.d.ts",
+        "GameState.ts",
+        "main.ts"
+    ]
+}
