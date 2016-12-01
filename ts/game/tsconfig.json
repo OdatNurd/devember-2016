@@ -10,6 +10,7 @@
     "files": [
         "../engine/engine-0.3.1.d.ts",
         "GameState.ts",
+        "scene/Game.ts",
         "main.ts"
     ]
 }
