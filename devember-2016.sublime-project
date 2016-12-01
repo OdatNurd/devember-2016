@@ -5,9 +5,13 @@
 			"folder_exclude_patterns":
 			[
 				"tools",
-				"bootstrap",
+				"bootstrap"
 			],
 			"path": "."
 		}
-	]
+	],
+	"settings":
+	{
+		"rulers": [80]
+	}
 }
