@@ -1,17 +1,18 @@
 {
-	"folders":
-	[
-		{
-			"folder_exclude_patterns":
-			[
-				"tools",
-				"bootstrap"
-			],
-			"path": "."
-		}
-	],
-	"settings":
-	{
-		"rulers": [80]
-	}
+    "folders":
+    [
+        {
+            "folder_exclude_patterns":
+            [
+                "tools",
+                "bootstrap"
+            ],
+            "path": "."
+        }
+    ],
+    "settings":
+    {
+        "rulers": [80],
+        "wrap_width": 80
+    }
 }
