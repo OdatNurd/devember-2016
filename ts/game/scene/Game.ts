@@ -23,24 +23,10 @@ module nurdz.game
             // Create the scene via our super class.
             super ("gameScreen", stage);
 
-            // Now create three bricks in each of the three different types,
-            // setting their position on the screen and their type. This is for
-            // testing the visuals on the class.
-            let brick1 = new Brick (stage);
-            let brick2 = new Brick (stage);
-            let brick3 = new Brick (stage);
-
-            brick1.brickType = BrickType.BRICK_BACKGROUND;
-            brick2.brickType = BrickType.BRICK_GRAY;
-            brick3.brickType = BrickType.BRICK_SOLID;
-
-            brick1.setStagePositionXY (0, 0);
-            brick2.setStagePositionXY (25, 0);
-            brick3.setStagePositionXY (50, 0);
-
-            this.addActor (brick1);
-            this.addActor (brick2);
-            this.addActor (brick3);
+            // Create a maze and add it to the scene so we can see how it
+            // renders itself.
+            let maze = new Maze (stage);
+            this.addActor (maze);
         }
 
         /**

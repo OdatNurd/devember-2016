@@ -100,6 +100,113 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * The width of the maze, in bricks.
+         *
+         * This is inclusive of the side walls, so it's actually 2 bricks wider than
+         * the play area.
+         *
+         * @type {Number}
+         */
+        var MAZE_WIDTH = 31;
+        /**
+         * The height of the maze, in bricks.
+         *
+         * This is inclusive of the bottom wall, so it's actually a brick taller
+         * than the play area.
+         *
+         * @type {Number}
+         */
+        var MAZE_HEIGHT = 19;
+        /**
+         * The entity that represents the maze in the game. This is the entire play
+         * area of the game.
+         */
+        var Maze = (function (_super) {
+            __extends(Maze, _super);
+            /**
+             * Construct a new empty maze entity.
+             *
+             * @param {Stage} stage the stage that we use to render ourselves
+             */
+            function Maze(stage) {
+                var _this = this;
+                // Invoke the super; note that this does not set a position because
+                // that is set by whoever created us. Our dimensions are based on
+                // the size of the brick sprites, which we don't know yet.
+                _super.call(this, "maze", stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+                /**
+                 * This callback is invoked when our sprite sheet finishes loading the
+                 * underlying image for the sprites.
+                 */
+                this.setDimensions = function (sheet) {
+                    // Alter our collision properties so that our bounds represent the
+                    // entire maze area.
+                    _this.makeRectangle(sheet.width * MAZE_WIDTH, sheet.height * MAZE_HEIGHT);
+                    // Set our position to center us on the screen horizontally and be
+                    // just slightly up from the bottom of the screen.
+                    _this.setStagePositionXY((_this._stage.width / 2) - (_this.width / 2), _this._stage.height - _this.height - 16);
+                };
+                // Set up a preload for the same sprite sheet that the brick entities
+                // are using. This will allow us to capture the callback that
+                // indicates that the sprite size is known, so that we can set up
+                // our dimensions.
+                new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
+                // Create the array that holds our contents and fill it with
+                // instances of the brick entity.
+                this._contents = new Array(MAZE_WIDTH * MAZE_HEIGHT);
+                for (var i = 0; i < MAZE_WIDTH * MAZE_HEIGHT; i++)
+                    this._contents[i] = new game.Brick(stage);
+                // Reset the maze
+                this.reset();
+            }
+            /**
+             * Render us onto the stage provided at the given position.
+             *
+             * This renders us by displaying all entities stored in the maze.
+             *
+             * @param {number}   x        the X coordinate to start drawing at
+             * @param {number}   y        the y coordinate to start drawing at
+             * @param {Renderer} renderer the renderer to use to render
+             */
+            Maze.prototype.render = function (x, y, renderer) {
+                // Iterate over all columns and rows of bricks, and get them to
+                // render themselves at the appropriate offset from the position
+                // we've been given.
+                for (var blitY = 0; blitY < MAZE_HEIGHT; blitY++) {
+                    for (var blitX = 0; blitX < MAZE_WIDTH; blitX++)
+                        this._contents[blitY * MAZE_WIDTH + blitX].render(x + (blitX * 25), y + (blitY * 25), renderer);
+                }
+            };
+            /**
+             * Reset the maze.
+             *
+             * This will modify the bricks in the maze to represent a new randomly
+             * created, empty maze.
+             */
+            Maze.prototype.reset = function () {
+                // First, every brick needs to be a background brick.
+                for (var i = 0; i < this._contents.length; i++)
+                    this._contents[i].brickType = game.BrickType.BRICK_BACKGROUND;
+                // Now the left and right sides need to be solid bricks.
+                for (var y = 0; y < MAZE_HEIGHT; y++) {
+                    this._contents[y * MAZE_WIDTH].brickType = game.BrickType.BRICK_SOLID;
+                    this._contents[y * MAZE_WIDTH + (MAZE_WIDTH - 1)].brickType = game.BrickType.BRICK_SOLID;
+                }
+                // Lastly, the bottom row needs to be made solid, except for the
+                // first and last columns, which have already been filled out.
+                for (var x = 1; x < MAZE_WIDTH - 1; x++)
+                    this._contents[(MAZE_HEIGHT - 1) * MAZE_WIDTH + x].brickType = game.BrickType.BRICK_SOLID;
+            };
+            return Maze;
+        }(game.Entity));
+        game.Maze = Maze;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * This scene represents the game screen, where the game will actually be
          * played.
          */
@@ -120,21 +227,10 @@ var nurdz;
             function GameScene(stage) {
                 // Create the scene via our super class.
                 _super.call(this, "gameScreen", stage);
-                // Now create three bricks in each of the three different types,
-                // setting their position on the screen and their type. This is for
-                // testing the visuals on the class.
-                var brick1 = new game.Brick(stage);
-                var brick2 = new game.Brick(stage);
-                var brick3 = new game.Brick(stage);
-                brick1.brickType = game.BrickType.BRICK_BACKGROUND;
-                brick2.brickType = game.BrickType.BRICK_GRAY;
-                brick3.brickType = game.BrickType.BRICK_SOLID;
-                brick1.setStagePositionXY(0, 0);
-                brick2.setStagePositionXY(25, 0);
-                brick3.setStagePositionXY(50, 0);
-                this.addActor(brick1);
-                this.addActor(brick2);
-                this.addActor(brick3);
+                // Create a maze and add it to the scene so we can see how it
+                // renders itself.
+                var maze = new game.Maze(stage);
+                this.addActor(maze);
             }
             /**
              * Invoked every time a key is pressed on the game screen

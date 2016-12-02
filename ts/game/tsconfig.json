@@ -11,6 +11,7 @@
         "../engine/engine-0.3.1.d.ts",
         "GameState.ts",
         "entity/Brick.ts",
+        "entity/Maze.ts",
         "scene/Game.ts",
         "main.ts"
     ]
