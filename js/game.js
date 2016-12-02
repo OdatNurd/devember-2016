@@ -45,19 +45,22 @@ var nurdz;
     var game;
     (function (game) {
         /**
-         * This is used to specify the valid values for brick types. A brick may
-         * be a solid brick, a gray brick (solid, but vanishes near the end of the
-         * game), or background (decorative, non-colliding).
+         * This is used to specify the valid values for brick types. This includes
+         * static bricks that make up the level, as well as bricks that make up the
+         * actual play area.
          */
         (function (BrickType) {
-            BrickType[BrickType["BRICK_SOLID"] = 0] = "BRICK_SOLID";
-            BrickType[BrickType["BRICK_GRAY"] = 1] = "BRICK_GRAY";
-            BrickType[BrickType["BRICK_BACKGROUND"] = 2] = "BRICK_BACKGROUND";
+            BrickType[BrickType["BRICK_BACKGROUND"] = 0] = "BRICK_BACKGROUND";
+            BrickType[BrickType["BRICK_SOLID"] = 1] = "BRICK_SOLID";
+            BrickType[BrickType["BRICK_GRAY"] = 2] = "BRICK_GRAY";
+            BrickType[BrickType["BRICK_BONUS"] = 3] = "BRICK_BONUS";
         })(game.BrickType || (game.BrickType = {}));
         var BrickType = game.BrickType;
         /**
-         * The entity that represents bricks (background, permanent and temporary)
-         * in the game.
+         * The entity that represents the bricks in the game. These can be used for
+         * level geometry or in the actual play area. Some of them are statically
+         * displayed while some of them can animate themselves appearing or
+         * vanishing away.
          */
         var Brick = (function (_super) {
             __extends(Brick, _super);
@@ -102,6 +105,10 @@ var nurdz;
                 this.addAnimation("gray_idle_gone", 1, false, [9]);
                 this.addAnimation("gray_vanish", 10, false, [5, 6, 7, 8, 9]);
                 this.addAnimation("gray_appear", 10, false, [9, 8, 7, 6, 5]);
+                this.addAnimation("bonus_idle", 1, false, [30]);
+                this.addAnimation("bonus_idle_gone", 1, false, [34]);
+                this.addAnimation("bonus_vanish", 10, false, [30, 31, 32, 33, 34]);
+                this.addAnimation("bonus_appear", 10, false, [34, 33, 32, 31, 30]);
                 // Set a default brick type. This will make sure that this brick
                 // is properly visually represented, either by playing the correct
                 // animation or by selecting the appropriate sprite.
@@ -119,7 +126,11 @@ var nurdz;
                 },
                 /**
                  * Set the brick type for the current brick. This visually changes the
-                 * appearance of the brick.
+                 * appearance of the brick as well.
+                 *
+                 * For static bricks, this changes rendering to the appropriate sprite,
+                 * while for animated bricks it selects an idle animation. It favors the
+                 * idle animation that shows the brick being present on the screen.
                  *
                  * @param {BrickType} newType the new type of the brick.
                  */
@@ -134,13 +145,25 @@ var nurdz;
                     // for animated brick entities, and that call will mess with the
                     // current sprite.
                     switch (this._brickType) {
+                        // These are primarily used to represent the outer bounds of the
+                        // play area.
                         case BrickType.BRICK_SOLID:
                             this._sprite = 0;
                             break;
+                        // These appear in the game grid and stop the ball, but vanish
+                        // away near the end of the game to allow for final ball
+                        // movement.
                         case BrickType.BRICK_GRAY:
                             this.playAnimation("gray_idle");
                             break;
-                        // Everything else is just a background brick.
+                        // These appear in the game grid; they don't actually block
+                        // movement of the ball, but as the ball passes through them
+                        // they award bonus points.
+                        case BrickType.BRICK_BONUS:
+                            this.playAnimation("bonus_idle");
+                            break;
+                        // Everything else is just a background brick. These are used to
+                        // represent the back wall of the play area.
                         default:
                             this._sprite = 1;
                             break;
@@ -417,8 +440,11 @@ var nurdz;
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
                 this._gray = new game.Brick(stage, game.BrickType.BRICK_GRAY);
+                this._bonus = new game.Brick(stage, game.BrickType.BRICK_BONUS);
                 this._blackHole = new game.Teleport(stage);
                 this._arrow = new game.Arrow(stage, game.ArrowType.ARROW_AUTOMATIC, game.ArrowDirection.ARROW_LEFT);
+                // We want the bonus brick to start out gone.
+                this._bonus.playAnimation("bonus_idle_gone");
                 // Create the array that holds our contents. null entries are
                 // treated as empty background bricks, so we don't need to do
                 // anything further here.
@@ -441,6 +467,7 @@ var nurdz;
             Maze.prototype.update = function (stage, tick) {
                 _super.prototype.update.call(this, stage, tick);
                 this._gray.update(stage, tick);
+                this._bonus.update(stage, tick);
                 this._blackHole.update(stage, tick);
                 this._arrow.update(stage, tick);
                 // If the tick is 0, leave; we don't trigger anything on the first
@@ -448,14 +475,20 @@ var nurdz;
                 if (tick == 0)
                     return;
                 // Swap the direction of the arrow every 2 seconds.
-                if (tick % 60 == 0)
+                if (tick % (30 * 2) == 0)
                     this._arrow.flip();
                 // After 5 seconds, make the gray bricks vanish.
-                if (tick % (60 * 5) == 0)
+                if (tick % (30 * 5) == 0)
                     this._gray.playAnimation("gray_vanish");
                 // After 7 seconds, make the gray bricks re-appear
-                if (tick % (60 * 7) == 0)
+                if (tick % (30 * 7) == 0)
                     this._gray.playAnimation("gray_appear");
+                // After 2 seconds, make the bonus brick appear.
+                if (tick % (30 * 2) == 0)
+                    this._bonus.playAnimation("bonus_appear");
+                // After 3 seconds, make the bonus brick vanish again.
+                if (tick % (30 * 3) == 0)
+                    this._bonus.playAnimation("bonus_vanish");
             };
             /**
              * Fetch the internal contents of the maze at the provided X and Y
@@ -567,6 +600,7 @@ var nurdz;
                 this.setCellAt(4, 5, this._gray);
                 this.setCellAt(5, 5, this._blackHole);
                 this.setCellAt(6, 5, this._arrow);
+                this.setCellAt(7, 5, this._bonus);
                 // Now the left and right sides need to be solid bricks.
                 for (var y = 0; y < MAZE_HEIGHT; y++) {
                     this.setBrickAt(0, y, this._solid);

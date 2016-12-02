@@ -54,6 +54,15 @@ module nurdz.game
         private _gray : Brick;
 
         /**
+         * Our singular bonus brick entity. There should be a group of these
+         * because in actual use we would need to animate only touched ones away
+         * and leave all others there. This is just for testing.
+         *
+         * These animate like gray bricks do, so they also need to be updated.
+         */
+        private _bonus : Brick;
+
+        /**
          * Our singular black hole entity that represents all black holes in the
          * maze.
          */
@@ -88,8 +97,12 @@ module nurdz.game
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
             this._gray = new Brick (stage, BrickType.BRICK_GRAY);
+            this._bonus = new Brick (stage, BrickType.BRICK_BONUS);
             this._blackHole = new Teleport (stage);
             this._arrow = new Arrow (stage, ArrowType.ARROW_AUTOMATIC, ArrowDirection.ARROW_LEFT);
+
+            // We want the bonus brick to start out gone.
+            this._bonus.playAnimation ("bonus_idle_gone");
 
             // Create the array that holds our contents. null entries are
             // treated as empty background bricks, so we don't need to do
@@ -132,6 +145,7 @@ module nurdz.game
         {
             super.update (stage, tick);
             this._gray.update (stage, tick);
+            this._bonus.update (stage, tick);
             this._blackHole.update (stage, tick);
             this._arrow.update (stage, tick);
 
@@ -141,16 +155,24 @@ module nurdz.game
                 return;
 
             // Swap the direction of the arrow every 2 seconds.
-            if (tick % 60 == 0)
+            if (tick % (30 * 2) == 0)
                 this._arrow.flip ();
 
             // After 5 seconds, make the gray bricks vanish.
-            if (tick % (60 * 5) == 0)
+            if (tick % (30 * 5) == 0)
                 this._gray.playAnimation ("gray_vanish");
 
             // After 7 seconds, make the gray bricks re-appear
-            if (tick % (60 * 7) == 0)
+            if (tick % (30 * 7) == 0)
                 this._gray.playAnimation ("gray_appear");
+
+            // After 2 seconds, make the bonus brick appear.
+            if (tick % (30 * 2) == 0)
+                this._bonus.playAnimation ("bonus_appear");
+
+            // After 3 seconds, make the bonus brick vanish again.
+            if (tick % (30 * 3) == 0)
+                this._bonus.playAnimation ("bonus_vanish");
         }
 
         /**
@@ -281,6 +303,7 @@ module nurdz.game
             this.setCellAt (4, 5, this._gray);
             this.setCellAt (5, 5, this._blackHole);
             this.setCellAt (6, 5, this._arrow);
+            this.setCellAt (7, 5, this._bonus);
 
             // Now the left and right sides need to be solid bricks.
             for (let y = 0 ; y < MAZE_HEIGHT ; y++)

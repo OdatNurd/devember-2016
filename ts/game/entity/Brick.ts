@@ -1,32 +1,40 @@
 module nurdz.game
 {
     /**
-     * This is used to specify the valid values for brick types. A brick may
-     * be a solid brick, a gray brick (solid, but vanishes near the end of the
-     * game), or background (decorative, non-colliding).
+     * This is used to specify the valid values for brick types. This includes
+     * static bricks that make up the level, as well as bricks that make up the
+     * actual play area.
      */
     export enum BrickType
     {
+        BRICK_BACKGROUND,
         BRICK_SOLID,
         BRICK_GRAY,
-        BRICK_BACKGROUND
+        BRICK_BONUS
     }
 
     /**
-     * The entity that represents bricks (background, permanent and temporary)
-     * in the game.
+     * The entity that represents the bricks in the game. These can be used for
+     * level geometry or in the actual play area. Some of them are statically
+     * displayed while some of them can animate themselves appearing or
+     * vanishing away.
      */
     export class Brick extends MazeCell
     {
         /**
-         * The type of this brick; the default is background until otherwise
-         * set.
+         * The type of this brick, which is used to determine how the player can
+         * interact with it, and also specifies how it is represented
+         * graphically.
          */
         private _brickType : BrickType;
 
         /**
          * Set the brick type for the current brick. This visually changes the
-         * appearance of the brick.
+         * appearance of the brick as well.
+         *
+         * For static bricks, this changes rendering to the appropriate sprite,
+         * while for animated bricks it selects an idle animation. It favors the
+         * idle animation that shows the brick being present on the screen.
          *
          * @param {BrickType} newType the new type of the brick.
          */
@@ -44,15 +52,28 @@ module nurdz.game
             // current sprite.
             switch (this._brickType)
             {
+                // These are primarily used to represent the outer bounds of the
+                // play area.
                 case BrickType.BRICK_SOLID:
                     this._sprite = 0;
                     break;
 
+                // These appear in the game grid and stop the ball, but vanish
+                // away near the end of the game to allow for final ball
+                // movement.
                 case BrickType.BRICK_GRAY:
                     this.playAnimation ("gray_idle");
                     break;
 
-                // Everything else is just a background brick.
+                // These appear in the game grid; they don't actually block
+                // movement of the ball, but as the ball passes through them
+                // they award bonus points.
+                case BrickType.BRICK_BONUS:
+                    this.playAnimation ("bonus_idle");
+                    break;
+
+                // Everything else is just a background brick. These are used to
+                // represent the back wall of the play area.
                 default:
                     this._sprite = 1;
                     break;
@@ -103,6 +124,11 @@ module nurdz.game
             this.addAnimation ("gray_idle_gone",  1, false, [9]);
             this.addAnimation ("gray_vanish",    10, false, [5, 6, 7, 8, 9]);
             this.addAnimation ("gray_appear",    10, false, [9, 8, 7, 6, 5]);
+
+            this.addAnimation ("bonus_idle",       1, false, [30]);
+            this.addAnimation ("bonus_idle_gone",  1, false, [34]);
+            this.addAnimation ("bonus_vanish",    10, false, [30, 31, 32, 33, 34]);
+            this.addAnimation ("bonus_appear",    10, false, [34, 33, 32, 31, 30]);
 
             // Set a default brick type. This will make sure that this brick
             // is properly visually represented, either by playing the correct
