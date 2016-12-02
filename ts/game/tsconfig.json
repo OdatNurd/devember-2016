@@ -12,6 +12,7 @@
         "GameState.ts",
         "entity/MazeCell.ts",
         "entity/Brick.ts",
+        "entity/Teleport.ts",
         "entity/Maze.ts",
         "scene/Game.ts",
         "main.ts"

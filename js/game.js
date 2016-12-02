@@ -141,6 +141,51 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * The entity that represents black holes (teleporters) in the game.
+         */
+        var Teleport = (function (_super) {
+            __extends(Teleport, _super);
+            /**
+             * Construct a new teleport entity that will render on the stage
+             * provided.
+             *
+             * This entity is always in a continuously animated state.
+             *
+             * @param {Stage} stage the stage that we use to render ourselves
+             */
+            function Teleport(stage) {
+                var _this = this;
+                // Invoke the super; note that this does not set a position because
+                // that is set by whoever created us. Our dimensions are based on
+                // our sprites, so we don't set anything here.
+                _super.call(this, stage, "blackHole");
+                /**
+                 * This callback is invoked when our sprite sheet finishes loading the
+                 * underlying image for the sprites. It allows us to set our bounds to
+                 * be a rectangle at the dimensions of the sprites in the sprite sheet.
+                 */
+                this.setDimensions = function (sheet) {
+                    // Alter our collision properties
+                    _this.makeRectangle(sheet.width, sheet.height);
+                };
+                // Load the sprite sheet that will contain our sprites. The size of
+                // the entity is based on the size of the sprites, so we let the
+                // callback handle that.
+                this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
+                // Set up an animation. As this is the first animation, it will play
+                // by default.
+                this.addAnimation("idle", 10, true, [35, 36, 37, 38, 39]);
+            }
+            return Teleport;
+        }(game.MazeCell));
+        game.Teleport = Teleport;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * The width of the maze, in bricks.
          *
          * This is inclusive of the side walls, so it's actually 2 bricks wider than
