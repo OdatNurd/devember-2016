@@ -91,6 +91,49 @@ module nurdz.game
         }
 
         /**
+         * Fetch the internal contents of the maze at the provided X and Y
+         * values.
+         *
+         * @param   {number}   x the maze X value to fetch
+         * @param   {number}   y the maze Y value to fetch
+         *
+         * @returns {MazeCell}   the contents of the cell, or null. null will be
+         * returned if the cell is empty or if the position provided is out of
+         * bounds.
+         */
+        getCellAt (x : number, y : number) : MazeCell
+        {
+            // The bounds are invalid, so return null
+            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
+                return null;
+
+            // Return the contents of the cell, if any
+            return this._contents[y * MAZE_WIDTH + x];
+        }
+
+        /**
+         * Change the cell at the provided X and Y values in the maze to the cell
+         * provided; if cell is null, this essentially sets an empty brick into
+         * this position in the maze.
+         *
+         * If the bounds provided are not valid for the maze, nothing happens.
+         *
+         * @param {number}   x    the maze X value to set
+         * @param {number}   y    the maze Y value to set
+         * @param {MazeCell} cell the new cell to set, or null to set the
+         * empty brick
+         */
+        setCellAt (x : number, y : number, cell : MazeCell) : void
+        {
+            // The bounds are invalid, so do nothing.
+            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
+                return;
+
+            // Set the brick at the location to the one provided.
+            this._contents[y * MAZE_WIDTH + x] = cell;
+        }
+
+        /**
          * Check the internal contents of the maze at the provided X and Y
          * values and fetch the brick that is stored at that location.
          *
@@ -102,13 +145,9 @@ module nurdz.game
          */
         getBrickAt (x : number, y : number) : Brick
         {
-            // The bounds are invalid, so return the default.
-            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                return this._empty;
-
-            // Return the contents of the maze as a brick; if there is no brick
-            // at this location, return the default instead.
-            return (<Brick>this._contents[y * MAZE_WIDTH + x]) || this._empty;
+            // Get the cell at this location, and return it back, returning the
+            // empty brick if needed.
+            return (<Brick>this.getCellAt (x, y)) || this._empty;
         }
 
         /**
@@ -125,12 +164,7 @@ module nurdz.game
          */
         setBrickAt (x : number, y : number, brick : Brick) : void
         {
-            // The bounds are invalid, so do nothing.
-            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                return;
-
-            // Set the brick at the location to the one provided.
-            this._contents[y * MAZE_WIDTH + x] = brick;
+            this.setCellAt (x, y, brick);
         }
 
         /**
