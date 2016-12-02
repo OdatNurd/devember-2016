@@ -32,9 +32,16 @@ module nurdz.game
          */
         set brickType (newType : BrickType)
         {
-            // Set the type of the brick to the one passed in, then set the
-            // sprite in the current sprite sheet to match it.
+            // First, set our internal type flag to the one provided.
             this._brickType = newType;
+
+            // Now set up visuals. For non-animated bricks, we just set the
+            // sprite from the sprite sheet. For animated bricks, we need to
+            // start playing the appropriate idle animation.
+            //
+            // This works because the Maze entity makes sure to only call update
+            // for animated brick entities, and that call will mess with the
+            // current sprite.
             switch (this._brickType)
             {
                 case BrickType.BRICK_SOLID:
@@ -42,9 +49,10 @@ module nurdz.game
                     break;
 
                 case BrickType.BRICK_GRAY:
-                    this._sprite = 5;
+                    this.playAnimation ("gray_idle");
                     break;
 
+                // Everything else is just a background brick.
                 default:
                     this._sprite = 1;
                     break;
@@ -86,7 +94,19 @@ module nurdz.game
             // callback handle that.
             this._sheet = new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
 
-            // Set a default brick type.
+            // The non-animated bricks don't have their update methods called,
+            // so no special setup is needed here.
+            //
+            // For the animated brick types, we set up animations for them,
+            // which includes the idle states (where they are not animating).
+            this.addAnimation ("gray_idle",       1, false, [5]);
+            this.addAnimation ("gray_idle_gone",  1, false, [9]);
+            this.addAnimation ("gray_vanish",    10, false, [5, 6, 7, 8, 9]);
+            this.addAnimation ("gray_appear",    10, false, [9, 8, 7, 6, 5]);
+
+            // Set a default brick type. This will make sure that this brick
+            // is properly visually represented, either by playing the correct
+            // animation or by selecting the appropriate sprite.
             this.brickType = typeOfBrick;
         }
 

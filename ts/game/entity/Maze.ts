@@ -44,6 +44,16 @@ module nurdz.game
         private _solid : Brick;
 
         /**
+         * Our singular gray brick entity. Having only one means that all gray
+         * bricks vanish at the same time, instead of allowing us to stagger
+         * them.
+         *
+         * Unlike the bricks above, the gray bricks can vanish, so they need to
+         * be updated frame by frame.
+         */
+        private _gray : Brick;
+
+        /**
          * Our singular black hole entity that represents all black holes in the
          * maze.
          */
@@ -77,6 +87,7 @@ module nurdz.game
             // Create our maze entities.
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
+            this._gray = new Brick (stage, BrickType.BRICK_GRAY);
             this._blackHole = new Teleport (stage);
             this._arrow = new Arrow (stage, ArrowType.ARROW_AUTOMATIC, ArrowDirection.ARROW_LEFT);
 
@@ -120,12 +131,26 @@ module nurdz.game
         update (stage : Stage, tick : number) : void
         {
             super.update (stage, tick);
+            this._gray.update (stage, tick);
             this._blackHole.update (stage, tick);
             this._arrow.update (stage, tick);
+
+            // If the tick is 0, leave; we don't trigger anything on the first
+            // frame.
+            if (tick == 0)
+                return;
 
             // Swap the direction of the arrow every 2 seconds.
             if (tick % 60 == 0)
                 this._arrow.flip ();
+
+            // After 5 seconds, make the gray bricks vanish.
+            if (tick % (60 * 5) == 0)
+                this._gray.playAnimation ("gray_vanish");
+
+            // After 7 seconds, make the gray bricks re-appear
+            if (tick % (60 * 7) == 0)
+                this._gray.playAnimation ("gray_appear");
         }
 
         /**
@@ -253,6 +278,7 @@ module nurdz.game
 
             // Temporarily include a black hole so we can make sure everything
             // works as expected.
+            this.setCellAt (4, 5, this._gray);
             this.setCellAt (5, 5, this._blackHole);
             this.setCellAt (6, 5, this._arrow);
 

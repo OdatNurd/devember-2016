@@ -93,7 +93,18 @@ var nurdz;
                 // the entity is based on the size of the sprites, so we let the
                 // callback handle that.
                 this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
-                // Set a default brick type.
+                // The non-animated bricks don't have their update methods called,
+                // so no special setup is needed here.
+                //
+                // For the animated brick types, we set up animations for them,
+                // which includes the idle states (where they are not animating).
+                this.addAnimation("gray_idle", 1, false, [5]);
+                this.addAnimation("gray_idle_gone", 1, false, [9]);
+                this.addAnimation("gray_vanish", 10, false, [5, 6, 7, 8, 9]);
+                this.addAnimation("gray_appear", 10, false, [9, 8, 7, 6, 5]);
+                // Set a default brick type. This will make sure that this brick
+                // is properly visually represented, either by playing the correct
+                // animation or by selecting the appropriate sprite.
                 this.brickType = typeOfBrick;
             }
             Object.defineProperty(Brick.prototype, "brickType", {
@@ -113,16 +124,23 @@ var nurdz;
                  * @param {BrickType} newType the new type of the brick.
                  */
                 set: function (newType) {
-                    // Set the type of the brick to the one passed in, then set the
-                    // sprite in the current sprite sheet to match it.
+                    // First, set our internal type flag to the one provided.
                     this._brickType = newType;
+                    // Now set up visuals. For non-animated bricks, we just set the
+                    // sprite from the sprite sheet. For animated bricks, we need to
+                    // start playing the appropriate idle animation.
+                    //
+                    // This works because the Maze entity makes sure to only call update
+                    // for animated brick entities, and that call will mess with the
+                    // current sprite.
                     switch (this._brickType) {
                         case BrickType.BRICK_SOLID:
                             this._sprite = 0;
                             break;
                         case BrickType.BRICK_GRAY:
-                            this._sprite = 5;
+                            this.playAnimation("gray_idle");
                             break;
+                        // Everything else is just a background brick.
                         default:
                             this._sprite = 1;
                             break;
@@ -398,6 +416,7 @@ var nurdz;
                 // Create our maze entities.
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
+                this._gray = new game.Brick(stage, game.BrickType.BRICK_GRAY);
                 this._blackHole = new game.Teleport(stage);
                 this._arrow = new game.Arrow(stage, game.ArrowType.ARROW_AUTOMATIC, game.ArrowDirection.ARROW_LEFT);
                 // Create the array that holds our contents. null entries are
@@ -421,11 +440,22 @@ var nurdz;
              */
             Maze.prototype.update = function (stage, tick) {
                 _super.prototype.update.call(this, stage, tick);
+                this._gray.update(stage, tick);
                 this._blackHole.update(stage, tick);
                 this._arrow.update(stage, tick);
+                // If the tick is 0, leave; we don't trigger anything on the first
+                // frame.
+                if (tick == 0)
+                    return;
                 // Swap the direction of the arrow every 2 seconds.
                 if (tick % 60 == 0)
                     this._arrow.flip();
+                // After 5 seconds, make the gray bricks vanish.
+                if (tick % (60 * 5) == 0)
+                    this._gray.playAnimation("gray_vanish");
+                // After 7 seconds, make the gray bricks re-appear
+                if (tick % (60 * 7) == 0)
+                    this._gray.playAnimation("gray_appear");
             };
             /**
              * Fetch the internal contents of the maze at the provided X and Y
@@ -534,6 +564,7 @@ var nurdz;
                     this._contents[i] = null;
                 // Temporarily include a black hole so we can make sure everything
                 // works as expected.
+                this.setCellAt(4, 5, this._gray);
                 this.setCellAt(5, 5, this._blackHole);
                 this.setCellAt(6, 5, this._arrow);
                 // Now the left and right sides need to be solid bricks.
