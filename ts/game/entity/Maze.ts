@@ -50,6 +50,13 @@ module nurdz.game
         private _blackHole : Teleport;
 
         /**
+         * Our test arrow; this is for development testing.
+         *
+         * @type {Arrow}
+         */
+        private _arrow : Arrow;
+
+        /**
          * Construct a new empty maze entity.
          *
          * @param {Stage} stage the stage that we use to render ourselves
@@ -71,6 +78,7 @@ module nurdz.game
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
             this._blackHole = new Teleport (stage);
+            this._arrow = new Arrow (stage, ArrowType.ARROW_AUTOMATIC, ArrowDirection.ARROW_LEFT);
 
             // Create the array that holds our contents. null entries are
             // treated as empty background bricks, so we don't need to do
@@ -113,6 +121,11 @@ module nurdz.game
         {
             super.update (stage, tick);
             this._blackHole.update (stage, tick);
+            this._arrow.update (stage, tick);
+
+            // Swap the direction of the arrow every 2 seconds.
+            if (tick % 60 == 0)
+                this._arrow.flip ();
         }
 
         /**
@@ -241,6 +254,7 @@ module nurdz.game
             // Temporarily include a black hole so we can make sure everything
             // works as expected.
             this.setCellAt (5, 5, this._blackHole);
+            this.setCellAt (6, 5, this._arrow);
 
             // Now the left and right sides need to be solid bricks.
             for (let y = 0 ; y < MAZE_HEIGHT ; y++)
