@@ -16,7 +16,7 @@ module nurdz.game
      * The entity that represents bricks (background, permanent and temporary)
      * in the game.
      */
-    export class Brick extends Entity
+    export class Brick extends MazeCell
     {
         /**
          * The type of this brick; the default is background until otherwise
@@ -69,14 +69,17 @@ module nurdz.game
          * surround the play area, the background of the play area, and the gray
          * blocks that impede ball movement until all balls are pushed.
          *
-         * @param {Stage} stage the stage that we use to render ourselves
+         * @param {Stage}     stage       the stage that we use to render
+         * ourselves
+         * @param {BrickType} typeOfBrick the type of brick entity this should
+         * be
          */
-        constructor (stage : Stage)
+        constructor (stage : Stage, typeOfBrick : BrickType = BrickType.BRICK_SOLID)
         {
             // Invoke the super; note that this does not set a position because
             // that is set by whoever created us. Our dimensions are based on
             // our sprites, so we don't set anything here.
-            super ("brick", stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+            super (stage, "brick");
 
             // Load the sprite sheet that will contain our sprites. The size of
             // the entity is based on the size of the sprites, so we let the
@@ -84,7 +87,7 @@ module nurdz.game
             this._sheet = new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
 
             // Set a default brick type.
-            this.brickType = BrickType.BRICK_BACKGROUND;
+            this.brickType = typeOfBrick;
         }
 
         /**

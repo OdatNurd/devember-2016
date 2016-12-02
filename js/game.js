@@ -8,6 +8,43 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * The entity that represents a cell inside of the Maze entity.
+         *
+         * These are basically regular Entity objects with a slightly different
+         * common interface.
+         */
+        var MazeCell = (function (_super) {
+            __extends(MazeCell, _super);
+            /**
+             * Construct a new maze cell that will render on the stage provided and
+             * which will use the provided SpriteSheet.
+             *
+             * The dimensions of this entity are not set at construction time and
+             * are instead set based on the size of the sprites in the attached
+             * sprite sheet.
+             *
+             * Subclasses are responsible for setting the sprite sheet and for
+             * ensuring that all MazeCell subclasses use the same size sprites.
+             *
+             * @param {Stage}  stage the stage that we use to render ourselves
+             * @param {String} name  the entity name for this subclass
+             */
+            function MazeCell(stage, name) {
+                // Invoke the super; note that this does not set a position because
+                // that is set by whoever created us. Our dimensions are based on
+                // our sprites, so we don't set anything here.
+                _super.call(this, name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+            }
+            return MazeCell;
+        }(game.Entity));
+        game.MazeCell = MazeCell;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * This is used to specify the valid values for brick types. A brick may
          * be a solid brick, a gray brick (solid, but vanishes near the end of the
          * game), or background (decorative, non-colliding).
@@ -31,14 +68,18 @@ var nurdz;
              * surround the play area, the background of the play area, and the gray
              * blocks that impede ball movement until all balls are pushed.
              *
-             * @param {Stage} stage the stage that we use to render ourselves
+             * @param {Stage}     stage       the stage that we use to render
+             * ourselves
+             * @param {BrickType} typeOfBrick the type of brick entity this should
+             * be
              */
-            function Brick(stage) {
+            function Brick(stage, typeOfBrick) {
                 var _this = this;
+                if (typeOfBrick === void 0) { typeOfBrick = BrickType.BRICK_SOLID; }
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
-                _super.call(this, "brick", stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+                _super.call(this, stage, "brick");
                 /**
                  * This callback is invoked when our sprite sheet finishes loading the
                  * underlying image for the sprites. It allows us to set our bounds to
@@ -53,7 +94,7 @@ var nurdz;
                 // callback handle that.
                 this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
                 // Set a default brick type.
-                this.brickType = BrickType.BRICK_BACKGROUND;
+                this.brickType = typeOfBrick;
             }
             Object.defineProperty(Brick.prototype, "brickType", {
                 /**
@@ -91,7 +132,7 @@ var nurdz;
                 configurable: true
             });
             return Brick;
-        }(game.Entity));
+        }(game.MazeCell));
         game.Brick = Brick;
     })(game = nurdz.game || (nurdz.game = {}));
 })(nurdz || (nurdz = {}));
@@ -151,14 +192,53 @@ var nurdz;
                 // indicates that the sprite size is known, so that we can set up
                 // our dimensions.
                 new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
-                // Create the array that holds our contents and fill it with
-                // instances of the brick entity.
+                // Create both our empty brick and our solid brick for use in maps.
+                this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
+                this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
+                // Create the array that holds our contents. null entries are
+                // treated as empty background bricks, so we don't need to do
+                // anything further here.
                 this._contents = new Array(MAZE_WIDTH * MAZE_HEIGHT);
-                for (var i = 0; i < MAZE_WIDTH * MAZE_HEIGHT; i++)
-                    this._contents[i] = new game.Brick(stage);
                 // Reset the maze
                 this.reset();
             }
+            /**
+             * Check the internal contents of the maze at the provided X and Y
+             * values and fetch the brick that is stored at that location.
+             *
+             * @param   {number} x the maze X value to check
+             * @param   {number} y the maze Y value to check
+             *
+             * @returns {Brick} the brick at the given location; this will be the
+             * background brick if this location does not contain a brick
+             */
+            Maze.prototype.getBrickAt = function (x, y) {
+                // The bounds are invalid, so return the default.
+                if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
+                    return this._empty;
+                // Return the contents of the maze as a brick; if there is no brick
+                // at this location, return the default instead.
+                return this._contents[y * MAZE_WIDTH + x] || this._empty;
+            };
+            /**
+             * Change the brick at at the provided Z and Y values in the maze to the
+             * brick provided; if brick is null, this essentially sets an empty
+             * brick into this position in the grid.
+             *
+             * If the bounds provided are not valid for the maze, nothing happens.
+             *
+             * @param {number} x     the maze X value to set
+             * @param {number} y     the maze Y value to set
+             * @param {Brick}  brick the new brick to set, or null to set the empty
+             * brick
+             */
+            Maze.prototype.setBrickAt = function (x, y, brick) {
+                // The bounds are invalid, so do nothing.
+                if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
+                    return;
+                // Set the brick at the location to the one provided.
+                this._contents[y * MAZE_WIDTH + x] = brick;
+            };
             /**
              * Render us onto the stage provided at the given position.
              *
@@ -174,7 +254,7 @@ var nurdz;
                 // we've been given.
                 for (var blitY = 0; blitY < MAZE_HEIGHT; blitY++) {
                     for (var blitX = 0; blitX < MAZE_WIDTH; blitX++)
-                        this._contents[blitY * MAZE_WIDTH + blitX].render(x + (blitX * 25), y + (blitY * 25), renderer);
+                        this.getBrickAt(blitX, blitY).render(x + (blitX * 25), y + (blitY * 25), renderer);
                 }
             };
             /**
@@ -184,18 +264,19 @@ var nurdz;
              * created, empty maze.
              */
             Maze.prototype.reset = function () {
-                // First, every brick needs to be a background brick.
+                // First, every brick needs to be a background brick. To do this we
+                // just need to clear the entry in the array.
                 for (var i = 0; i < this._contents.length; i++)
-                    this._contents[i].brickType = game.BrickType.BRICK_BACKGROUND;
+                    this._contents[i] = null;
                 // Now the left and right sides need to be solid bricks.
                 for (var y = 0; y < MAZE_HEIGHT; y++) {
-                    this._contents[y * MAZE_WIDTH].brickType = game.BrickType.BRICK_SOLID;
-                    this._contents[y * MAZE_WIDTH + (MAZE_WIDTH - 1)].brickType = game.BrickType.BRICK_SOLID;
+                    this.setBrickAt(0, y, this._solid);
+                    this.setBrickAt(MAZE_WIDTH - 1, y, this._solid);
                 }
                 // Lastly, the bottom row needs to be made solid, except for the
                 // first and last columns, which have already been filled out.
                 for (var x = 1; x < MAZE_WIDTH - 1; x++)
-                    this._contents[(MAZE_HEIGHT - 1) * MAZE_WIDTH + x].brickType = game.BrickType.BRICK_SOLID;
+                    this.setBrickAt(x, MAZE_HEIGHT - 1, this._solid);
             };
             return Maze;
         }(game.Entity));
