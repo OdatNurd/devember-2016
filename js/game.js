@@ -237,9 +237,10 @@ var nurdz;
                 // indicates that the sprite size is known, so that we can set up
                 // our dimensions.
                 new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
-                // Create both our empty brick and our solid brick for use in maps.
+                // Create our maze entities.
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
+                this._blackHole = new game.Teleport(stage);
                 // Create the array that holds our contents. null entries are
                 // treated as empty background bricks, so we don't need to do
                 // anything further here.
@@ -247,6 +248,22 @@ var nurdz;
                 // Reset the maze
                 this.reset();
             }
+            /**
+             * This is called every frame update (tick tells us how many times this
+             * has happened) to allow us to update ourselves.
+             *
+             * This invokes the superclass method, and then makes sure to also
+             * invoke the update method for our animated MazeCell entities, so that
+             * their animations will play as expected.
+             *
+             * @param {Stage}  stage the stage that we are on
+             * @param {number} tick  the current engine tick; this advances once for
+             * each frame update
+             */
+            Maze.prototype.update = function (stage, tick) {
+                _super.prototype.update.call(this, stage, tick);
+                this._blackHole.update(stage, tick);
+            };
             /**
              * Fetch the internal contents of the maze at the provided X and Y
              * values.
@@ -328,8 +345,17 @@ var nurdz;
                 // render themselves at the appropriate offset from the position
                 // we've been given.
                 for (var blitY = 0; blitY < MAZE_HEIGHT; blitY++) {
-                    for (var blitX = 0; blitX < MAZE_WIDTH; blitX++)
-                        this.getBrickAt(blitX, blitY).render(x + (blitX * 25), y + (blitY * 25), renderer);
+                    for (var blitX = 0; blitX < MAZE_WIDTH; blitX++) {
+                        // Get the cell at this position, using the empty brick
+                        // cell if there isn't anything.
+                        var cell = this.getCellAt(blitX, blitY) || this._empty;
+                        // If the cell is not a brick entity of some kind, then it
+                        // probably has a transparent background. So we should first
+                        // render the empty cell to provide a background for it.
+                        if (cell instanceof game.Brick == false)
+                            this._empty.render(x + (blitX * 25), y + (blitY * 25), renderer);
+                        cell.render(x + (blitX * 25), y + (blitY * 25), renderer);
+                    }
                 }
             };
             /**
@@ -343,6 +369,9 @@ var nurdz;
                 // just need to clear the entry in the array.
                 for (var i = 0; i < this._contents.length; i++)
                     this._contents[i] = null;
+                // Temporarily include a black hole so we can make sure everything
+                // works as expected.
+                this.setCellAt(5, 5, this._blackHole);
                 // Now the left and right sides need to be solid bricks.
                 for (var y = 0; y < MAZE_HEIGHT; y++) {
                     this.setBrickAt(0, y, this._solid);

@@ -44,6 +44,12 @@ module nurdz.game
         private _solid : Brick;
 
         /**
+         * Our singular black hole entity that represents all black holes in the
+         * maze.
+         */
+        private _blackHole : Teleport;
+
+        /**
          * Construct a new empty maze entity.
          *
          * @param {Stage} stage the stage that we use to render ourselves
@@ -61,9 +67,10 @@ module nurdz.game
             // our dimensions.
             new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
 
-            // Create both our empty brick and our solid brick for use in maps.
+            // Create our maze entities.
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
+            this._blackHole = new Teleport (stage);
 
             // Create the array that holds our contents. null entries are
             // treated as empty background bricks, so we don't need to do
@@ -88,6 +95,24 @@ module nurdz.game
             // just slightly up from the bottom of the screen.
             this.setStagePositionXY ((this._stage.width / 2) - (this.width  / 2),
                                      this._stage.height - this.height - 16);
+        }
+
+        /**
+         * This is called every frame update (tick tells us how many times this
+         * has happened) to allow us to update ourselves.
+         *
+         * This invokes the superclass method, and then makes sure to also
+         * invoke the update method for our animated MazeCell entities, so that
+         * their animations will play as expected.
+         *
+         * @param {Stage}  stage the stage that we are on
+         * @param {number} tick  the current engine tick; this advances once for
+         * each frame update
+         */
+        update (stage : Stage, tick : number) : void
+        {
+            super.update (stage, tick);
+            this._blackHole.update (stage, tick);
         }
 
         /**
@@ -184,10 +209,19 @@ module nurdz.game
             for (let blitY = 0 ; blitY < MAZE_HEIGHT ; blitY++)
             {
                 for (let blitX = 0 ; blitX < MAZE_WIDTH ; blitX++)
-                    this.getBrickAt(blitX, blitY).render (
-                        x + (blitX * 25),
-                        y + (blitY * 25),
-                        renderer);
+                {
+                    // Get the cell at this position, using the empty brick
+                    // cell if there isn't anything.
+                    let cell = this.getCellAt (blitX, blitY) || this._empty;
+
+                    // If the cell is not a brick entity of some kind, then it
+                    // probably has a transparent background. So we should first
+                    // render the empty cell to provide a background for it.
+                    if (cell instanceof Brick == false)
+                        this._empty.render (x + (blitX * 25), y + (blitY * 25), renderer);
+
+                    cell.render (x + (blitX * 25), y + (blitY * 25), renderer);
+                }
             }
         }
 
@@ -203,6 +237,10 @@ module nurdz.game
             // just need to clear the entry in the array.
             for (let i = 0 ; i < this._contents.length ; i++)
                 this._contents[i] = null;
+
+            // Temporarily include a black hole so we can make sure everything
+            // works as expected.
+            this.setCellAt (5, 5, this._blackHole);
 
             // Now the left and right sides need to be solid bricks.
             for (let y = 0 ; y < MAZE_HEIGHT ; y++)
