@@ -123,10 +123,16 @@ module nurdz.game
             // entire maze area.
             this.makeRectangle (sheet.width * MAZE_WIDTH, sheet.height * MAZE_HEIGHT);
 
+            // Determine how much width is left on the stage that is not taken
+            // up by us.
+            let remainder = this._stage.width - this.width;
+
             // Set our position to center us on the screen horizontally and be
-            // just slightly up from the bottom of the screen.
+            // just slightly up from the bottom of the screen. We use half of
+            // the remainder of the width, so that the bottom edge is as far
+            // from the bottom of the screen as the side edges are.
             this.setStagePositionXY ((this._stage.width / 2) - (this.width  / 2),
-                                     this._stage.height - this.height - 16);
+                                     this._stage.height - this.height - (remainder / 2));
         }
 
         /**

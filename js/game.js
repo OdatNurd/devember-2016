@@ -427,9 +427,14 @@ var nurdz;
                     // Alter our collision properties so that our bounds represent the
                     // entire maze area.
                     _this.makeRectangle(sheet.width * MAZE_WIDTH, sheet.height * MAZE_HEIGHT);
+                    // Determine how much width is left on the stage that is not taken
+                    // up by us.
+                    var remainder = _this._stage.width - _this.width;
                     // Set our position to center us on the screen horizontally and be
-                    // just slightly up from the bottom of the screen.
-                    _this.setStagePositionXY((_this._stage.width / 2) - (_this.width / 2), _this._stage.height - _this.height - 16);
+                    // just slightly up from the bottom of the screen. We use half of
+                    // the remainder of the width, so that the bottom edge is as far
+                    // from the bottom of the screen as the side edges are.
+                    _this.setStagePositionXY((_this._stage.width / 2) - (_this.width / 2), _this._stage.height - _this.height - (remainder / 2));
                 };
                 // Set up a preload for the same sprite sheet that the brick entities
                 // are using. This will allow us to capture the callback that
