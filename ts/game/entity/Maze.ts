@@ -39,6 +39,15 @@ module nurdz.game
     const TELEPORT_MIN_DISTANCE = 2;
 
     /**
+     * When generating the random contents of the maze, we generate a certain
+     * number of arrows per row in the maze. This specifies the minimum and
+     * maximum number of arrows that can be generated for each row in the maze.
+     *
+     * @type {Array}
+     */
+    const ARROWS_PER_ROW = [3, 8];
+
+    /**
      * The entity that represents the maze in the game. This is the entire play
      * area of the game.
      */
@@ -87,11 +96,10 @@ module nurdz.game
         private _blackHole : Teleport;
 
         /**
-         * Our test arrow; this is for development testing.
-         *
-         * @type {Arrow}
+         * An entity pool which contains all of the arrow entities we've created
+         * so far.
          */
-        private _arrow : Arrow;
+        private _arrows : EntityPool;
 
         /**
          * Construct a new empty maze entity.
@@ -111,13 +119,21 @@ module nurdz.game
             // our dimensions.
             new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
 
+            // Create our entity pools.
+            this._arrows = new EntityPool ();
+
             // Create our maze entities.
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
             this._gray = new Brick (stage, BrickType.BRICK_GRAY);
             this._bonus = new Brick (stage, BrickType.BRICK_BONUS);
             this._blackHole = new Teleport (stage);
-            this._arrow = new Arrow (stage, ArrowType.ARROW_AUTOMATIC, ArrowDirection.ARROW_LEFT);
+
+            // For arrows, we will pre-populate the maximum possible number of
+            // arrows into the arrow pool. The type and direction of these
+            // arrows does not matter; all arrows are added dead anyway.
+            for (let i = 0 ; i < (MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1] ; i++)
+                this._arrows.addEntity (new Arrow (stage), false);
 
             // We want the bonus brick to start out gone.
             this._bonus.playAnimation ("bonus_idle_gone");
@@ -175,7 +191,9 @@ module nurdz.game
             this._gray.update (stage, tick);
             this._bonus.update (stage, tick);
             this._blackHole.update (stage, tick);
-            this._arrow.update (stage, tick);
+
+            // Now update all of the entities in our various entity pools.
+            this._arrows.update (stage, tick);
         }
 
         /**
@@ -385,7 +403,6 @@ module nurdz.game
         }
 
         /**
-
          * Generate black holes into the maze. We generate a specific number of
          * them at random locations in the grid.
          *
@@ -421,6 +438,68 @@ module nurdz.game
             }
         }
 
+        /**
+         * Generate arrow entities into the maze. We generate a random number of
+         * arrows per row in the maze, where the number of items is constrained
+         * to a range of possible arrows per row.
+         *
+         * NOTE:
+         *    The current generation scheme for this is that we scan row by
+         *    row inserting a given number of arrows per row, where the number
+         *    is randomly generated. Currently the arrows are always normal, and
+         *    their facing is randomly selected.
+         */
+        private genArrows () : void
+        {
+            // Iterate over all of the rows that can possibly contain arrows. We
+            // start two rows down to make room for the initial ball locations
+            // and the empty balls, and we stop 2 rows short to account for the
+            // border of the maze and the goal row.
+            for (let row = 2 ; row < MAZE_HEIGHT - 2 ; row++)
+            {
+                // First, we need to determine how many arrows we will generate
+                // for this row.
+                let arrowCount = Utils.randomIntInRange (ARROWS_PER_ROW[0], ARROWS_PER_ROW[1]);
+
+                // Now keep generating arrows into this row until we have
+                // generated enough.
+                while (arrowCount > 0)
+                {
+                    // Generate a column randomly. If this location has something,
+                    // try again.
+                    let column = this.genRandomMazeColumn ();
+                    if (this.getCellAt (column, row) != null)
+                        continue;
+
+                    // This cell contains an arrow; resurrect one from the object
+                    // pool. If there isn't one to resurrect, create one and add
+                    // add it to the pool.
+                    let arrow : Arrow = <Arrow>this._arrows.resurrectEntity ();
+                    if (arrow == null)
+                    {
+                        arrow = new Arrow (this._stage);
+                        this._arrows.addEntity (arrow, true);
+                    }
+
+                    // Now randomly set the direction to be left or right as
+                    // appropriate.
+                    if (Utils.randomIntInRange (0, 100) > 50)
+                        arrow.arrowDirection = ArrowDirection.ARROW_LEFT;
+                    else
+                        arrow.arrowDirection = ArrowDirection.ARROW_RIGHT;
+
+                    // Randomly select the arrow type.
+                    if (Utils.randomIntInRange (0, 100) > 25)
+                        arrow.arrowType = ArrowType.ARROW_NORMAL;
+                    else
+                        arrow.arrowType = ArrowType.ARROW_AUTOMATIC;
+
+                    // Add it to the maze and count it as placed.
+                    this.setCellAt (column, row, arrow);
+                    arrowCount--;
+                }
+            }
+        }
 
         /**
          * Reset the maze.
@@ -437,6 +516,7 @@ module nurdz.game
 
             // Now generate the contents of the maze.
             this.genBlackHoles ();
+            this.genArrows ();
         }
     }
 

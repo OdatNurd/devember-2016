@@ -594,6 +594,14 @@ var nurdz;
          */
         var TELEPORT_MIN_DISTANCE = 2;
         /**
+         * When generating the random contents of the maze, we generate a certain
+         * number of arrows per row in the maze. This specifies the minimum and
+         * maximum number of arrows that can be generated for each row in the maze.
+         *
+         * @type {Array}
+         */
+        var ARROWS_PER_ROW = [3, 8];
+        /**
          * The entity that represents the maze in the game. This is the entire play
          * area of the game.
          */
@@ -632,13 +640,19 @@ var nurdz;
                 // indicates that the sprite size is known, so that we can set up
                 // our dimensions.
                 new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
+                // Create our entity pools.
+                this._arrows = new game.EntityPool();
                 // Create our maze entities.
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
                 this._gray = new game.Brick(stage, game.BrickType.BRICK_GRAY);
                 this._bonus = new game.Brick(stage, game.BrickType.BRICK_BONUS);
                 this._blackHole = new game.Teleport(stage);
-                this._arrow = new game.Arrow(stage, game.ArrowType.ARROW_AUTOMATIC, game.ArrowDirection.ARROW_LEFT);
+                // For arrows, we will pre-populate the maximum possible number of
+                // arrows into the arrow pool. The type and direction of these
+                // arrows does not matter; all arrows are added dead anyway.
+                for (var i = 0; i < (MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1]; i++)
+                    this._arrows.addEntity(new game.Arrow(stage), false);
                 // We want the bonus brick to start out gone.
                 this._bonus.playAnimation("bonus_idle_gone");
                 // Create the array that holds our contents. null entries are
@@ -668,7 +682,8 @@ var nurdz;
                 this._gray.update(stage, tick);
                 this._bonus.update(stage, tick);
                 this._blackHole.update(stage, tick);
-                this._arrow.update(stage, tick);
+                // Now update all of the entities in our various entity pools.
+                this._arrows.update(stage, tick);
             };
             /**
              * Fetch the internal contents of the maze at the provided X and Y
@@ -847,7 +862,6 @@ var nurdz;
                 return game.Utils.randomIntInRange(2, MAZE_HEIGHT - 2);
             };
             /**
-    
              * Generate black holes into the maze. We generate a specific number of
              * them at random locations in the grid.
              *
@@ -877,6 +891,59 @@ var nurdz;
                 }
             };
             /**
+             * Generate arrow entities into the maze. We generate a random number of
+             * arrows per row in the maze, where the number of items is constrained
+             * to a range of possible arrows per row.
+             *
+             * NOTE:
+             *    The current generation scheme for this is that we scan row by
+             *    row inserting a given number of arrows per row, where the number
+             *    is randomly generated. Currently the arrows are always normal, and
+             *    their facing is randomly selected.
+             */
+            Maze.prototype.genArrows = function () {
+                // Iterate over all of the rows that can possibly contain arrows. We
+                // start two rows down to make room for the initial ball locations
+                // and the empty balls, and we stop 2 rows short to account for the
+                // border of the maze and the goal row.
+                for (var row = 2; row < MAZE_HEIGHT - 2; row++) {
+                    // First, we need to determine how many arrows we will generate
+                    // for this row.
+                    var arrowCount = game.Utils.randomIntInRange(ARROWS_PER_ROW[0], ARROWS_PER_ROW[1]);
+                    // Now keep generating arrows into this row until we have
+                    // generated enough.
+                    while (arrowCount > 0) {
+                        // Generate a column randomly. If this location has something,
+                        // try again.
+                        var column = this.genRandomMazeColumn();
+                        if (this.getCellAt(column, row) != null)
+                            continue;
+                        // This cell contains an arrow; resurrect one from the object
+                        // pool. If there isn't one to resurrect, create one and add
+                        // add it to the pool.
+                        var arrow = this._arrows.resurrectEntity();
+                        if (arrow == null) {
+                            arrow = new game.Arrow(this._stage);
+                            this._arrows.addEntity(arrow, true);
+                        }
+                        // Now randomly set the direction to be left or right as
+                        // appropriate.
+                        if (game.Utils.randomIntInRange(0, 100) > 50)
+                            arrow.arrowDirection = game.ArrowDirection.ARROW_LEFT;
+                        else
+                            arrow.arrowDirection = game.ArrowDirection.ARROW_RIGHT;
+                        // Randomly select the arrow type.
+                        if (game.Utils.randomIntInRange(0, 100) > 25)
+                            arrow.arrowType = game.ArrowType.ARROW_NORMAL;
+                        else
+                            arrow.arrowType = game.ArrowType.ARROW_AUTOMATIC;
+                        // Add it to the maze and count it as placed.
+                        this.setCellAt(column, row, arrow);
+                        arrowCount--;
+                    }
+                }
+            };
+            /**
              * Reset the maze.
              *
              * This will modify the bricks in the maze to represent a new randomly
@@ -889,6 +956,7 @@ var nurdz;
                 this.emptyMaze();
                 // Now generate the contents of the maze.
                 this.genBlackHoles();
+                this.genArrows();
             };
             return Maze;
         }(game.Entity));
