@@ -154,31 +154,6 @@ module nurdz.game
             this._bonus.update (stage, tick);
             this._blackHole.update (stage, tick);
             this._arrow.update (stage, tick);
-
-            // If the tick is 0, leave; we don't trigger anything on the first
-            // frame.
-            if (tick == 0)
-                return;
-
-            // Swap the direction of the arrow every 2 seconds.
-            if (tick % (30 * 2) == 0)
-                this._arrow.flip ();
-
-            // After 5 seconds, make the gray bricks vanish.
-            if (tick % (30 * 5) == 0)
-                this._gray.playAnimation ("gray_vanish");
-
-            // After 7 seconds, make the gray bricks re-appear
-            if (tick % (30 * 7) == 0)
-                this._gray.playAnimation ("gray_appear");
-
-            // After 2 seconds, make the bonus brick appear.
-            if (tick % (30 * 2) == 0)
-                this._bonus.playAnimation ("bonus_appear");
-
-            // After 3 seconds, make the bonus brick vanish again.
-            if (tick % (30 * 3) == 0)
-                this._bonus.playAnimation ("bonus_vanish");
         }
 
         /**
@@ -292,24 +267,19 @@ module nurdz.game
         }
 
         /**
-         * Reset the maze.
+         * Prepare for maze generation by resetting the contents of the maze to
+         * be empty.
          *
-         * This will modify the bricks in the maze to represent a new randomly
-         * created, empty maze.
+         * The entire contents of the maze is set to be the empty background
+         * brick, followed by wrapping the edges in the bounding bricks that
+         * stop the ball from falling out of the maze.
          */
-        reset () : void
+        private emptyMaze () : void
         {
             // First, every brick needs to be a background brick. To do this we
             // just need to clear the entry in the array.
             for (let i = 0 ; i < this._contents.length ; i++)
                 this._contents[i] = null;
-
-            // Temporarily include a black hole so we can make sure everything
-            // works as expected.
-            this.setCellAt (4, 5, this._gray);
-            this.setCellAt (5, 5, this._blackHole);
-            this.setCellAt (6, 5, this._arrow);
-            this.setCellAt (7, 5, this._bonus);
 
             // Now the left and right sides need to be solid bricks.
             for (let y = 0 ; y < MAZE_HEIGHT ; y++)
@@ -322,6 +292,88 @@ module nurdz.game
             // first and last columns, which have already been filled out.
             for (let x = 1 ; x < MAZE_WIDTH - 1 ; x++)
                 this.setBrickAt (x, MAZE_HEIGHT - 1, this._solid);
+        }
+
+        /**
+         * Scan the maze over the range of values given and check to see if any
+         * entities exist in this area or not. This is not specific to any
+         * particular entity.
+         *
+         * @param   {number}  x1 the x location of the first cell to check
+         * @param   {number}  y1 the y location of the first cell to check
+         * @param   {number}  x2 the x location of the second cell to check
+         * @param   {number}  y2 the y location of the second cell to check
+         *
+         * @returns {boolean}    true if any of the cells in the rectangular
+         * range between the two given points contains an entity.
+         */
+        private entityInRange (x1 : number, y1 : number, x2 : number, y2 : number) : boolean
+        {
+            // Scan the entire range; this is really inefficient but it gets
+            // the job done.
+            //
+            // Note that getCellAt () returns null for an invalid location, so
+            // this handles locations that end up off of the edge OK.
+            for (let x = x1 ; x <= x2 ; x++)
+            {
+                for (let y = y1 ; y <= y2 ; y++)
+                {
+                    if (this.getCellAt (x, y) != null)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        /**
+         * Randomly select a column in the maze for the purposes of generating
+         * maze contents.
+         *
+         * This ensures that the value selected is valid for a position inside
+         * of the maze; this means that it makes sure that the value is never
+         * one of the edge columns which bound the sides of the maze.
+         *
+         * @returns {number} the randomly selected column in the maze
+         */
+        private genRandomMazeColumn () : number
+        {
+            // Generate, ensuring that we never pick an edge.
+            return Utils.randomIntInRange (1, MAZE_WIDTH -1);
+        }
+
+        /**
+         * Randomly select a row in the maze for the purposes of generating maze
+         * contents.
+         *
+         * This ensures that the value selected is valid for a position inside
+         * of the maze. In particular we need a row at the top for the balls to
+         * start in and the balls to end up in, plus a row at the top to allow
+         * for at least a potential drop of one ball and a row at the bottom for
+         * the outer boundary.
+         *
+         * @returns {number} [the randomly selected row in the maze
+         */
+        private genRandomMazeRow () : number
+        {
+            // Generate, ensuring that we skip two rows for the initial ball
+            // placements and at least a single row of movement, and two rows on
+            // the bottom to make room for the lower boundary and the goal line.
+            return Utils.randomIntInRange (2, MAZE_HEIGHT - 2);
+        }
+
+        /**
+         * Reset the maze.
+         *
+         * This will modify the bricks in the maze to represent a new randomly
+         * created, empty maze.
+         */
+        reset () : void
+        {
+            // Prepare the maze; this empties out the current contents (if any)
+            // and gives us a plain empty maze that is surrounded with the
+            // bounding bricks that we need.
+            this.emptyMaze ();
         }
     }
 
