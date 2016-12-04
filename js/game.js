@@ -578,6 +578,22 @@ var nurdz;
          */
         var MAZE_HEIGHT = 19;
         /**
+         * When generating the random contents of the maze, we insert this many
+         * teleport entities into the maze at random locations.
+         *
+         * @type {Number}
+         */
+        var TOTAL_TELEPORTERS = 5;
+        /**
+         * When generating the teleport entities, this specifies the minimum distance
+         * that can occur between two adjacent teleporters.
+         *
+         * If this is set too high, maze generation will deadlock; be sensible.
+         *
+         * @type {Number}
+         */
+        var TELEPORT_MIN_DISTANCE = 2;
+        /**
          * The entity that represents the maze in the game. This is the entire play
          * area of the game.
          */
@@ -645,7 +661,10 @@ var nurdz;
              * each frame update
              */
             Maze.prototype.update = function (stage, tick) {
+                // Let the super do it's think for us.
                 _super.prototype.update.call(this, stage, tick);
+                // Make sure that all of our bricks that can animate get updated, so
+                // that their animations run as expected.
                 this._gray.update(stage, tick);
                 this._bonus.update(stage, tick);
                 this._blackHole.update(stage, tick);
@@ -828,6 +847,36 @@ var nurdz;
                 return game.Utils.randomIntInRange(2, MAZE_HEIGHT - 2);
             };
             /**
+    
+             * Generate black holes into the maze. We generate a specific number of
+             * them at random locations in the grid.
+             *
+             * This should be done first because unlike other elements in the maze,
+             * these can be anywhere instead of only a set number of them being
+             * allowed per row.
+             *
+             * MOTE:
+             *    The current generation scheme for this is that locations are
+             *    randomly selected, but if any entity is within two tiles of the
+             *    chosen tile (including the chosen tile itself), that location is
+             *    rejected.
+             *
+             */
+            Maze.prototype.genBlackHoles = function () {
+                for (var i = 0; i < TOTAL_TELEPORTERS; i++) {
+                    // Get a location.
+                    var x = this.genRandomMazeColumn();
+                    var y = this.genRandomMazeRow();
+                    // If there are no entities within the proper distance of this
+                    // selected square (which includes the square itself), then this
+                    // is a good place to put the teleport; otherwise, try again.
+                    if (this.entityInRange(x - TELEPORT_MIN_DISTANCE, y - TELEPORT_MIN_DISTANCE, x + TELEPORT_MIN_DISTANCE, y + TELEPORT_MIN_DISTANCE) == false)
+                        this.setCellAt(x, y, this._blackHole);
+                    else
+                        i--;
+                }
+            };
+            /**
              * Reset the maze.
              *
              * This will modify the bricks in the maze to represent a new randomly
@@ -838,6 +887,8 @@ var nurdz;
                 // and gives us a plain empty maze that is surrounded with the
                 // bounding bricks that we need.
                 this.emptyMaze();
+                // Now generate the contents of the maze.
+                this.genBlackHoles();
             };
             return Maze;
         }(game.Entity));
