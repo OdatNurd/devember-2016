@@ -10,6 +10,7 @@
     "files": [
         "../engine/engine-0.3.1.d.ts",
         "GameState.ts",
+        "EntityPool.ts",
         "entity/MazeCell.ts",
         "entity/Brick.ts",
         "entity/Teleport.ts",
