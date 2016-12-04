@@ -55,6 +55,29 @@ module nurdz.game
         { return this._arrowType; }
 
         /**
+         * Change the type of this arrow to the type passed in. This will modify
+         * the visual representation of the arrow, but the animation selected
+         * will be the idle animation appropriate for the type and direction of
+         * the arrow, so if this is invoked while the arrow is animating, the
+         * animation will jump.
+         *
+         * If this sets the type to the type that already exists, nothing
+         * happens.
+         *
+         * @param {ArrowType} newType the new arrow type
+         */
+        set arrowType (newType : ArrowType)
+        {
+            // If the type is actually changing, change it and ensure that the
+            // visual representation of the arrow is correct.
+            if (newType != this._arrowType)
+            {
+                this._arrowType = newType;
+                this.resetAnimation ();
+            }
+        }
+
+        /**
          * Obtain the current facing direction of the arrow. In the case that
          * the arrow is currently in the process of changing its facing visually
          * from one direction to another, this reports what the final direction
@@ -64,6 +87,27 @@ module nurdz.game
          */
         get arrowDirection () : ArrowDirection
         { return this._arrowDirection; }
+
+        /**
+         * Set the current facing direction of the arrow. This immediately jumps
+         * the state of the arrow to the correct new facing, skipping the
+         * animation that happens with the flip() method.
+         *
+         * If this sets the direction to the direction that is already set,
+         * nothing happens.
+         *
+         * @param {ArrowDirection} newDirection the new direction
+         */
+        set arrowDirection (newDirection : ArrowDirection)
+        {
+            // If the direction is actually changing, change it and ensure that
+            // the visual representation of the arrow is correct.
+            if (newDirection != this._arrowDirection)
+            {
+                this._arrowDirection = newDirection;
+                this.resetAnimation ();
+            }
+        }
 
         /**
          * Construct a new arrow entity that will render on the stage provided.
@@ -76,7 +120,9 @@ module nurdz.game
          * @param {ArrowType}      arrowType the type of arrow to create
          * @param {ArrowDirection} direction the direction the arrow is facing
          */
-        constructor (stage : Stage, arrowType : ArrowType, direction : ArrowDirection)
+        constructor (stage : Stage,
+                     arrowType : ArrowType = ArrowType.ARROW_NORMAL,
+                     direction : ArrowDirection = ArrowDirection.ARROW_LEFT)
         {
             // Invoke the super; note that this does not set a position because
             // that is set by whoever created us. Our dimensions are based on
@@ -112,20 +158,7 @@ module nurdz.game
 
             // Based on the type and direction, set the appropriate animation
             // playing. We always start out being idle.
-            switch (arrowType)
-            {
-                case ArrowType.ARROW_NORMAL:
-                    this.playAnimation (direction == ArrowDirection.ARROW_LEFT
-                        ? "n_idle_left"
-                        : "n_idle_right");
-                    break;
-
-                case ArrowType.ARROW_AUTOMATIC:
-                    this.playAnimation (direction == ArrowDirection.ARROW_LEFT
-                        ? "a_idle_left"
-                        : "a_idle_right");
-                    break;
-            }
+            this.resetAnimation ();
         }
 
         /**
@@ -137,6 +170,37 @@ module nurdz.game
         {
             // Alter our collision properties
             this.makeRectangle (sheet.width, sheet.height);
+        }
+
+        /**
+         * This resets the animation for the arrow based on it's current type
+         * and direction.
+         *
+         * This will select the appropriate idle animation for the type and
+         * direction that the arrow is currently set for.
+         *
+         * This is an internal helper for use when we manually set the type
+         * and direction values.
+         */
+        private resetAnimation () : void
+        {
+            // Based on the type and direction, set the appropriate animation
+            // playing. We always start out being idle.
+            switch (this._arrowType)
+            {
+                case ArrowType.ARROW_NORMAL:
+                    this.playAnimation (this._arrowDirection == ArrowDirection.ARROW_LEFT
+                        ? "n_idle_left"
+                        : "n_idle_right");
+                    break;
+
+                case ArrowType.ARROW_AUTOMATIC:
+                    this.playAnimation (this._arrowDirection == ArrowDirection.ARROW_LEFT
+                        ? "a_idle_left"
+                        : "a_idle_right");
+                    break;
+            }
+
         }
 
         /**

@@ -392,6 +392,8 @@ var nurdz;
              */
             function Arrow(stage, arrowType, direction) {
                 var _this = this;
+                if (arrowType === void 0) { arrowType = ArrowType.ARROW_NORMAL; }
+                if (direction === void 0) { direction = ArrowDirection.ARROW_LEFT; }
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
@@ -430,18 +432,7 @@ var nurdz;
                 this.addAnimation("a_rotate_l_to_r", 10, false, [29, 28, 27, 26, 25]);
                 // Based on the type and direction, set the appropriate animation
                 // playing. We always start out being idle.
-                switch (arrowType) {
-                    case ArrowType.ARROW_NORMAL:
-                        this.playAnimation(direction == ArrowDirection.ARROW_LEFT
-                            ? "n_idle_left"
-                            : "n_idle_right");
-                        break;
-                    case ArrowType.ARROW_AUTOMATIC:
-                        this.playAnimation(direction == ArrowDirection.ARROW_LEFT
-                            ? "a_idle_left"
-                            : "a_idle_right");
-                        break;
-                }
+                this.resetAnimation();
             }
             Object.defineProperty(Arrow.prototype, "arrowType", {
                 /**
@@ -452,6 +443,26 @@ var nurdz;
                  * @returns {ArrowType} the type of this arrow
                  */
                 get: function () { return this._arrowType; },
+                /**
+                 * Change the type of this arrow to the type passed in. This will modify
+                 * the visual representation of the arrow, but the animation selected
+                 * will be the idle animation appropriate for the type and direction of
+                 * the arrow, so if this is invoked while the arrow is animating, the
+                 * animation will jump.
+                 *
+                 * If this sets the type to the type that already exists, nothing
+                 * happens.
+                 *
+                 * @param {ArrowType} newType the new arrow type
+                 */
+                set: function (newType) {
+                    // If the type is actually changing, change it and ensure that the
+                    // visual representation of the arrow is correct.
+                    if (newType != this._arrowType) {
+                        this._arrowType = newType;
+                        this.resetAnimation();
+                    }
+                },
                 enumerable: true,
                 configurable: true
             });
@@ -465,9 +476,53 @@ var nurdz;
                  * @returns {ArrowDirection} the current facing direction of this arrow
                  */
                 get: function () { return this._arrowDirection; },
+                /**
+                 * Set the current facing direction of the arrow. This immediately jumps
+                 * the state of the arrow to the correct new facing, skipping the
+                 * animation that happens with the flip() method.
+                 *
+                 * If this sets the direction to the direction that is already set,
+                 * nothing happens.
+                 *
+                 * @param {ArrowDirection} newDirection the new direction
+                 */
+                set: function (newDirection) {
+                    // If the direction is actually changing, change it and ensure that
+                    // the visual representation of the arrow is correct.
+                    if (newDirection != this._arrowDirection) {
+                        this._arrowDirection = newDirection;
+                        this.resetAnimation();
+                    }
+                },
                 enumerable: true,
                 configurable: true
             });
+            /**
+             * This resets the animation for the arrow based on it's current type
+             * and direction.
+             *
+             * This will select the appropriate idle animation for the type and
+             * direction that the arrow is currently set for.
+             *
+             * This is an internal helper for use when we manually set the type
+             * and direction values.
+             */
+            Arrow.prototype.resetAnimation = function () {
+                // Based on the type and direction, set the appropriate animation
+                // playing. We always start out being idle.
+                switch (this._arrowType) {
+                    case ArrowType.ARROW_NORMAL:
+                        this.playAnimation(this._arrowDirection == ArrowDirection.ARROW_LEFT
+                            ? "n_idle_left"
+                            : "n_idle_right");
+                        break;
+                    case ArrowType.ARROW_AUTOMATIC:
+                        this.playAnimation(this._arrowDirection == ArrowDirection.ARROW_LEFT
+                            ? "a_idle_left"
+                            : "a_idle_right");
+                        break;
+                }
+            };
             /**
              * Flip the current direction of this arrow from left to right or vice
              * versa.
