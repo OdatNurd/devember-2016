@@ -16,6 +16,11 @@ module nurdz.game
      * This is inclusive of the bottom wall, so it's actually a brick taller
      * than the play area.
      *
+     * Note that in use, the top row is where the balls are stored at the start
+     * of the game, and the row below that is always left empty at game start to
+     * allow all balls a potential to move. Also, the last row in the play area
+     * (that is not the bottom wall) is left clear as the goal line.
+     *
      * @type {Number}
      */
     const MAZE_HEIGHT = 19;
@@ -48,6 +53,25 @@ module nurdz.game
     const ARROWS_PER_ROW = [3, 8];
 
     /**
+     * When generating the random contents of the maze, this is the percentage
+     * chance that a row in the maze will have any gray bricks.
+     *
+     * @type {Number}
+     */
+    const GRAY_BRICK_CHANCE = 50;
+
+    /**
+     * When generating the random contents of the maze, we generate a certain
+     * number of gray bricks per row (assuming we generate any at all, see
+     * GRAY_BRICK_CHANCE).
+     *
+     * This specifies the minimum and maximum number of gray bricks that can
+     * be generated into the row.
+     * @type {Array}
+     */
+    const GRAY_BRICKS_PER_ROW = [1, 3];
+
+    /**
      * The entity that represents the maze in the game. This is the entire play
      * area of the game.
      */
@@ -66,19 +90,9 @@ module nurdz.game
         private _empty : Brick;
 
         /**
-         * Our singular brick entity that represents the solid brick.
+         * Our singular brick entity that represents the solid (wall) brick.
          */
         private _solid : Brick;
-
-        /**
-         * Our singular gray brick entity. Having only one means that all gray
-         * bricks vanish at the same time, instead of allowing us to stagger
-         * them.
-         *
-         * Unlike the bricks above, the gray bricks can vanish, so they need to
-         * be updated frame by frame.
-         */
-        private _gray : Brick;
 
         /**
          * Our singular bonus brick entity. There should be a group of these
@@ -96,10 +110,18 @@ module nurdz.game
         private _blackHole : Teleport;
 
         /**
-         * An entity pool which contains all of the arrow entities we've created
-         * so far.
+         * An actor pool which contains all of the arrow entities we've created
+         * so far. The arrows that are in the live list are currently in the
+         * level.
          */
         private _arrows : ActorPool<Arrow>;
+
+        /**
+         * An actor pool which contains all of the gray brick entities we've
+         * created so far. The bricks that are in the live list are currently in
+         * the level.
+         */
+        private _grayBricks : ActorPool<Brick>;
 
         /**
          * Construct a new empty maze entity.
@@ -121,17 +143,20 @@ module nurdz.game
 
             // Create our entity pools.
             this._arrows = new ActorPool<Arrow> ();
+            this._grayBricks = new ActorPool<Brick> ();
 
             // Create our maze entities.
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
-            this._gray = new Brick (stage, BrickType.BRICK_GRAY);
             this._bonus = new Brick (stage, BrickType.BRICK_BONUS);
             this._blackHole = new Teleport (stage);
 
             // For arrows, we will pre-populate the maximum possible number of
             // arrows into the arrow pool. The type and direction of these
             // arrows does not matter; all arrows are added dead anyway.
+            //
+            // We don't do this for the other pools because they don't contain
+            // as many objects as the arrow pool does.
             for (let i = 0 ; i < (MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1] ; i++)
                 this._arrows.addEntity (new Arrow (stage), false);
 
@@ -188,12 +213,12 @@ module nurdz.game
 
             // Make sure that all of our bricks that can animate get updated, so
             // that their animations run as expected.
-            this._gray.update (stage, tick);
             this._bonus.update (stage, tick);
             this._blackHole.update (stage, tick);
 
             // Now update all of the entities in our various entity pools.
             this._arrows.update (stage, tick);
+            this._grayBricks.update (stage, tick);
         }
 
         /**
@@ -446,8 +471,8 @@ module nurdz.game
          * NOTE:
          *    The current generation scheme for this is that we scan row by
          *    row inserting a given number of arrows per row, where the number
-         *    is randomly generated. Currently the arrows are always normal, and
-         *    their facing is randomly selected.
+         *    is randomly generated. Currently the arrows are 75% normal and
+         *    25% automatic, and their facing is randomly selected.
          */
         private genArrows () : void
         {
@@ -502,6 +527,65 @@ module nurdz.game
         }
 
         /**
+         * Generate gray brick entities into the maze. We generate a random
+         * number of bricks per row in the maze, where the number of items is
+         * constrained to a range of possible bricks per row. This works the way
+         * the arrow generation does, except that there is a chance that a row
+         * will contain no bricks at all.
+         *
+         * NOTE: The current generation scheme for this is that we scan row by
+         * row inserting a given number of bricks per row, where the number is
+         * randomly generated and might be 0.
+         */
+        private genGrayBricks () : void
+        {
+            // Iterate over all of the rows that can possibly contain bricks. We
+            // start two rows down to make room for the initial ball locations
+            // and the empty balls, and we stop 2 rows short to account for the
+            // border of the maze and the goal row.
+            for (let row = 2 ; row < MAZE_HEIGHT - 2 ; row++)
+            {
+                // See if we should bother generating any bricks in this row
+                // at all.
+                if (Utils.randomIntInRange (0, 100) > GRAY_BRICK_CHANCE)
+                    continue;
+
+                // First, we need to determine how many bricks we will generate
+                // for this row.
+                let brickCount = Utils.randomIntInRange (GRAY_BRICKS_PER_ROW[0], GRAY_BRICKS_PER_ROW[1]);
+
+                // Now keep generating bricks into this row until we have
+                // generated enough.
+                while (brickCount > 0)
+                {
+                    // Generate a column randomly. If this location is already
+                    // filled or the square above is an arrow, try again.
+                    let column = this.genRandomMazeColumn ();
+                    if (this.getCellAt (column, row) != null ||
+                        (this.getCellAt (column, row - 1) instanceof Arrow))
+                        continue;
+
+                    // This cell contains brick; resurrect one from the object
+                    // pool. If there isn't one to resurrect, create one and add
+                    // add it to the pool.
+                    let brick : Brick = this._grayBricks.resurrectEntity ();
+                    if (brick == null)
+                    {
+                        brick = new Brick (this._stage, BrickType.BRICK_GRAY);
+                        this._grayBricks.addEntity (brick, true);
+                    }
+
+                    // Make sure the brick is visible
+                    brick.playAnimation ("gray_idle");
+
+                    // Add it to the maze and count it as placed.
+                    this.setCellAt (column, row, brick);
+                    brickCount--;
+                }
+            }
+        }
+
+        /**
          * Reset the maze.
          *
          * This will modify the bricks in the maze to represent a new randomly
@@ -517,6 +601,7 @@ module nurdz.game
             // Now generate the contents of the maze.
             this.genBlackHoles ();
             this.genArrows ();
+            this.genGrayBricks ();
         }
     }
 
