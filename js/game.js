@@ -78,6 +78,21 @@ var nurdz;
                 }
             };
             /**
+             * Bulk mark all entities in the pool as being dead.
+             *
+             * If there are no live contents, this harmlessly does nothing.
+             */
+            ActorPool.prototype.killALl = function () {
+                // If there are any live elements, push them into the dead pool and
+                // then remove them from the original array. This uses apply to
+                // push all of the elements one after the other (push takes multiple
+                // arguments).
+                if (this._liveContents.length > 0) {
+                    this._deadPool.push.apply(this._deadPool, this._liveContents);
+                    this._liveContents.length = 0;
+                }
+            };
+            /**
              * Resurrect a previously dead entity by pulling it from the list of
              * entities that were added to the pool and then marked as dead.
              *
@@ -1116,6 +1131,11 @@ var nurdz;
              * created, empty maze.
              */
             Maze.prototype.reset = function () {
+                // Make sure that all of the entity pools are emptied out by killing
+                // everything in them.
+                this._arrows.killALl();
+                this._grayBricks.killALl();
+                this._bonusBricks.killALl();
                 // Prepare the maze; this empties out the current contents (if any)
                 // and gives us a plain empty maze that is surrounded with the
                 // bounding bricks that we need.

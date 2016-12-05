@@ -97,6 +97,24 @@ module nurdz.game
         }
 
         /**
+         * Bulk mark all entities in the pool as being dead.
+         *
+         * If there are no live contents, this harmlessly does nothing.
+         */
+        killALl () : void
+        {
+            // If there are any live elements, push them into the dead pool and
+            // then remove them from the original array. This uses apply to
+            // push all of the elements one after the other (push takes multiple
+            // arguments).
+            if (this._liveContents.length > 0)
+            {
+                this._deadPool.push.apply (this._deadPool, this._liveContents);
+                this._liveContents.length = 0;
+            }
+        }
+
+        /**
          * Resurrect a previously dead entity by pulling it from the list of
          * entities that were added to the pool and then marked as dead.
          *

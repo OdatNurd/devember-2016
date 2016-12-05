@@ -643,6 +643,12 @@ module nurdz.game
          */
         reset () : void
         {
+            // Make sure that all of the entity pools are emptied out by killing
+            // everything in them.
+            this._arrows.killALl ();
+            this._grayBricks.killALl ();
+            this._bonusBricks.killALl ();
+
             // Prepare the maze; this empties out the current contents (if any)
             // and gives us a plain empty maze that is surrounded with the
             // bounding bricks that we need.
