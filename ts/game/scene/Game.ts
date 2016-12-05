@@ -7,6 +7,13 @@ module nurdz.game
     export class GameScene extends Scene
     {
         /**
+         * The maze, which holds most of the game entities.
+         *
+         * @type {Maze}
+         */
+        private _maze : Maze;
+
+        /**
          * Construct a new game screen scene that will display on the provided
          * stage.
          *
@@ -25,8 +32,8 @@ module nurdz.game
 
             // Create a maze and add it to the scene so we can see how it
             // renders itself.
-            let maze = new Maze (stage);
-            this.addActor (maze);
+            this._maze = new Maze (stage);
+            this.addActor (this._maze);
         }
 
         /**
@@ -52,6 +59,11 @@ module nurdz.game
                 // mode.
                 case KeyCodes.KEY_F:
                     this._stage.toggleFullscreen();
+                    return true;
+
+                // Trigger a new maze generation.
+                case KeyCodes.KEY_G:
+                    this._maze.reset ();
                     return true;
             }
 

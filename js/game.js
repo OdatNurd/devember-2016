@@ -1178,8 +1178,8 @@ var nurdz;
                 _super.call(this, "gameScreen", stage);
                 // Create a maze and add it to the scene so we can see how it
                 // renders itself.
-                var maze = new game.Maze(stage);
-                this.addActor(maze);
+                this._maze = new game.Maze(stage);
+                this.addActor(this._maze);
             }
             /**
              * Invoked every time a key is pressed on the game screen
@@ -1201,6 +1201,10 @@ var nurdz;
                     // mode.
                     case game.KeyCodes.KEY_F:
                         this._stage.toggleFullscreen();
+                        return true;
+                    // Trigger a new maze generation.
+                    case game.KeyCodes.KEY_G:
+                        this._maze.reset();
                         return true;
                 }
                 // We did not handle it
