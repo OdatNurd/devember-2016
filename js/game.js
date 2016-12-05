@@ -622,6 +622,24 @@ var nurdz;
          */
         var GRAY_BRICKS_PER_ROW = [1, 3];
         /**
+         * When generating the random contents of the maze, this is the percentage
+         * chance that a row in the maze will contain any bonus tiles.
+         *
+         * @type {Number}
+         */
+        var BONUS_BRICK_CHANCE = 40;
+        /**
+         * When generating the random contents of the maze, we generate a certain
+         * number of bonus bricks per row (assuming we generate any at all, see
+         * BONUS_BRICK_CHANCE).
+         *
+         * This specifies the minimum and maximum number of gray bricks that can
+         * be generated into the row.
+         *
+         * @type {Array}
+         */
+        var BONUS_BRICKS_PER_ROW = [1, 2];
+        /**
          * The entity that represents the maze in the game. This is the entire play
          * area of the game.
          */
@@ -663,10 +681,10 @@ var nurdz;
                 // Create our entity pools.
                 this._arrows = new game.ActorPool();
                 this._grayBricks = new game.ActorPool();
+                this._bonusBricks = new game.ActorPool();
                 // Create our maze entities.
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
-                this._bonus = new game.Brick(stage, game.BrickType.BRICK_BONUS);
                 this._blackHole = new game.Teleport(stage);
                 // For arrows, we will pre-populate the maximum possible number of
                 // arrows into the arrow pool. The type and direction of these
@@ -676,8 +694,6 @@ var nurdz;
                 // as many objects as the arrow pool does.
                 for (var i = 0; i < (MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1]; i++)
                     this._arrows.addEntity(new game.Arrow(stage), false);
-                // We want the bonus brick to start out gone.
-                this._bonus.playAnimation("bonus_idle_gone");
                 // Create the array that holds our contents. null entries are
                 // treated as empty background bricks, so we don't need to do
                 // anything further here.
@@ -700,13 +716,12 @@ var nurdz;
             Maze.prototype.update = function (stage, tick) {
                 // Let the super do it's think for us.
                 _super.prototype.update.call(this, stage, tick);
-                // Make sure that all of our bricks that can animate get updated, so
-                // that their animations run as expected.
-                this._bonus.update(stage, tick);
+                // Make sure the black holes animate.
                 this._blackHole.update(stage, tick);
                 // Now update all of the entities in our various entity pools.
                 this._arrows.update(stage, tick);
                 this._grayBricks.update(stage, tick);
+                this._bonusBricks.update(stage, tick);
             };
             /**
              * Fetch the internal contents of the maze at the provided X and Y
@@ -1008,8 +1023,56 @@ var nurdz;
                             brick = new game.Brick(this._stage, game.BrickType.BRICK_GRAY);
                             this._grayBricks.addEntity(brick, true);
                         }
-                        // Make sure the brick is visible
-                        brick.playAnimation("gray_idle");
+                        // Make sure the brick starts out growing into place.
+                        brick.playAnimation("gray_appear");
+                        // Add it to the maze and count it as placed.
+                        this.setCellAt(column, row, brick);
+                        brickCount--;
+                    }
+                }
+            };
+            /**
+             * Generate bonus brick entities into the maze. We generate a random
+             * number of bricks per row in the maze, where the number of items is
+             * constrained to a range of possible bricks per row. This works the way
+             * the gray brick generation does.
+             *
+             * NOTE: The current generation scheme for this is that we scan row by
+             * row inserting a given number of bricks per row, where the number is
+             * randomly generated and might be 0.
+             */
+            Maze.prototype.genBonusBricks = function () {
+                // Iterate over all of the rows that can possibly contain bricks. We
+                // start two rows down to make room for the initial ball locations
+                // and the empty balls, and we stop 2 rows short to account for the
+                // border of the maze and the goal row.
+                for (var row = 2; row < MAZE_HEIGHT - 2; row++) {
+                    // See if we should bother generating any bricks in this row
+                    // at all.
+                    if (game.Utils.randomIntInRange(0, 100) > BONUS_BRICK_CHANCE)
+                        continue;
+                    // First, we need to determine how many bricks we will generate
+                    // for this row.
+                    var brickCount = game.Utils.randomIntInRange(BONUS_BRICKS_PER_ROW[0], BONUS_BRICKS_PER_ROW[1]);
+                    // Now keep generating bricks into this row until we have
+                    // generated enough.
+                    while (brickCount > 0) {
+                        // Generate a column randomly. If this location is already
+                        // filled or the square above is an arrow, try again.
+                        var column = this.genRandomMazeColumn();
+                        if (this.getCellAt(column, row) != null ||
+                            (this.getCellAt(column, row - 1) instanceof game.Arrow))
+                            continue;
+                        // This cell contains brick; resurrect one from the object
+                        // pool. If there isn't one to resurrect, create one and add
+                        // add it to the pool.
+                        var brick = this._grayBricks.resurrectEntity();
+                        if (brick == null) {
+                            brick = new game.Brick(this._stage, game.BrickType.BRICK_BONUS);
+                            this._grayBricks.addEntity(brick, true);
+                        }
+                        // Make sure the brick starts out growing into place.
+                        brick.playAnimation("bonus_appear");
                         // Add it to the maze and count it as placed.
                         this.setCellAt(column, row, brick);
                         brickCount--;
@@ -1031,6 +1094,7 @@ var nurdz;
                 this.genBlackHoles();
                 this.genArrows();
                 this.genGrayBricks();
+                this.genBonusBricks();
             };
             return Maze;
         }(game.Entity));
