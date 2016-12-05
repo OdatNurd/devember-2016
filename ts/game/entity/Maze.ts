@@ -490,10 +490,11 @@ module nurdz.game
                 // generated enough.
                 while (arrowCount > 0)
                 {
-                    // Generate a column randomly. If this location has something,
-                    // try again.
+                    // Generate a column randomly. If this location is already
+                    // filled, or the tile above it is a black hole,  try again.
                     let column = this.genRandomMazeColumn ();
-                    if (this.getCellAt (column, row) != null)
+                    if (this.getCellAt (column, row) != null ||
+                        (this.getCellAt (column, row - 1) instanceof Teleport))
                         continue;
 
                     // This cell contains an arrow; resurrect one from the object

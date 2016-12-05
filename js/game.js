@@ -936,10 +936,11 @@ var nurdz;
                     // Now keep generating arrows into this row until we have
                     // generated enough.
                     while (arrowCount > 0) {
-                        // Generate a column randomly. If this location has something,
-                        // try again.
+                        // Generate a column randomly. If this location is already
+                        // filled, or the tile above it is a black hole,  try again.
                         var column = this.genRandomMazeColumn();
-                        if (this.getCellAt(column, row) != null)
+                        if (this.getCellAt(column, row) != null ||
+                            (this.getCellAt(column, row - 1) instanceof game.Teleport))
                             continue;
                         // This cell contains an arrow; resurrect one from the object
                         // pool. If there isn't one to resurrect, create one and add
