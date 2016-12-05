@@ -146,14 +146,21 @@ module nurdz.game
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
             this._blackHole = new Teleport (stage);
 
-            // For arrows, we will pre-populate the maximum possible number of
-            // arrows into the arrow pool. The type and direction of these
-            // arrows does not matter; all arrows are added dead anyway.
+            // Pre-populate all of our actor pools with the maximum possible
+            // number of actors that we could need. For the case of the gray
+            // bricks and bonus bricks, this creates more than we technically
+            // need (since not all rows get those added).
             //
-            // We don't do this for the other pools because they don't contain
-            // as many objects as the arrow pool does.
+            // This is sort of wasteful, but it gets around an engine problem
+            // whereby creating an entity at runtime that loads an image will
+            // trigger an exception because it's trying to add a preload when
+            // it does not need to.
             for (let i = 0 ; i < (MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1] ; i++)
                 this._arrows.addEntity (new Arrow (stage), false);
+            for (let i = 0 ; i < (MAZE_HEIGHT - 4) * GRAY_BRICKS_PER_ROW[1] ; i++)
+                this._grayBricks.addEntity (new Brick (stage, BrickType.BRICK_GRAY), false);
+            for (let i = 0 ; i < (MAZE_HEIGHT - 4) * BONUS_BRICKS_PER_ROW[1] ; i++)
+                this._bonusBricks.addEntity (new Brick (stage, BrickType.BRICK_BONUS), false);
 
             // Create the array that holds our contents. null entries are
             // treated as empty background bricks, so we don't need to do
