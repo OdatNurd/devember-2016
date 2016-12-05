@@ -8,7 +8,7 @@ var nurdz;
     var game;
     (function (game) {
         /**
-         * This class represents an entity pool.
+         * This class represents an actor pool.
          *
          * The idea is that during the game we will want to construct multiple
          * instances of some of the different types of entities (for example
@@ -21,14 +21,12 @@ var nurdz;
          * This class allows you to add some number of entities to the list, which
          * are considered "alive", and then redact them from the list of live
          * objects and insert them into the list of dead objects instead.
-         *
-         * @type {[type]}
          */
-        var EntityPool = (function () {
+        var ActorPool = (function () {
             /**
              * Create a new empty entity pool.
              */
-            function EntityPool() {
+            function ActorPool() {
                 // Create the two pools of entities
                 this._deadPool = new Array();
                 this._liveContents = new Array();
@@ -40,11 +38,11 @@ var nurdz;
              * If the entity provided is already in the list of either live or dead
              * entities, this does nothing.
              *
-             * @param {Entity}  newEntity the entity to add to the live list.
+             * @param {Actor}  newEntity the entity to add to the live list.
              * @param {boolean} isAlive   true if the entity is added to the live
              * pool, false if it should be added as dead
              */
-            EntityPool.prototype.addEntity = function (newEntity, isAlive) {
+            ActorPool.prototype.addEntity = function (newEntity, isAlive) {
                 if (isAlive === void 0) { isAlive = true; }
                 // Only add the entity to the live contents if we don't already know
                 // about it.
@@ -63,10 +61,10 @@ var nurdz;
              * If the provided entity is already dead or is not in the list of live
              * entities, then nothing happens.
              *
-             * @param {Entity} deadEntity the entity to mark as dead; if this is not
+             * @param {Actor} deadEntity the entity to mark as dead; if this is not
              * an entity already in the live part of the pool, nothing happens.
              */
-            EntityPool.prototype.killEntity = function (deadEntity) {
+            ActorPool.prototype.killEntity = function (deadEntity) {
                 // Find the index of the entity provided in the list of live
                 // entities.
                 var liveLocation = this._liveContents.indexOf(deadEntity);
@@ -91,9 +89,9 @@ var nurdz;
              * entity as you see fit, as the entity will emerge in exactly the state
              * it was in when it died.
              *
-             * @returns {Entity|null} the resurrected entity, or null if there is
+             * @returns {Actor|null} the resurrected entity, or null if there is
              */
-            EntityPool.prototype.resurrectEntity = function () {
+            ActorPool.prototype.resurrectEntity = function () {
                 // Resurrect a dead entity; if this does not work, return null
                 // right away.
                 var entity = this._deadPool.pop();
@@ -108,19 +106,19 @@ var nurdz;
              * currently marked as being alive.
              *
              * This method can be treated like an invocation of the update() method
-             * contained in the Entity class itself.
+             * contained in the Actor class itself.
              *
              * @param {Stage}  stage the stage the entity is on
              * @param {number} tick  the game tick; this is a count of how many
              * times the game loop has executed
              */
-            EntityPool.prototype.update = function (stage, tick) {
+            ActorPool.prototype.update = function (stage, tick) {
                 for (var i = 0; i < this._liveContents.length; i++)
                     this._liveContents[i].update(stage, tick);
             };
-            return EntityPool;
+            return ActorPool;
         }());
-        game.EntityPool = EntityPool;
+        game.ActorPool = ActorPool;
     })(game = nurdz.game || (nurdz.game = {}));
 })(nurdz || (nurdz = {}));
 var nurdz;
@@ -641,7 +639,7 @@ var nurdz;
                 // our dimensions.
                 new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
                 // Create our entity pools.
-                this._arrows = new game.EntityPool();
+                this._arrows = new game.ActorPool();
                 // Create our maze entities.
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);

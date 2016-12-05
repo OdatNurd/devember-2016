@@ -1,7 +1,7 @@
 module nurdz.game
 {
     /**
-     * This class represents an entity pool.
+     * This class represents an actor pool.
      *
      * The idea is that during the game we will want to construct multiple
      * instances of some of the different types of entities (for example
@@ -14,10 +14,8 @@ module nurdz.game
      * This class allows you to add some number of entities to the list, which
      * are considered "alive", and then redact them from the list of live
      * objects and insert them into the list of dead objects instead.
-     *
-     * @type {[type]}
      */
-    export class EntityPool
+    export class ActorPool
     {
         /**
          * This contains the list of entities that have been added to the pool
@@ -26,7 +24,7 @@ module nurdz.game
          * When a request for a new entity is made of the pool, it comes out of
          * this array (if possible).
          */
-        private _deadPool : Array<Entity>;
+        private _deadPool : Array<Actor>;
 
         /**
          * This contains the list of entities that have been added to the pool
@@ -35,7 +33,7 @@ module nurdz.game
          * The API methods for obtaining and operating over the list of entities
          * operates over the entities in this part of the pool.
          */
-        private _liveContents : Array<Entity>;
+        private _liveContents : Array<Actor>;
 
         /**
          * Create a new empty entity pool.
@@ -54,11 +52,11 @@ module nurdz.game
          * If the entity provided is already in the list of either live or dead
          * entities, this does nothing.
          *
-         * @param {Entity}  newEntity the entity to add to the live list.
+         * @param {Actor}  newEntity the entity to add to the live list.
          * @param {boolean} isAlive   true if the entity is added to the live
          * pool, false if it should be added as dead
          */
-        addEntity (newEntity : Entity, isAlive : boolean = true) : void
+        addEntity (newEntity : Actor, isAlive : boolean = true) : void
         {
             // Only add the entity to the live contents if we don't already know
             // about it.
@@ -78,10 +76,10 @@ module nurdz.game
          * If the provided entity is already dead or is not in the list of live
          * entities, then nothing happens.
          *
-         * @param {Entity} deadEntity the entity to mark as dead; if this is not
+         * @param {Actor} deadEntity the entity to mark as dead; if this is not
          * an entity already in the live part of the pool, nothing happens.
          */
-        killEntity (deadEntity : Entity) : void
+        killEntity (deadEntity : Actor) : void
         {
             // Find the index of the entity provided in the list of live
             // entities.
@@ -110,9 +108,9 @@ module nurdz.game
          * entity as you see fit, as the entity will emerge in exactly the state
          * it was in when it died.
          *
-         * @returns {Entity|null} the resurrected entity, or null if there is
+         * @returns {Actor|null} the resurrected entity, or null if there is
          */
-        resurrectEntity () : Entity
+        resurrectEntity () : Actor
         {
             // Resurrect a dead entity; if this does not work, return null
             // right away.
@@ -130,7 +128,7 @@ module nurdz.game
          * currently marked as being alive.
          *
          * This method can be treated like an invocation of the update() method
-         * contained in the Entity class itself.
+         * contained in the Actor class itself.
          *
          * @param {Stage}  stage the stage the entity is on
          * @param {number} tick  the game tick; this is a count of how many
