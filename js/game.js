@@ -38,7 +38,7 @@ var nurdz;
              * If the entity provided is already in the list of either live or dead
              * entities, this does nothing.
              *
-             * @param {Actor}  newEntity the entity to add to the live list.
+             * @param {T}       newEntity the entity to add to the live list.
              * @param {boolean} isAlive   true if the entity is added to the live
              * pool, false if it should be added as dead
              */
@@ -61,7 +61,7 @@ var nurdz;
              * If the provided entity is already dead or is not in the list of live
              * entities, then nothing happens.
              *
-             * @param {Actor} deadEntity the entity to mark as dead; if this is not
+             * @param {T} deadEntity the entity to mark as dead; if this is not
              * an entity already in the live part of the pool, nothing happens.
              */
             ActorPool.prototype.killEntity = function (deadEntity) {
@@ -89,7 +89,7 @@ var nurdz;
              * entity as you see fit, as the entity will emerge in exactly the state
              * it was in when it died.
              *
-             * @returns {Actor|null} the resurrected entity, or null if there is
+             * @returns {T|null} the resurrected entity, or null if there is
              */
             ActorPool.prototype.resurrectEntity = function () {
                 // Resurrect a dead entity; if this does not work, return null

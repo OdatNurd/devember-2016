@@ -99,7 +99,7 @@ module nurdz.game
          * An entity pool which contains all of the arrow entities we've created
          * so far.
          */
-        private _arrows : ActorPool;
+        private _arrows : ActorPool<Arrow>;
 
         /**
          * Construct a new empty maze entity.
@@ -120,7 +120,7 @@ module nurdz.game
             new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
 
             // Create our entity pools.
-            this._arrows = new ActorPool ();
+            this._arrows = new ActorPool<Arrow> ();
 
             // Create our maze entities.
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
@@ -474,7 +474,7 @@ module nurdz.game
                     // This cell contains an arrow; resurrect one from the object
                     // pool. If there isn't one to resurrect, create one and add
                     // add it to the pool.
-                    let arrow : Arrow = <Arrow>this._arrows.resurrectEntity ();
+                    let arrow : Arrow = this._arrows.resurrectEntity ();
                     if (arrow == null)
                     {
                         arrow = new Arrow (this._stage);
