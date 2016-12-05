@@ -5,8 +5,6 @@ module nurdz.game
      *
      * This is inclusive of the side walls, so it's actually 2 bricks wider than
      * the play area.
-     *
-     * @type {Number}
      */
     const MAZE_WIDTH = 31;
 
@@ -20,74 +18,51 @@ module nurdz.game
      * of the game, and the row below that is always left empty at game start to
      * allow all balls a potential to move. Also, the last row in the play area
      * (that is not the bottom wall) is left clear as the goal line.
-     *
-     * @type {Number}
      */
     const MAZE_HEIGHT = 19;
 
     /**
-     * When generating the random contents of the maze, we insert this many
-     * teleport entities into the maze at random locations.
-     *
-     * @type {Number}
+     * The total number of teleport entities that get generated randomly into
+     * the maze.
      */
     const TOTAL_TELEPORTERS = 5;
 
     /**
-     * When generating the teleport entities, this specifies the minimum distance
-     * that can occur between two adjacent teleporters.
+     * The minimum distance allowed between teleport entities and all other
+     * entities. This makes sure they don't get generated too close together.
      *
-     * If this is set too high, maze generation will deadlock; be sensible.
-     *
-     * @type {Number}
+     * Be careful not to set this too high or the generation may deadlock due to
+     * there being no suitable locations.
      */
     const TELEPORT_MIN_DISTANCE = 2;
 
     /**
-     * When generating the random contents of the maze, we generate a certain
-     * number of arrows per row in the maze. This specifies the minimum and
-     * maximum number of arrows that can be generated for each row in the maze.
-     *
-     * @type {Array}
+     * The minimum and maximum number of arrows that are generated per row in
+     * the maze.
      */
     const ARROWS_PER_ROW = [3, 8];
 
     /**
-     * When generating the random contents of the maze, this is the percentage
-     * chance that a row in the maze will have any gray bricks.
-     *
-     * @type {Number}
+     * The chance (percentage) that a row will contain any gray bricks at all.
      */
     const GRAY_BRICK_CHANCE = 50;
 
     /**
-     * When generating the random contents of the maze, we generate a certain
-     * number of gray bricks per row (assuming we generate any at all, see
-     * GRAY_BRICK_CHANCE).
-     *
-     * This specifies the minimum and maximum number of gray bricks that can
-     * be generated into the row.
-     * @type {Array}
+     * The minimum and maximum number of gray bricks that are generated per row.
+     * This is only used after GRAY_BRICK_CHANCE has been used to determine if
+     * there will be any bricks at all.
      */
     const GRAY_BRICKS_PER_ROW = [1, 3];
 
     /**
-     * When generating the random contents of the maze, this is the percentage
-     * chance that a row in the maze will contain any bonus tiles.
-     *
-     * @type {Number}
+     * The chance (percentage) that a row will contain any bonus bricks.
      */
     const BONUS_BRICK_CHANCE = 40;
 
     /**
-     * When generating the random contents of the maze, we generate a certain
-     * number of bonus bricks per row (assuming we generate any at all, see
-     * BONUS_BRICK_CHANCE).
-     *
-     * This specifies the minimum and maximum number of gray bricks that can
-     * be generated into the row.
-     *
-     * @type {Array}
+     * The minimum and maximum number of gray bricks that are generated per row.
+     * This is only used after BONUS_BRICK_CHANCE has been used to determine if
+     * there will be any bricks at all.
      */
     const BONUS_BRICKS_PER_ROW = [1, 2];
 
