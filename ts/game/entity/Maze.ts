@@ -225,7 +225,7 @@ module nurdz.game
          */
         update (stage : Stage, tick : number) : void
         {
-            // Let the super do it's think for us.
+            // Let the super do it's thing for us.
             super.update (stage, tick);
 
             // Make sure the black holes animate.

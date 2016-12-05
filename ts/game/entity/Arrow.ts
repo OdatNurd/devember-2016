@@ -1,6 +1,18 @@
 module nurdz.game
 {
     /**
+     * For automatic arrows, this is the minimum number of seconds before the
+     * arrow will automatically flip itself. This can be a fractional value.
+     */
+    const MIN_AUTO_FLIP_SECONDS = 3;
+
+    /**
+     * For automatic arrows, this is the maximum number of seconds before the
+     * arrow will automatically flip itself. This can be a fractional value.
+     */
+    const MAX_AUTO_FLIP_SECONDS = 12;
+
+    /**
      * This is used to specify the two types of arrows in the game.
      *
      * A normal arrow faces some direction and only swaps directions when it is
@@ -45,6 +57,19 @@ module nurdz.game
         private _arrowDirection : ArrowDirection;
 
         /**
+         * For automatic bricks, this indicates how long it will be before the
+         * arrow randomly flips directions. This gets set to a random value
+         * every time the type of the arrow is set to be automatic (even if it
+         * is already automatic) or when the flip finishes.
+         *
+         * This value counts down one for every call to update(), and when it
+         * hits 0 we flip the arrow.
+         *
+         * @type {number}
+         */
+        private _autoFlipTimer : number;
+
+        /**
          * Obtain the type of this arrow. This is either a normal arrow, which
          * only swaps its direction when it is touched by a dropping ball, or
          * an automatic ball, which randomly swaps directions.
@@ -61,13 +86,22 @@ module nurdz.game
          * the arrow, so if this is invoked while the arrow is animating, the
          * animation will jump.
          *
+         * When the type passed in is the automatic arrow type, the internal
+         * timer for how long until the arrow randomly flips directions is
+         * reset.
+         *
          * If this sets the type to the type that already exists, nothing
-         * happens.
+         * happens except for the possible resetting of the auto flip timer (to
+         * allow you to force a timer reset).
          *
          * @param {ArrowType} newType the new arrow type
          */
         set arrowType (newType : ArrowType)
         {
+            // If the new type is automatic, set up the auto flip timer.
+            if (newType == ArrowType.ARROW_AUTOMATIC)
+                this.setAutoFlipTimer ();
+
             // If the type is actually changing, change it and ensure that the
             // visual representation of the arrow is correct.
             if (newType != this._arrowType)
@@ -133,6 +167,11 @@ module nurdz.game
             this._arrowType = arrowType;
             this._arrowDirection = direction;
 
+            // If this is an automatic arrow, set up the auto flip timer right
+            // away.
+            if (arrowType == ArrowType.ARROW_AUTOMATIC)
+                this.setAutoFlipTimer ();
+
             // Load the sprite sheet that will contain our sprites. The size of
             // the entity is based on the size of the sprites, so we let the
             // callback handle that.
@@ -173,6 +212,20 @@ module nurdz.game
         }
 
         /**
+         * Reset the internal timer that counts down how long it will be until
+         * the arrow automatically flips (if it's going to do that).
+         *
+         * This always resets the timer; it's up the caller to only invoke this
+         * when it wants that to happen.
+         */
+        private setAutoFlipTimer () : void
+        {
+            this._autoFlipTimer = Utils.randomIntInRange (
+                Math.floor (30 * MIN_AUTO_FLIP_SECONDS),
+                Math.floor (30 * MAX_AUTO_FLIP_SECONDS));
+        }
+
+        /**
          * This resets the animation for the arrow based on it's current type
          * and direction.
          *
@@ -204,6 +257,29 @@ module nurdz.game
         }
 
         /**
+         * This is called every frame update (tick tells us how many times this
+         * has happened) to allow us to update ourselves.
+         *
+         * @param {Stage}  stage the stage that we are on
+         * @param {number} tick  the current engine tick; this advances once for
+         * each frame update
+         */
+        update (stage : Stage, tick : number) : void
+        {
+            // Let the super do it's thing for us.
+            super.update (stage, tick);
+
+            // If this is an automatic arrow, decrement the timer and maybe also
+            // call the flip function if it's time to automatically flip.
+            if (this._arrowType == ArrowType.ARROW_AUTOMATIC)
+            {
+                this._autoFlipTimer--;
+                if (this._autoFlipTimer == 0)
+                    this.flip ();
+            }
+        }
+
+        /**
          * Flip the current direction of this arrow from left to right or vice
          * versa.
          *
@@ -232,6 +308,11 @@ module nurdz.game
                     this._arrowDirection = ArrowDirection.ARROW_LEFT;
                     break;
             }
+
+            // If this is an automatic arrow, reset the timer for the next
+            // automatic flip.
+            if (this._arrowType == ArrowType.ARROW_AUTOMATIC)
+                this.setAutoFlipTimer ();
         }
     }
 
