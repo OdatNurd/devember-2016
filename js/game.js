@@ -913,6 +913,18 @@ var nurdz;
                 // Reset the maze
                 this.reset();
             }
+            Object.defineProperty(Maze.prototype, "cellSize", {
+                /**
+                 * Get the size (in pixels) of the cells in the maze based on the
+                 * current sprite set. The cells are square, so this represents both
+                 * dimensions.
+                 *
+                 * @returns {number} the pixel size of the cells in the grid
+                 */
+                get: function () { return this._empty.width; },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * This is called every frame update (tick tells us how many times this
              * has happened) to allow us to update ourselves.

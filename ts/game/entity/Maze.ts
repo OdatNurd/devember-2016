@@ -123,6 +123,16 @@ module nurdz.game
         private _balls : ActorPool<Ball>;
 
         /**
+         * Get the size (in pixels) of the cells in the maze based on the
+         * current sprite set. The cells are square, so this represents both
+         * dimensions.
+         *
+         * @returns {number} the pixel size of the cells in the grid
+         */
+        get cellSize () : number
+        { return this._empty.width; }
+
+        /**
          * Construct a new empty maze entity.
          *
          * @param {Stage} stage the stage that we use to render ourselves
