@@ -12,6 +12,7 @@
         "GameState.ts",
         "ActorPool.ts",
         "entity/MazeCell.ts",
+        "entity/Marker.ts",
         "entity/Ball.ts",
         "entity/Brick.ts",
         "entity/Teleport.ts",
