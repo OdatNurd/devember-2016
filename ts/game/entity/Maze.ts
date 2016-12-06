@@ -681,11 +681,11 @@ module nurdz.game
                     // This cell contains brick; resurrect one from the object
                     // pool. If there isn't one to resurrect, create one and add
                     // add it to the pool.
-                    let brick : Brick = this._grayBricks.resurrectEntity ();
+                    let brick : Brick = this._bonusBricks.resurrectEntity ();
                     if (brick == null)
                     {
                         brick = new Brick (this._stage, BrickType.BRICK_BONUS);
-                        this._grayBricks.addEntity (brick, true);
+                        this._bonusBricks.addEntity (brick, true);
                     }
 
                     // Make sure the brick starts out growing into place.

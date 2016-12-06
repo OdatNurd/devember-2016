@@ -1321,10 +1321,10 @@ var nurdz;
                         // This cell contains brick; resurrect one from the object
                         // pool. If there isn't one to resurrect, create one and add
                         // add it to the pool.
-                        var brick = this._grayBricks.resurrectEntity();
+                        var brick = this._bonusBricks.resurrectEntity();
                         if (brick == null) {
                             brick = new game.Brick(this._stage, game.BrickType.BRICK_BONUS);
-                            this._grayBricks.addEntity(brick, true);
+                            this._bonusBricks.addEntity(brick, true);
                         }
                         // Make sure the brick starts out growing into place.
                         brick.playAnimation("bonus_appear");
