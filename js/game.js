@@ -881,6 +881,7 @@ var nurdz;
                 this._arrows = new game.ActorPool();
                 this._grayBricks = new game.ActorPool();
                 this._bonusBricks = new game.ActorPool();
+                this._balls = new game.ActorPool();
                 // Create our maze entities.
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
@@ -900,6 +901,11 @@ var nurdz;
                     this._grayBricks.addEntity(new game.Brick(stage, game.BrickType.BRICK_GRAY), false);
                 for (var i = 0; i < (MAZE_HEIGHT - 4) * BONUS_BRICKS_PER_ROW[1]; i++)
                     this._bonusBricks.addEntity(new game.Brick(stage, game.BrickType.BRICK_BONUS), false);
+                // Fill the actor pool for balls with a complete set of balls; this
+                // only ever happens once and is the one case where we always know
+                // exactly how many entities of a type we need.
+                for (var i = 0; i < (MAZE_WIDTH - 2) * 2; i++)
+                    this._balls.addEntity(new game.Ball(stage), false);
                 // Create the array that holds our contents. null entries are
                 // treated as empty background bricks, so we don't need to do
                 // anything further here.
@@ -928,6 +934,7 @@ var nurdz;
                 this._arrows.update(stage, tick);
                 this._grayBricks.update(stage, tick);
                 this._bonusBricks.update(stage, tick);
+                this._balls.update(stage, tick);
             };
             /**
              * Fetch the internal contents of the maze at the provided X and Y
@@ -1286,6 +1293,31 @@ var nurdz;
                 }
             };
             /**
+             * Place the balls into the maze.
+             *
+             * Currently this fill up the top row with balls for the player only,
+             * but it should also store balls for the computer into another data
+             * structure.
+             */
+            Maze.prototype.placeBalls = function () {
+                // There should be two sets of balls that we cycle between, but for
+                // now we just put a set of player balls into the top row of the
+                // maze.
+                for (var col = 1; col < MAZE_WIDTH - 1; col++) {
+                    // Get a ball; this pool always has enough entities for us
+                    // because the number is fixed.
+                    var ball = this._balls.resurrectEntity();
+                    // Set the score and type.
+                    ball.score = 0;
+                    ball.ballType = game.BallType.BALL_PLAYER;
+                    // Have the ball appear onto the screen (instead of just being
+                    // there)
+                    ball.appear();
+                    // Set the ball in now.
+                    this.setCellAt(col, 0, ball);
+                }
+            };
+            /**
              * Reset the maze.
              *
              * This will modify the bricks in the maze to represent a new randomly
@@ -1297,6 +1329,7 @@ var nurdz;
                 this._arrows.killALl();
                 this._grayBricks.killALl();
                 this._bonusBricks.killALl();
+                this._balls.killALl();
                 // Prepare the maze; this empties out the current contents (if any)
                 // and gives us a plain empty maze that is surrounded with the
                 // bounding bricks that we need.
@@ -1306,6 +1339,8 @@ var nurdz;
                 this.genArrows();
                 this.genGrayBricks();
                 this.genBonusBricks();
+                // Now we can place the balls in.
+                this.placeBalls();
             };
             return Maze;
         }(game.Entity));

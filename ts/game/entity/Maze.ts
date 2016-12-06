@@ -113,10 +113,14 @@ module nurdz.game
          * An actor pool which contains all of the bonus brick entities we've
          * created so far. The bricks that are in the live list are currently
          * in the level.
-         *
-         * @type {ActorPool<Brick>}
          */
         private _bonusBricks : ActorPool<Brick>;
+
+        /**
+         * An actor pool which contains all of the ball entities we've created.
+         * This is always a set number.
+         */
+        private _balls : ActorPool<Ball>;
 
         /**
          * Construct a new empty maze entity.
@@ -140,6 +144,7 @@ module nurdz.game
             this._arrows = new ActorPool<Arrow> ();
             this._grayBricks = new ActorPool<Brick> ();
             this._bonusBricks = new ActorPool<Brick> ();
+            this._balls = new ActorPool<Ball> ();
 
             // Create our maze entities.
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
@@ -161,6 +166,12 @@ module nurdz.game
                 this._grayBricks.addEntity (new Brick (stage, BrickType.BRICK_GRAY), false);
             for (let i = 0 ; i < (MAZE_HEIGHT - 4) * BONUS_BRICKS_PER_ROW[1] ; i++)
                 this._bonusBricks.addEntity (new Brick (stage, BrickType.BRICK_BONUS), false);
+
+            // Fill the actor pool for balls with a complete set of balls; this
+            // only ever happens once and is the one case where we always know
+            // exactly how many entities of a type we need.
+            for (let i = 0 ; i < (MAZE_WIDTH - 2) * 2 ; i++)
+                this._balls.addEntity (new Ball (stage), false);
 
             // Create the array that holds our contents. null entries are
             // treated as empty background bricks, so we don't need to do
@@ -217,6 +228,7 @@ module nurdz.game
             this._arrows.update (stage, tick);
             this._grayBricks.update (stage, tick);
             this._bonusBricks.update (stage, tick);
+            this._balls.update (stage, tick);
         }
 
         /**
@@ -643,6 +655,37 @@ module nurdz.game
         }
 
         /**
+         * Place the balls into the maze.
+         *
+         * Currently this fill up the top row with balls for the player only,
+         * but it should also store balls for the computer into another data
+         * structure.
+         */
+        private placeBalls () : void
+        {
+            // There should be two sets of balls that we cycle between, but for
+            // now we just put a set of player balls into the top row of the
+            // maze.
+            for (let col = 1 ; col < MAZE_WIDTH - 1 ; col++)
+            {
+                // Get a ball; this pool always has enough entities for us
+                // because the number is fixed.
+                let ball = this._balls.resurrectEntity ();
+
+                // Set the score and type.
+                ball.score = 0;
+                ball.ballType = BallType.BALL_PLAYER;
+
+                // Have the ball appear onto the screen (instead of just being
+                // there)
+                ball.appear ();
+
+                // Set the ball in now.
+                this.setCellAt (col, 0, ball);
+            }
+        }
+
+        /**
          * Reset the maze.
          *
          * This will modify the bricks in the maze to represent a new randomly
@@ -655,6 +698,7 @@ module nurdz.game
             this._arrows.killALl ();
             this._grayBricks.killALl ();
             this._bonusBricks.killALl ();
+            this._balls.killALl ();
 
             // Prepare the maze; this empties out the current contents (if any)
             // and gives us a plain empty maze that is surrounded with the
@@ -666,6 +710,9 @@ module nurdz.game
             this.genArrows ();
             this.genGrayBricks ();
             this.genBonusBricks ();
+
+            // Now we can place the balls in.
+            this.placeBalls ();
         }
     }
 
