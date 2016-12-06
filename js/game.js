@@ -944,16 +944,51 @@ var nurdz;
              */
             Maze.prototype.handleClick = function (position) {
                 // The position is in pixels, so reduce it down to the size of the
-                // cells in the maze.
+                // cells in the maze, then collect the entity out of the maze at
+                // that location (if any).
                 position.reduce(this.cellSize);
-                // If the position is not in the first row OR it is, but that position
-                // is not a ball, then do nothing.
-                if (position.y != 0 ||
-                    this.getCellAt(position.x, position.y) instanceof game.Ball == false)
-                    return false;
-                // We care about this click.
-                console.log(position);
-                return true;
+                var entity = this.getCellAt(position.x, position.y);
+                // If this is a brick, we might want to vanish or appear it in the
+                // maze.
+                if (entity instanceof game.Brick) {
+                    // Since it's a brick, change it's animation based on the type.
+                    // We can tell if the brick is visible or not by checking what
+                    // the currently playing animation is.
+                    var brick = entity;
+                    switch (brick.brickType) {
+                        case game.BrickType.BRICK_GRAY:
+                            if (brick.animations.current == "gray_vanish")
+                                brick.playAnimation("gray_appear");
+                            else
+                                brick.playAnimation("gray_vanish");
+                            return true;
+                        case game.BrickType.BRICK_BONUS:
+                            if (brick.animations.current == "bonus_vanish")
+                                brick.playAnimation("bonus_appear");
+                            else
+                                brick.playAnimation("bonus_vanish");
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+                // If it is an arrow, flip it. This works for any type of arrow; an
+                // automatic arrow will reset its random flip time in this case.
+                if (entity instanceof game.Arrow) {
+                    var arrow = entity;
+                    arrow.flip();
+                    return true;
+                }
+                // If the entity is a ball and it's in the first position, then
+                // vanish it.
+                if (position.y == 0 && entity instanceof game.Ball) {
+                    var ball = entity;
+                    ball.vanish();
+                    console.log("Click on a ball in the first row");
+                    return true;
+                }
+                // We care not for this click.
+                return false;
             };
             /**
              * This is called every frame update (tick tells us how many times this
