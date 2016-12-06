@@ -920,6 +920,7 @@ var nurdz;
                 this._grayBricks = new game.ActorPool();
                 this._bonusBricks = new game.ActorPool();
                 this._balls = new game.ActorPool();
+                this._markers = new game.ActorPool();
                 // Create our maze entities.
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
@@ -964,6 +965,36 @@ var nurdz;
                 configurable: true
             });
             /**
+             * Obtain a marker for use in debugging. This will pull the marker from
+             * the pool, creating new markers only as needed.
+             */
+            Maze.prototype.getMarker = function () {
+                // Try to pull a marker out of the pool
+                var marker = this._markers.resurrectEntity();
+                if (marker == null) {
+                    // None left in the pool, create and add a new one
+                    marker = new game.Marker(this._stage, this);
+                    this._markers.addEntity(marker, true);
+                }
+                return marker;
+            };
+            /**
+             * Remove all markers that may be set in the maze currently and move
+             * all of them back to the dead list in their actor pool.
+             */
+            Maze.prototype.removeAllMarkers = function () {
+                // Scan the entire maze, and for every marker entity that we find,
+                // remove it from that cell.
+                for (var row = 0; row < MAZE_HEIGHT; row++) {
+                    for (var col = 0; col < MAZE_WIDTH; col++) {
+                        if (this.getCellAt(col, row) instanceof game.Marker)
+                            this.setCellAt(col, row, null);
+                    }
+                }
+                // Now move all markers to the dead pool
+                this._markers.killALl();
+            };
+            /**
              * DEBUG METHOD
              *
              * This takes a point that is representative of a mouse click inside of
@@ -986,6 +1017,23 @@ var nurdz;
                 // that location (if any).
                 position.reduce(this.cellSize);
                 var entity = this.getCellAt(position.x, position.y);
+                // Handle markers; if there is nothing at this cell, add a marker
+                // here. If what is here is a marker, remove it.
+                // If there is nothing here, place a marker; if what we pull out
+                // is a marker, remove it.
+                if (entity == null || entity instanceof game.Marker) {
+                    // The object exists so it must be an entity. Move it to the
+                    // killed list, then remove it from the maze.
+                    if (entity != null) {
+                        this._markers.killEntity(entity);
+                        this.setCellAt(position.x, position.y, null);
+                    }
+                    else {
+                        // Get a marker and place it into the grid at this position.
+                        this.setCellAt(position.x, position.y, this.getMarker());
+                    }
+                    return true;
+                }
                 // If this is a brick, we might want to vanish or appear it in the
                 // maze.
                 if (entity instanceof game.Brick) {
@@ -1020,8 +1068,12 @@ var nurdz;
                 // If the entity is a ball and it's in the first position, then
                 // vanish it.
                 if (position.y == 0 && entity instanceof game.Ball) {
+                    // Get the ball and vanish it
                     var ball = entity;
                     ball.vanish();
+                    // We're going to drop this ball, so remove all of the tracking
+                    // markers from the last track (if any).
+                    this.removeAllMarkers();
                     console.log("Click on a ball in the first row");
                     return true;
                 }
@@ -1445,6 +1497,7 @@ var nurdz;
                 this._grayBricks.killALl();
                 this._bonusBricks.killALl();
                 this._balls.killALl();
+                this.removeAllMarkers();
                 // Prepare the maze; this empties out the current contents (if any)
                 // and gives us a plain empty maze that is surrounded with the
                 // bounding bricks that we need.
