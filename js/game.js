@@ -1449,6 +1449,30 @@ var nurdz;
                 return false;
             };
             /**
+             * This gets triggered while the game is running and the user clicks the
+             * mouse in the scene.
+             *
+             * The method should return true if the mouse event was handled or false
+             * if it was not. The Stage will prevent the default handling for all
+             * mouse events that are handled.
+             *
+             * @param eventObj the event object
+             *
+             * @returns {boolean} true if the mouse event was handled, false
+             * otherwise
+             */
+            GameScene.prototype.inputMouseClick = function (eventObj) {
+                // Calculate where on the stage the mouse clicked. If this is inside
+                // of the maze, localize the point to the bounds of the maze and
+                // have the maze handle it.
+                var mousePos = this._stage.calculateMousePos(eventObj);
+                if (this._maze.contains(mousePos) == true) {
+                    var pos = this._maze.position;
+                    return this._maze.handleClick(mousePos.translateXY(-pos.x, -pos.y));
+                }
+                return false;
+            };
+            /**
              * This is invoked every frame to render the current scene to the stage.
              */
             GameScene.prototype.render = function () {
