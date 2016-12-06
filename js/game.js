@@ -926,6 +926,36 @@ var nurdz;
                 configurable: true
             });
             /**
+             * DEBUG METHOD
+             *
+             * This takes a point that is representative of a mouse click inside of
+             * the maze (i.e. the point (0, 0) is the upper left corner of this
+             * entity) and "handles" it, using whatever debug logic we deem
+             * exciting.
+             *
+             * This should return true or false depending on if it did anything with
+             * the point or not, so the scene knows if the default handling should
+             * be applied or not.
+             *
+             * @param   {Point}   position the position in our bounds of the click
+             *
+             * @returns {boolean}          true if we handled the click, or false
+             * otherwise
+             */
+            Maze.prototype.handleClick = function (position) {
+                // The position is in pixels, so reduce it down to the size of the
+                // cells in the maze.
+                position.reduce(this.cellSize);
+                // If the position is not in the first row OR it is, but that position
+                // is not a ball, then do nothing.
+                if (position.y != 0 ||
+                    this.getCellAt(position.x, position.y) instanceof game.Ball == false)
+                    return false;
+                // We care about this click.
+                console.log(position);
+                return true;
+            };
+            /**
              * This is called every frame update (tick tells us how many times this
              * has happened) to allow us to update ourselves.
              *
