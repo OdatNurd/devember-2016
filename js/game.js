@@ -1065,19 +1065,100 @@ var nurdz;
                     arrow.flip();
                     return true;
                 }
-                // If the entity is a ball and it's in the first position, then
-                // vanish it.
-                if (position.y == 0 && entity instanceof game.Ball) {
-                    // Get the ball and vanish it
-                    var ball = entity;
-                    ball.vanish();
-                    // We're going to drop this ball, so remove all of the tracking
-                    // markers from the last track (if any).
+                // If the entity is a ball, try to move it downwards
+                if (entity instanceof game.Ball) {
+                    // We're going to move the ball, so remove all markers from
+                    // the maze.
                     this.removeAllMarkers();
-                    console.log("Click on a ball in the first row");
+                    // Get the ball entity out and remove it from the maze at
+                    // this position by replacing it with a marker entity.
+                    var ball = entity;
+                    this.setCellAt(position.x, position.y, this.getMarker());
+                    // Duplicate the position that the ball started out at.
+                    var ballPos = position.copy();
+                    // Keep looping, deciding if the ball should move or not. When
+                    // the function returns true, it has modified the position to
+                    // be where the ball is moving to; when it is false, the ball
+                    // could not move from this point.
+                    // When the position has changed, we set a marker at the new
+                    // position.
+                    while (this.nextBallPosition(ballPos))
+                        this.setCellAt(ballPos.x, ballPos.y, this.getMarker());
+                    // The loop stopped at the location where the ball should have
+                    // stopped. Put the ball entity that we started with at that
+                    // position now. This will leave a marker dangling as alive, but
+                    // that's OK.
+                    this.setCellAt(ballPos.x, ballPos.y, ball);
                     return true;
                 }
                 // We care not for this click.
+                return false;
+            };
+            /**
+             * Given a point that represents the position that is expected to be a
+             * ball, calculate where the next position that it should be is. This is
+             * either one block down or one block to the left/right, depending on
+             * what is happening.
+             *
+             * If the ball would stop at this location, false is returned back to
+             * indicate this. Otherwise, the position passed in is modified to show
+             * where the move would go next and true is returned.
+             *
+             * @param   {Point}   position the current position of the ball that is
+             * moving
+             *
+             * @returns {boolean}          true if the ball moved, false otherwise.
+             * When true is returned, the passed in point is modified to show where
+             * the new location is.
+             */
+            Maze.prototype.nextBallPosition = function (position) {
+                // If this position is in the second to last row of the maze, it has
+                // reached the goal line, so movement stops.
+                if (position.y == MAZE_HEIGHT - 2)
+                    return false;
+                // Get the contents of the cell below us.
+                var below = this.getCellAt(position.x, position.y + 1);
+                // We are allowed to pass through empty spaces or bonus bricks.
+                // If there's nothing below us, we can move through it.
+                if (below == null ||
+                    below instanceof game.Brick &&
+                        ((below.brickType == game.BrickType.BRICK_BONUS) ||
+                            (below.animations.current == "gray_vanish"))) {
+                    // If it was a bonus brick, vanish it; then move down
+                    if (below != null)
+                        below.playAnimation("bonus_vanish");
+                    position.y++;
+                    return true;
+                }
+                // If it's a black hole, pass through it (should really teleport).
+                if (below instanceof game.Teleport) {
+                    position.y++;
+                    return true;
+                }
+                // If what is below is an arrow, handle that.
+                if (below instanceof game.Arrow) {
+                    // Get the direction on the arrow and the cell in that direction
+                    var left = below.arrowDirection == game.ArrowDirection.ARROW_LEFT;
+                    var side = this.getCellAt(position.x + (left ? -1 : 1), position.y);
+                    // If the cell to the left is empty or a bonus brick, we can
+                    // move there.
+                    if (side == null ||
+                        side instanceof game.Brick &&
+                            ((side.brickType == game.BrickType.BRICK_BONUS) ||
+                                (side.animations.current == "gray_vanish"))) {
+                        if (side != null)
+                            side.playAnimation("bonus_vanish");
+                        position.x = position.x + (left ? -1 : 1);
+                        return true;
+                    }
+                    // If it is a black hole, pass through it (should really teleport).
+                    if (side instanceof game.Teleport) {
+                        position.x = position.x + (left ? -1 : 1);
+                        return true;
+                    }
+                    // Cannot move, we're blocked.
+                    return false;
+                }
                 return false;
             };
             /**
