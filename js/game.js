@@ -581,6 +581,22 @@ var nurdz;
                         return true;
                 }
             };
+            /**
+             * For bricks that allow us to enter them, this will get invoked if the
+             * ball enters our cell in the maze.
+             *
+             * This is only true for gray bricks that are gone or for bonus bricks
+             * that are still visible.
+             */
+            Brick.prototype.touchingBall = function () {
+                // If this is a bonus brick and it is visible, then switch the
+                // animation to indicate that it has been touched and is thus now
+                // collected.
+                if (this._brickType == BrickType.BRICK_BONUS &&
+                    (this.animations.current == "bonus_idle" ||
+                        this.animations.current == "bonus_appear"))
+                    this.playAnimation("bonus_vanish");
+            };
             return Brick;
         }(game.MazeCell));
         game.Brick = Brick;
@@ -1289,6 +1305,10 @@ var nurdz;
                 // If that cell is empty, or the ball is allowed to pass through it,
                 // then change the position to drop down and return true.
                 if (below == null || below.blocksBall() == false) {
+                    // If there is an entity below us, we're about to enter it's
+                    // location, so tell it that.
+                    if (below != null)
+                        below.touchingBall();
                     position.y++;
                     return true;
                 }
@@ -1305,6 +1325,10 @@ var nurdz;
                 // allowed to enter that cell or not.
                 var movedCell = this.getCellAt(testPos.x, testPos.y);
                 if (movedCell == null || movedCell.blocksBall() == false) {
+                    // If we're moving into an existing cell, tell it that we're
+                    // doing it.
+                    if (movedCell != null)
+                        movedCell.touchingBall();
                     // Tell the cell that moved the ball that we actually moved it,
                     // and then return back the position that it gave.
                     below.didChangeDirection();

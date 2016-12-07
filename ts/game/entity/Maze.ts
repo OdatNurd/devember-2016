@@ -470,6 +470,11 @@ module nurdz.game
             // then change the position to drop down and return true.
             if (below == null || below.blocksBall () == false)
             {
+                // If there is an entity below us, we're about to enter it's
+                // location, so tell it that.
+                if (below != null)
+                    below.touchingBall ();
+
                 position.y++;
                 return true;
             }
@@ -489,6 +494,11 @@ module nurdz.game
             let movedCell = this.getCellAt (testPos.x, testPos.y);
             if (movedCell == null || movedCell.blocksBall () == false)
             {
+                // If we're moving into an existing cell, tell it that we're
+                // doing it.
+                if (movedCell != null)
+                    movedCell.touchingBall ();
+
                 // Tell the cell that moved the ball that we actually moved it,
                 // and then return back the position that it gave.
                 below.didChangeDirection ();
