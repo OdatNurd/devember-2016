@@ -44,5 +44,39 @@ module nurdz.game
         {
             return true;
         }
+
+        /**
+         * Returns a determination on where the ball would go if it was not
+         * allowed to enter this cell. This only gets invoked in the case where
+         * the ball is blocked from entering the cell (i.e. blockBall() returns
+         * true).
+         *
+         * If this cell thinks that the ball would change locations by touching
+         * it, it will modify the location provided to specify where the ball
+         * should end up and then return true. Otherwise, it will leave the
+         * location alone and only return false.
+         *
+         * @param   {Point}   location the location of where the ball currently
+         * is; this will be modified if we return true to indicate where the
+         * ball should have ended up.
+         *
+         * @returns {boolean} true if we changed the location passed in or false
+         * if we left it alone.
+         */
+        changeBallLocation (location : Point) : boolean
+        {
+            return false;
+        }
+
+        /**
+         * This is invoked after a call to changeBallLocation() that returned
+         * true if the ball was actually changed to that location. That allows
+         * this cell to do something in response to having successfully moved
+         * the ball.
+         */
+        didChangeDirection () : void
+        {
+
+        }
     }
 }
