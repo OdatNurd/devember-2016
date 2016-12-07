@@ -46,6 +46,18 @@ module nurdz.game
         }
 
         /**
+         * This method will be invoked on this maze cell when the ball enters
+         * the cell that it contains.
+         *
+         * This can only happen if blocksBall() returns false, as otherwise the
+         * ball would be blocked from entering this entity.
+         */
+        touchingBall () : void
+        {
+
+        }
+
+        /**
          * Returns a determination on where the ball would go if it was not
          * allowed to enter this cell. This only gets invoked in the case where
          * the ball is blocked from entering the cell (i.e. blockBall() returns

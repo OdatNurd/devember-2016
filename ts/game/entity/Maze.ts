@@ -395,7 +395,6 @@ module nurdz.game
                 // the maze.
                 this.removeAllMarkers ();
 
-
                 // Remove the ball entity from the maze at this location, since
                 // we are going to move it. We also set a marker here to show
                 // where we started the move from.
