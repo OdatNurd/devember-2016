@@ -73,10 +73,17 @@ module nurdz.game
     export class Maze extends Entity
     {
         /**
+         * This is an array the same size as the _contents array which contains
+         * a boolean that indicates if this position should be marked with a
+         * debug marker or not.
+         */
+        private _markers : Array <boolean>;
+
+        /**
          * The contents of the maze, which is a collection of entities that are
          * expected to always have the same dimensions.
          */
-        private _contents: Array<MazeCell>;
+        private _contents : Array<MazeCell>;
 
         /**
          * Our singular Brick entity that represents the empty (background)
@@ -94,6 +101,12 @@ module nurdz.game
          * maze.
          */
         private _blackHole : Teleport;
+
+        /**
+         * Our singular marker entity; this is used to render a marker at all
+         * marked locations.
+         */
+        private _marker : Marker;
 
         /**
          * An actor pool which contains all of the arrow entities we've created
@@ -121,17 +134,6 @@ module nurdz.game
          * This is always a set number.
          */
         private _balls : ActorPool<Ball>;
-
-        /**
-         * An actor pool which contains all of the marker entities we've
-         * created.
-         *
-         * Since these are for debugging, the number of them is variable.
-         * Additionally we can't pre-populate the list because we need to know
-         * the maze cell size to create one, and that's only known after all of
-         * the preloads are completed.
-         */
-        private _markers : ActorPool<Marker>;
 
         /**
          * Get the size (in pixels) of the cells in the maze based on the
@@ -166,9 +168,9 @@ module nurdz.game
             this._grayBricks = new ActorPool<Brick> ();
             this._bonusBricks = new ActorPool<Brick> ();
             this._balls = new ActorPool<Ball> ();
-            this._markers = new ActorPool<Marker> ();
 
-            // Create our maze entities.
+            // Create our maze entities; the marker entity is deferred until
+            // we know the dimensions of the sprites in the sprite sheet.
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
             this._blackHole = new Teleport (stage);
@@ -200,31 +202,75 @@ module nurdz.game
             // anything further here.
             this._contents = new Array (MAZE_WIDTH * MAZE_HEIGHT);
 
+            // Create the marker overlay.
+            this._markers = new Array (MAZE_WIDTH * MAZE_HEIGHT);
+
             // Reset the maze
             this.reset ();
         }
 
         /**
-         * Obtain a marker for use in debugging. This will pull the marker from
-         * the pool, creating new markers only as needed.
+         * Set a debug marker on the cell at the given location in the maze.
+         *
+         * If the location is out of bounds of the maze or there is already a
+         * marker at this location, then this will do nothing.
+         *
+         * @param {number} x the X coordinate to put a marker at
+         * @param {number} y the Y coordinate to put a marker at
          */
-        private getMarker () : Marker
+        private setMarkerAt (x : number, y : number) : void
         {
-            // Try to pull a marker out of the pool
-            let marker = this._markers.resurrectEntity ();
-            if (marker == null)
-            {
-                // None left in the pool, create and add a new one
-                marker = new Marker (this._stage, this);
-                this._markers.addEntity (marker, true);
-            }
+            // If the bounds are invalid, do nothing.
+            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
+                return;
 
-            return marker;
+            // Set the marker into the marker list at this location.
+            // Set the brick at the location to the one provided.
+            this._markers[y * MAZE_WIDTH + x] = true;
         }
 
         /**
-         * Remove all markers that may be set in the maze currently and move
-         * all of them back to the dead list in their actor pool.
+         * Clear the debug marker on the cell at the given location in the maze.
+         *
+         * If the location is out of bounds or does not contain a marker, then
+         * this will do nothing.
+         *
+         * @param {number} x the X coordinate to clear the marker from
+         * @param {number} y the Y coordinate to clear the marker from
+         */
+        private clearMarkerAt (x : number, y : number) : void
+        {
+            // If the bounds are invalid or there is not a marker a this
+            // location, then do nothing.
+            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
+                return;
+
+            // Now remove it from the grid
+            this._markers[y * MAZE_WIDTH + x] = false;
+        }
+
+        /**
+         * Check the maze to see if there is a debug marker on the location
+         * given.
+         *
+         * @param   {number}  x the X coordinate to check in the maze
+         * @param   {number}  y the Y coordinate to check in the maze
+         *
+         * @returns {boolean}   true if this position contains a marker, or
+         * false otherwise
+         */
+        private hasMarkerAt (x : number, y : number) : boolean
+        {
+            // The bounds are invalid, so no marker
+            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
+                return false;
+
+            // There is only a marker if this location is true.
+            return this._markers[y * MAZE_WIDTH + x] == true;
+        }
+
+        /**
+         * Remove all markers that may be set in the maze currently.
          */
         private removeAllMarkers () : void
         {
@@ -234,13 +280,9 @@ module nurdz.game
             {
                 for (let col = 0 ; col < MAZE_WIDTH ; col++)
                 {
-                    if (this.getCellAt (col, row) instanceof Marker)
-                        this.setCellAt (col, row, null);
+                    this.clearMarkerAt (col, row);
                 }
             }
-
-            // Now move all markers to the dead pool
-            this._markers.killALl ();
         }
 
         /**
@@ -256,6 +298,13 @@ module nurdz.game
             // Determine how much width is left on the stage that is not taken
             // up by us.
             let remainder = this._stage.width - this.width;
+
+            // Create a marker entity and set it's dimensions based on the
+            // sprite sheet we loaded. Our callback might get invoked before
+            // that of the _empty entity that our cellSize property returns,
+            // so it's not safe to reference it here.
+            this._marker = new Marker (this._stage, this);
+            this._marker.makeRectangle (sheet.width, sheet.height);
 
             // Set our position to center us on the screen horizontally and be
             // just slightly up from the bottom of the screen. We use half of
@@ -290,25 +339,15 @@ module nurdz.game
             position.reduce (this.cellSize);
             let entity = this.getCellAt (position.x, position.y);
 
-            // Handle markers; if there is nothing at this cell, add a marker
-            // here. If what is here is a marker, remove it.
-            // If there is nothing here, place a marker; if what we pull out
-            // is a marker, remove it.
-            if (entity == null || entity instanceof Marker)
+            // If this cell in the maze does not contain anything, then toggle
+            // the marker at this location/
+            if (entity == null)
             {
-                // The object exists so it must be an entity. Move it to the
-                // killed list, then remove it from the maze.
-                if (entity != null)
-                {
-                    this._markers.killEntity (entity);
-                    this.setCellAt (position.x, position.y, null);
-                }
+                // If there a marker here, then clear it; otherwise, add it.
+                if (this.hasMarkerAt (position.x, position.y))
+                    this.clearMarkerAt (position.x, position.y);
                 else
-                {
-                    // Get a marker and place it into the grid at this position.
-                    this.setCellAt (position.x, position.y, this.getMarker ());
-                }
-                return true;
+                    this.setMarkerAt (position.x, position.y);
             }
 
             // If this is a brick, we might want to vanish or appear it in the
@@ -356,10 +395,21 @@ module nurdz.game
                 // the maze.
                 this.removeAllMarkers ();
 
+
+                // Remove the ball entity from the maze at this location, since
+                // we are going to move it. We also set a marker here to show
+                // where we started the move from.
                 // Get the ball entity out and remove it from the maze at
                 // this position by replacing it with a marker entity.
+
+                // Get the ball entity at this location.
                 let ball = <Ball> entity;
-                this.setCellAt (position.x, position.y, this.getMarker ());
+
+                // Remove the ball from this position, since it will (probably)
+                // be moving, and set a marker here so that we know where the
+                // ball started.
+                this.setCellAt (position.x, position.y, null);
+                this.setMarkerAt (position.x, position.y);
 
                 // Duplicate the position that the ball started out at.
                 let ballPos = position.copy ();
@@ -368,15 +418,15 @@ module nurdz.game
                 // the function returns true, it has modified the position to
                 // be where the ball is moving to; when it is false, the ball
                 // could not move from this point.
+                //
                 // When the position has changed, we set a marker at the new
                 // position.
                 while (this.nextBallPosition (ballPos))
-                    this.setCellAt (ballPos.x, ballPos.y, this.getMarker ());
+                    this.setMarkerAt (ballPos.x, ballPos.y);
 
                 // The loop stopped at the location where the ball should have
                 // stopped. Put the ball entity that we started with at that
-                // position now. This will leave a marker dangling as alive, but
-                // that's OK.
+                // position now.
                 this.setCellAt (ballPos.x, ballPos.y, ball);
                 return true;
             }
@@ -584,7 +634,12 @@ module nurdz.game
                     if (cell instanceof Brick == false)
                         this._empty.render (x + (blitX * 25), y + (blitY * 25), renderer);
 
+                    // Render this cell.
                     cell.render (x + (blitX * 25), y + (blitY * 25), renderer);
+
+                    // If this position contains a marker, render one here.
+                    if (this.hasMarkerAt (blitX, blitY))
+                        this._marker.render (x + (blitX * 25), y + (blitY * 25), renderer);
                 }
             }
         }
