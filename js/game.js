@@ -248,6 +248,15 @@ var nurdz;
                 // have to do is set the color we want to render with.
                 this._debugColor = 'white';
             }
+            /**
+             * Marker blocks do not block the ball because they're not really there
+             * at all, they're just for debugging.
+             *
+             * @returns {boolean} always false
+             */
+            Marker.prototype.blocksBall = function () {
+                return false;
+            };
             return Marker;
         }(game.MazeCell));
         game.Marker = Marker;
@@ -608,6 +617,17 @@ var nurdz;
                 // by default.
                 this.addAnimation("idle", 10, true, [35, 36, 37, 38, 39]);
             }
+            /**
+             * Technically the teleport SHOULD block the ball and then it's
+             * changeBallLocation() would select the location of one of the other
+             * teleports, but for now we just allow the ball to pass through us.
+             *
+             * @returns {boolean} always false; the ball is allowed to move through
+             * us
+             */
+            Teleport.prototype.blocksBall = function () {
+                return false;
+            };
             return Teleport;
         }(game.MazeCell));
         game.Teleport = Teleport;

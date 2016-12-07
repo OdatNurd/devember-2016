@@ -40,6 +40,19 @@ module nurdz.game
             // Alter our collision properties
             this.makeRectangle (sheet.width, sheet.height);
         }
+
+        /**
+         * Technically the teleport SHOULD block the ball and then it's
+         * changeBallLocation() would select the location of one of the other
+         * teleports, but for now we just allow the ball to pass through us.
+         *
+         * @returns {boolean} always false; the ball is allowed to move through
+         * us
+         */
+        blocksBall () : boolean
+        {
+            return false;
+        }
     }
 
 }

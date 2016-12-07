@@ -31,5 +31,16 @@ module nurdz.game
             // have to do is set the color we want to render with.
             this._debugColor = 'white';
         }
+
+        /**
+         * Marker blocks do not block the ball because they're not really there
+         * at all, they're just for debugging.
+         *
+         * @returns {boolean} always false
+         */
+        blocksBall () : boolean
+        {
+            return false;
+        }
     }
 }
