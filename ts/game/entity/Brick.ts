@@ -146,6 +146,36 @@ module nurdz.game
             // Alter our collision properties
             this.makeRectangle (sheet.width, sheet.height);
         }
+
+        /**
+         * The only bricks that block the ball are solid bricks and gray bricks
+         * that are still visible on the screen.
+         *
+         * @returns {boolean} true if this brick should block the brick or false
+         * if the ball should be allowed to pass through it.
+         */
+        blocksBall () : boolean
+        {
+            switch (this._brickType)
+            {
+                // Bonus bricks always allow the ball to pass through.
+                case BrickType.BRICK_BONUS:
+                    return false;
+
+                // Gray bricks allow the ball to pass through if they have
+                // vanished.
+                case BrickType.BRICK_GRAY:
+                    if (this.animations.current == "gray_idle_gone" ||
+                        this.animations.current == "gray_vanish")
+                        return false;
+                    return true;
+
+                // Everything else blocks movement.
+                default:
+                    return true;
+            }
+        }
+
     }
 
 }

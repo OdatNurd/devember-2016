@@ -29,5 +29,20 @@ module nurdz.game
             // our sprites, so we don't set anything here.
             super (name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
         }
+
+        /**
+         * Returns a determination on whether this maze cell, in its current
+         * state, would block the ball from moving through it or not.
+         *
+         * When this returns true, the ball is stopped before entering this
+         * cell. Otherwise, it is allowed to enter this cell.
+         *
+         * @returns {boolean} true if this entity should block this ball moving
+         * through it or false if it should allow such movement.
+         */
+        blocksBall () : boolean
+        {
+            return true;
+        }
     }
 }

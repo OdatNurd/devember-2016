@@ -168,6 +168,19 @@ var nurdz;
                 // our sprites, so we don't set anything here.
                 _super.call(this, name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
             }
+            /**
+             * Returns a determination on whether this maze cell, in its current
+             * state, would block the ball from moving through it or not.
+             *
+             * When this returns true, the ball is stopped before entering this
+             * cell. Otherwise, it is allowed to enter this cell.
+             *
+             * @returns {boolean} true if this entity should block this ball moving
+             * through it or false if it should allow such movement.
+             */
+            MazeCell.prototype.blocksBall = function () {
+                return true;
+            };
             return MazeCell;
         }(game.Entity));
         game.MazeCell = MazeCell;
@@ -497,6 +510,30 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            /**
+             * The only bricks that block the ball are solid bricks and gray bricks
+             * that are still visible on the screen.
+             *
+             * @returns {boolean} true if this brick should block the brick or false
+             * if the ball should be allowed to pass through it.
+             */
+            Brick.prototype.blocksBall = function () {
+                switch (this._brickType) {
+                    // Bonus bricks always allow the ball to pass through.
+                    case BrickType.BRICK_BONUS:
+                        return false;
+                    // Gray bricks allow the ball to pass through if they have
+                    // vanished.
+                    case BrickType.BRICK_GRAY:
+                        if (this.animations.current == "gray_idle_gone" ||
+                            this.animations.current == "gray_vanish")
+                            return false;
+                        return true;
+                    // Everything else blocks movement.
+                    default:
+                        return true;
+                }
+            };
             return Brick;
         }(game.MazeCell));
         game.Brick = Brick;
@@ -1118,40 +1155,37 @@ var nurdz;
                     return false;
                 // Get the contents of the cell below us.
                 var below = this.getCellAt(position.x, position.y + 1);
-                // We are allowed to pass through empty spaces or bonus bricks.
-                // If there's nothing below us, we can move through it.
-                if (below == null ||
-                    below instanceof game.Brick &&
-                        ((below.brickType == game.BrickType.BRICK_BONUS) ||
-                            (below.animations.current == "gray_vanish"))) {
-                    // If it was a bonus brick, vanish it; then move down
-                    if (below != null)
-                        below.playAnimation("bonus_vanish");
+                // If the cell is empty, or the ball is allowed to pass through it,
+                // then change the position and return true.
+                if (below == null || below.blocksBall() == false) {
                     position.y++;
                     return true;
                 }
-                // If it's a black hole, pass through it (should really teleport).
+                // The teleport says that it blocks the ball, but it really doesn't,
+                // we handle it here. Right now we're just passing through it, but
+                // we really need to select a different teleport and come from there
+                // instead.
                 if (below instanceof game.Teleport) {
                     position.y++;
                     return true;
                 }
-                // If what is below is an arrow, handle that.
+                // Arrows block our downward movement, but they move the ball in a
+                // lateral direction.
                 if (below instanceof game.Arrow) {
                     // Get the direction on the arrow and the cell in that direction
                     var left = below.arrowDirection == game.ArrowDirection.ARROW_LEFT;
                     var side = this.getCellAt(position.x + (left ? -1 : 1), position.y);
-                    // If the cell to the left is empty or a bonus brick, we can
-                    // move there.
-                    if (side == null ||
-                        side instanceof game.Brick &&
-                            ((side.brickType == game.BrickType.BRICK_BONUS) ||
-                                (side.animations.current == "gray_vanish"))) {
-                        if (side != null)
-                            side.playAnimation("bonus_vanish");
+                    // If there is nothing there, or there is but we're allowed to
+                    // pass through it, shift the ball in the appropriate location
+                    // and we're done.
+                    if (side == null || side.blocksBall() == false) {
                         position.x = position.x + (left ? -1 : 1);
                         return true;
                     }
-                    // If it is a black hole, pass through it (should really teleport).
+                    // The teleport says that it blocks the ball, but it really
+                    // doesn't, we handle it here. Right now we're just passing
+                    // through it, but we really need to select a different teleport
+                    // and come from there instead.
                     if (side instanceof game.Teleport) {
                         position.x = position.x + (left ? -1 : 1);
                         return true;

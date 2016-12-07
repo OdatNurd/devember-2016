@@ -412,48 +412,45 @@ module nurdz.game
             // Get the contents of the cell below us.
             let below = this.getCellAt (position.x, position.y + 1);
 
-            // We are allowed to pass through empty spaces or bonus bricks.
-            // If there's nothing below us, we can move through it.
-            if (below == null ||
-                below instanceof Brick &&
-                  (((<Brick>below).brickType == BrickType.BRICK_BONUS) ||
-                  ((<Brick>below).animations.current == "gray_vanish")))
+            // If the cell is empty, or the ball is allowed to pass through it,
+            // then change the position and return true.
+            if (below == null || below.blocksBall () == false)
             {
-                // If it was a bonus brick, vanish it; then move down
-                if (below != null)
-                    below.playAnimation ("bonus_vanish");
-                position.y ++;
+                position.y++;
                 return true;
             }
 
-            // If it's a black hole, pass through it (should really teleport).
+            // The teleport says that it blocks the ball, but it really doesn't,
+            // we handle it here. Right now we're just passing through it, but
+            // we really need to select a different teleport and come from there
+            // instead.
             if (below instanceof Teleport)
             {
                 position.y++;
                 return true;
             }
 
-            // If what is below is an arrow, handle that.
+            // Arrows block our downward movement, but they move the ball in a
+            // lateral direction.
             if (below instanceof Arrow)
             {
                 // Get the direction on the arrow and the cell in that direction
                 let left = (<Arrow>below).arrowDirection == ArrowDirection.ARROW_LEFT;
                 let side = this.getCellAt (position.x + (left ? -1 : 1), position.y);
 
-                // If the cell to the left is empty or a bonus brick, we can
-                // move there.
-                if (side == null ||
-                    side instanceof Brick &&
-                      (((<Brick>side).brickType == BrickType.BRICK_BONUS) ||
-                      ((<Brick>side).animations.current == "gray_vanish")))
+                // If there is nothing there, or there is but we're allowed to
+                // pass through it, shift the ball in the appropriate location
+                // and we're done.
+                if (side == null || side.blocksBall () == false)
                 {
-                    if (side != null)
-                        side.playAnimation ("bonus_vanish");
                     position.x = position.x + (left ? -1 : 1);
                     return true;
                 }
 
-                // If it is a black hole, pass through it (should really teleport).
+                // The teleport says that it blocks the ball, but it really
+                // doesn't, we handle it here. Right now we're just passing
+                // through it, but we really need to select a different teleport
+                // and come from there instead.
                 if (side instanceof Teleport)
                 {
                     position.x = position.x + (left ? -1 : 1);
@@ -463,7 +460,6 @@ module nurdz.game
                 // Cannot move, we're blocked.
                 return false;
             }
-
 
             return false;
         }
