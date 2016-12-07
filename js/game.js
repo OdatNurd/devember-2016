@@ -1209,9 +1209,14 @@ var nurdz;
             };
             /**
              * Given a point that represents the position that is expected to be a
-             * ball, calculate where the next position that it should be is. This is
-             * either one block down or one block to the left/right, depending on
-             * what is happening.
+             * ball, calculate where the next position that it should be is.
+             *
+             * The possible position changes are:
+             *    1) the cell below us allows the ball to enter it or is empty, so
+             *       drop down one.
+             *    2) The cell below us is an arrow which shoves us one space to the
+             *       left or right, possibly.
+             *    3) The cell below us is a teleport; currently this is unhandled.
              *
              * If the ball would stop at this location, false is returned back to
              * indicate this. Otherwise, the position passed in is modified to show
@@ -1229,46 +1234,35 @@ var nurdz;
                 // reached the goal line, so movement stops.
                 if (position.y == MAZE_HEIGHT - 2)
                     return false;
-                // Get the contents of the cell below us.
+                // Get the contents of the cell below us in the grid.
                 var below = this.getCellAt(position.x, position.y + 1);
-                // If the cell is empty, or the ball is allowed to pass through it,
-                // then change the position and return true.
+                // If that cell is empty, or the ball is allowed to pass through it,
+                // then change the position to drop down and return true.
                 if (below == null || below.blocksBall() == false) {
                     position.y++;
                     return true;
                 }
-                // The teleport says that it blocks the ball, but it really doesn't,
-                // we handle it here. Right now we're just passing through it, but
-                // we really need to select a different teleport and come from there
-                // instead.
-                if (below instanceof game.Teleport) {
-                    position.y++;
+                // The cell below has blocked our movement. Make a duplicate of the
+                // current position and then ask that cell if it thinks the ball
+                // should be moved.
+                //
+                // If that returns false it doesn't think the ball should move, so
+                // we can just leave.
+                var testPos = position.copy();
+                if (below.changeBallLocation(testPos) == false)
+                    return false;
+                // Check the contents of the new location and see if the ball is
+                // allowed to enter that cell or not.
+                var movedCell = this.getCellAt(testPos.x, testPos.y);
+                if (movedCell == null || movedCell.blocksBall() == false) {
+                    // Tell the cell that moved the ball that we actually moved it,
+                    // and then return back the position that it gave.
+                    below.didChangeDirection();
+                    position.setTo(testPos);
                     return true;
                 }
-                // Arrows block our downward movement, but they move the ball in a
-                // lateral direction.
-                if (below instanceof game.Arrow) {
-                    // Get the direction on the arrow and the cell in that direction
-                    var left = below.arrowDirection == game.ArrowDirection.ARROW_LEFT;
-                    var side = this.getCellAt(position.x + (left ? -1 : 1), position.y);
-                    // If there is nothing there, or there is but we're allowed to
-                    // pass through it, shift the ball in the appropriate location
-                    // and we're done.
-                    if (side == null || side.blocksBall() == false) {
-                        position.x = position.x + (left ? -1 : 1);
-                        return true;
-                    }
-                    // The teleport says that it blocks the ball, but it really
-                    // doesn't, we handle it here. Right now we're just passing
-                    // through it, but we really need to select a different teleport
-                    // and come from there instead.
-                    if (side instanceof game.Teleport) {
-                        position.x = position.x + (left ? -1 : 1);
-                        return true;
-                    }
-                    // Cannot move, we're blocked.
-                    return false;
-                }
+                // The cell below us wants to shift our location to somewhere that
+                // we're not allowed to enter, so just leave.
                 return false;
             };
             /**
