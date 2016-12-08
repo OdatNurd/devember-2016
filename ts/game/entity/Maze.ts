@@ -821,7 +821,12 @@ module nurdz.game
                                         y - TELEPORT_MIN_DISTANCE,
                                         x + TELEPORT_MIN_DISTANCE,
                                         y + TELEPORT_MIN_DISTANCE) == false)
+                {
+                    // Store it, then add this location to the list of possible
+                    // destinations in this black hole.
                     this.setCellAt (x, y, this._blackHole);
+                    this._blackHole.addDestination (new Point (x, y));
+                }
                 else
                     i--;
             }
@@ -1054,6 +1059,10 @@ module nurdz.game
             this._bonusBricks.killALl ();
             this._balls.killALl ();
             this.removeAllMarkers ();
+
+            // Make sure that our black hole entity doesn't know about any
+            // destinations from a prior maze (if any).
+            this._blackHole.clearDestinations ();
 
             // Prepare the maze; this empties out the current contents (if any)
             // and gives us a plain empty maze that is surrounded with the

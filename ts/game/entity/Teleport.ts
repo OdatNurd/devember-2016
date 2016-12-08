@@ -6,6 +6,53 @@ module nurdz.game
     export class Teleport extends MazeCell
     {
         /**
+         * An array of potential teleport destinations that can be accessed from
+         * this teleport instance.
+         */
+        private _destinations : Array<Point>;
+
+        /**
+         * Get the destination of this teleport.
+         *
+         * There can be one or more destinations available from this teleport
+         * instance, in which case one of them is randomly selected.
+         *
+         * If there are no destinations registered, this returns null
+         *
+         * @returns {Point} the destination of this teleport
+         */
+        get destination () : Point
+        {
+            // How we operate depends on how many many destinations we have
+            switch (this._destinations.length)
+            {
+                // No known destinations
+                case 0:
+                    return null;
+
+                // Exactly one destination
+                case 1:
+                    return this._destinations[0];
+
+                // Many destinations
+                default:
+                    return this._destinations[Utils.randomIntInRange
+                        (0, this._destinations.length - 1)];
+            }
+        }
+
+        /**
+         * Get the number of destinations registered on this teleport instance.
+         *
+         * This can be any number >= 0; when it is larger than 1, a destination
+         * is randomly selected
+         *
+         * @returns {number} [description]
+         */
+        get length () : number
+        { return this._destinations.length; }
+
+        /**
          * Construct a new teleport entity that will render on the stage
          * provided.
          *
@@ -28,6 +75,9 @@ module nurdz.game
             // Set up an animation. As this is the first animation, it will play
             // by default.
             this.addAnimation ("idle", 10, true, [35, 36, 37, 38, 39]);
+
+            // Create the list of destinations
+            this._destinations = new Array<Point> ();
         }
 
         /**
@@ -42,9 +92,34 @@ module nurdz.game
         }
 
         /**
-         * Technically the teleport SHOULD block the ball and then it's
-         * changeBallLocation() would select the location of one of the other
-         * teleports, but for now we just allow the ball to pass through us.
+         * Add a potential destination to this teleport instance. This can be
+         * invoked more than once, in which case when activated the teleport
+         * will randomly select the destination from those provided.
+         *
+         * This does not verify that the location provided has not already been
+         * added; this allows you to bias one destination over another by adding
+         * it more than once.
+         *
+         * @param {Point} location the location to add
+         */
+        addDestination (location : Point) : void
+        {
+            this._destinations.push (location.copy ());
+        }
+
+        /**
+         * Remove all known destinations from this teleport object. This removes
+         * its ability to teleport the ball anywhere.
+         */
+        clearDestinations () : void
+        {
+            // Throw away all known destinations.
+            this._destinations.length = 0;
+        }
+
+        /**
+         * We don't block the ball because we change its position when it gets
+         * on top of us instead of when it touches us.
          *
          * @returns {boolean} always false; the ball is allowed to move through
          * us
@@ -52,6 +127,40 @@ module nurdz.game
         blocksBall () : boolean
         {
             return false;
+        }
+
+        /**
+         * When the ball is sitting on top of us, we transfer it to a different
+         * location in the grid, which has been previously given to us.
+         *
+         * @param {Point} ballPosition the position of the ball when it touched
+         * us
+         */
+        touchingBall (ballPosition : Point) : void
+        {
+            // Do we have any destinations set?
+            if (this._destinations.length > 0)
+            {
+                // Get a destination out.
+                let newPos = this.destination;
+
+                // As long as the new position is the same as the position that
+                // was given to us, select a new position (if possible), so that
+                // we don't try to teleport the ball to where it already is.
+                while (newPos.equals (ballPosition))
+                {
+                    // If there is only a single destination, leave; we can't
+                    // teleport because the ball is already there.
+                    if (this.length == 1)
+                        return;
+
+                    // Try again.
+                    newPos = this.destination;
+                }
+
+                // Change the position to the new one.
+                ballPosition.setTo (newPos);
+            }
         }
     }
 
