@@ -136,6 +136,22 @@ module nurdz.game
         private _balls : ActorPool<Ball>;
 
         /**
+         * The rules of moving the ball through the maze say that when the cycle
+         * starts, if the ball is on top of an entity, that entity can change
+         * its position to somewhere else in the maze.
+         *
+         * In order to stop a potential endless cascade, we institute a rule by
+         * which if the ball is transferred to a location that also contains such
+         * an entity, that one will not be allowed to change the ball location
+         * again before it drops.
+         *
+         * Hence, when a movement cycle jumps the ball in this manner, this flag
+         * gets set to let the code know that on the next trip through this
+         * cannot happen.
+         */
+        private _lastMoveTouched : boolean;
+
+        /**
          * Get the size (in pixels) of the cells in the maze based on the
          * current sprite set. The cells are square, so this represents both
          * dimensions.
@@ -174,6 +190,11 @@ module nurdz.game
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
             this._blackHole = new Teleport (stage);
+
+            // Since we haven't moved any ball yet, make sure the flag is turned
+            // off; this should always happen right before we start a ball
+            // moving.
+            this._lastMoveTouched = false;
 
             // Pre-populate all of our actor pools with the maximum possible
             // number of actors that we could need. For the case of the gray
@@ -395,11 +416,9 @@ module nurdz.game
                 // the maze.
                 this.removeAllMarkers ();
 
-                // Remove the ball entity from the maze at this location, since
-                // we are going to move it. We also set a marker here to show
-                // where we started the move from.
-                // Get the ball entity out and remove it from the maze at
-                // this position by replacing it with a marker entity.
+                // Ensure that the flag that indicates that the last move was
+                // handled by a touch is turned off.
+                this._lastMoveTouched = false;
 
                 // Get the ball entity at this location.
                 let ball = <Ball> entity;
@@ -464,8 +483,9 @@ module nurdz.game
                 return false;
 
             // Get the contents of the cell where the ball is currently at, if
-            // any; if there is one, give it a chance to change the position of
-            // the ball.
+            // any; if there is one, tell it that the ball touched it, and also
+            // possibly allow it to move the ball, as long as that's not how we
+            // got at the current position.
             let current = this.getCellAt (position.x, position.y);
             if (current != null)
             {
@@ -474,14 +494,24 @@ module nurdz.game
                 let newPos = position.copy ();
                 current.touchingBall (newPos);
 
-                // If the position has changed, the entity below us has changed
-                // it, so change to that position and leave.
-                if (newPos.equals (position) == false)
+                // If we're allowed to move the ball because of a touch and the
+                // entity below us actually changed the location, then that is
+                // the move for this cycle.
+                if (this._lastMoveTouched == false &&
+                    newPos.equals (position) == false)
                 {
+                    // Set the flag so we know we can't do this next time.
+                    this._lastMoveTouched = true;
+
+                    // Set the position to the one the entity provided.
                     position.setTo (newPos);
                     return true;
                 }
             }
+
+            // Whatever happens here, any movement that happens is not because
+            // of a touch.
+            this._lastMoveTouched = false;
 
             // Get the contents of the cell below us in the grid.
             let below = this.getCellAt (position.x, position.y + 1);

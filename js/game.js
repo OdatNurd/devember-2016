@@ -1077,6 +1077,10 @@ var nurdz;
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
                 this._blackHole = new game.Teleport(stage);
+                // Since we haven't moved any ball yet, make sure the flag is turned
+                // off; this should always happen right before we start a ball
+                // moving.
+                this._lastMoveTouched = false;
                 // Pre-populate all of our actor pools with the maximum possible
                 // number of actors that we could need. For the case of the gray
                 // bricks and bonus bricks, this creates more than we technically
@@ -1249,11 +1253,9 @@ var nurdz;
                     // We're going to move the ball, so remove all markers from
                     // the maze.
                     this.removeAllMarkers();
-                    // Remove the ball entity from the maze at this location, since
-                    // we are going to move it. We also set a marker here to show
-                    // where we started the move from.
-                    // Get the ball entity out and remove it from the maze at
-                    // this position by replacing it with a marker entity.
+                    // Ensure that the flag that indicates that the last move was
+                    // handled by a touch is turned off.
+                    this._lastMoveTouched = false;
                     // Get the ball entity at this location.
                     var ball = entity;
                     // Remove the ball from this position, since it will (probably)
@@ -1309,21 +1311,30 @@ var nurdz;
                 if (position.y == MAZE_HEIGHT - 2)
                     return false;
                 // Get the contents of the cell where the ball is currently at, if
-                // any; if there is one, give it a chance to change the position of
-                // the ball.
+                // any; if there is one, tell it that the ball touched it, and also
+                // possibly allow it to move the ball, as long as that's not how we
+                // got at the current position.
                 var current = this.getCellAt(position.x, position.y);
                 if (current != null) {
                     // Copy the position provided and then hand it to the entity
                     // that we're currently on top of.
                     var newPos = position.copy();
                     current.touchingBall(newPos);
-                    // If the position has changed, the entity below us has changed
-                    // it, so change to that position and leave.
-                    if (newPos.equals(position) == false) {
+                    // If we're allowed to move the ball because of a touch and the
+                    // entity below us actually changed the location, then that is
+                    // the move for this cycle.
+                    if (this._lastMoveTouched == false &&
+                        newPos.equals(position) == false) {
+                        // Set the flag so we know we can't do this next time.
+                        this._lastMoveTouched = true;
+                        // Set the position to the one the entity provided.
                         position.setTo(newPos);
                         return true;
                     }
                 }
+                // Whatever happens here, any movement that happens is not because
+                // of a touch.
+                this._lastMoveTouched = false;
                 // Get the contents of the cell below us in the grid.
                 var below = this.getCellAt(position.x, position.y + 1);
                 // If that cell is empty, or the ball is allowed to pass through it,
