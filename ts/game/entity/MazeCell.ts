@@ -51,8 +51,13 @@ module nurdz.game
          *
          * This can only happen if blocksBall() returns false, as otherwise the
          * ball would be blocked from entering this entity.
+         *
+         * The position of the ball (and thus of this grid entity) is passed in.
+         * The ball will be shifted to the location of this point when this call
+         * completes, which allows this entity to move this ball when it touches
+         * it.
          */
-        touchingBall () : void
+        touchingBall (ballPosition : Point) : void
         {
 
         }

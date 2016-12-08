@@ -182,8 +182,11 @@ module nurdz.game
          *
          * This is only true for gray bricks that are gone or for bonus bricks
          * that are still visible.
+         *
+         * @param {Point} ballPosition the position of the ball when it touched
+         * us; we ignore this
          */
-        touchingBall () : void
+        touchingBall (ballPosition : Point) : void
         {
             // If this is a bonus brick and it is visible, then switch the
             // animation to indicate that it has been touched and is thus now

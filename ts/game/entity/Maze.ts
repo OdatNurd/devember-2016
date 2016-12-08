@@ -463,6 +463,26 @@ module nurdz.game
             if (position.y == MAZE_HEIGHT - 2)
                 return false;
 
+            // Get the contents of the cell where the ball is currently at, if
+            // any; if there is one, give it a chance to change the position of
+            // the ball.
+            let current = this.getCellAt (position.x, position.y);
+            if (current != null)
+            {
+                // Copy the position provided and then hand it to the entity
+                // that we're currently on top of.
+                let newPos = position.copy ();
+                current.touchingBall (newPos);
+
+                // If the position has changed, the entity below us has changed
+                // it, so change to that position and leave.
+                if (newPos.equals (position) == false)
+                {
+                    position.setTo (newPos);
+                    return true;
+                }
+            }
+
             // Get the contents of the cell below us in the grid.
             let below = this.getCellAt (position.x, position.y + 1);
 
@@ -470,11 +490,8 @@ module nurdz.game
             // then change the position to drop down and return true.
             if (below == null || below.blocksBall () == false)
             {
-                // If there is an entity below us, we're about to enter it's
-                // location, so tell it that.
-                if (below != null)
-                    below.touchingBall ();
-
+                // The ball is not being blocked, so alter the position to drop
+                // it down onto the cell below us.
                 position.y++;
                 return true;
             }
@@ -494,11 +511,6 @@ module nurdz.game
             let movedCell = this.getCellAt (testPos.x, testPos.y);
             if (movedCell == null || movedCell.blocksBall () == false)
             {
-                // If we're moving into an existing cell, tell it that we're
-                // doing it.
-                if (movedCell != null)
-                    movedCell.touchingBall ();
-
                 // Tell the cell that moved the ball that we actually moved it,
                 // and then return back the position that it gave.
                 below.didChangeDirection ();
