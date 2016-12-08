@@ -439,7 +439,7 @@ module nurdz.game
                 //
                 // When the position has changed, we set a marker at the new
                 // position.
-                while (this.nextBallPosition (ballPos))
+                while (this.nextBallPosition (ball, ballPos))
                     this.setMarkerAt (ballPos.x, ballPos.y);
 
                 // The loop stopped at the location where the ball should have
@@ -468,14 +468,14 @@ module nurdz.game
          * indicate this. Otherwise, the position passed in is modified to show
          * where the move would go next and true is returned.
          *
-         * @param   {Point}   position the current position of the ball that is
-         * moving
+         * @param   {Ball}    ball     the ball that is moving
+         * @param   {Point}   position the current position of the ball given
          *
          * @returns {boolean}          true if the ball moved, false otherwise.
          * When true is returned, the passed in point is modified to show where
          * the new location is.
          */
-        private nextBallPosition (position : Point) : boolean
+        private nextBallPosition (ball : Ball, position : Point) : boolean
         {
             // If this position is in the second to last row of the maze, it has
             // reached the goal line, so movement stops.

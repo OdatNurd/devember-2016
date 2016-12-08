@@ -1363,7 +1363,7 @@ var nurdz;
                     //
                     // When the position has changed, we set a marker at the new
                     // position.
-                    while (this.nextBallPosition(ballPos))
+                    while (this.nextBallPosition(ball, ballPos))
                         this.setMarkerAt(ballPos.x, ballPos.y);
                     // The loop stopped at the location where the ball should have
                     // stopped. Put the ball entity that we started with at that
@@ -1389,14 +1389,14 @@ var nurdz;
              * indicate this. Otherwise, the position passed in is modified to show
              * where the move would go next and true is returned.
              *
-             * @param   {Point}   position the current position of the ball that is
-             * moving
+             * @param   {Ball}    ball     the ball that is moving
+             * @param   {Point}   position the current position of the ball given
              *
              * @returns {boolean}          true if the ball moved, false otherwise.
              * When true is returned, the passed in point is modified to show where
              * the new location is.
              */
-            Maze.prototype.nextBallPosition = function (position) {
+            Maze.prototype.nextBallPosition = function (ball, position) {
                 // If this position is in the second to last row of the maze, it has
                 // reached the goal line, so movement stops.
                 if (position.y == MAZE_HEIGHT - 2)
