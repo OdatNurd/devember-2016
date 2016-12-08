@@ -324,8 +324,7 @@ module nurdz.game
             // sprite sheet we loaded. Our callback might get invoked before
             // that of the _empty entity that our cellSize property returns,
             // so it's not safe to reference it here.
-            this._marker = new Marker (this._stage, this);
-            this._marker.makeRectangle (sheet.width, sheet.height);
+            this._marker = new Marker (this._stage, sheet.width);
 
             // Set our position to center us on the screen horizontally and be
             // just slightly up from the bottom of the screen. We use half of
