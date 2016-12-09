@@ -11,6 +11,24 @@ module nurdz.game
     }
 
     /**
+     * As the ball is being moved through the maze, a value of this type is
+     * stored into it to indicate under what circumstances it moved. This allows
+     * a ball or other entity to make a decision about how to move the ball
+     * based on prior movement.
+     *
+     * The prime case of this is allowed a ball pushed by an arrow to roll over
+     * other stationary balls.
+     */
+    export enum BallMoveType
+    {
+        BALL_MOVE_NONE,
+        BALL_MOVE_DROP,
+        BALL_MOVE_LEFT,
+        BALL_MOVE_RIGHT,
+        BALL_MOVE_JUMP,
+    }
+
+    /**
      * The entity that represents the bricks in the game. These can be used for
      * level geometry or in the actual play area. Some of them are statically
      * displayed while some of them can animate themselves appearing or
@@ -23,6 +41,11 @@ module nurdz.game
          * of the ball.
          */
         private _ballType : BallType;
+
+        /**
+         * The type of movement that was last made with this ball.
+         */
+        private _moveType : BallMoveType;
 
         /**
          * How many points this ball is worth in its current position. The value
@@ -55,6 +78,28 @@ module nurdz.game
             // ball to idle.
             this._ballType = newType;
             this.idle ();
+        }
+
+        /**
+         * Get the movement type that was most recently set on this ball. This
+         * can be used during movement to influence how an entity moves the
+         * ball.
+         *
+         * @returns {BallMoveType} the last set movement type of this ball
+         */
+        get moveType () : BallMoveType
+        { return this._moveType; }
+
+        /**
+         * Change the movement type of this ball to the type passed in; this
+         * value can be retreived and used by entities to influence how they
+         * operate.
+         *
+         * @param {BallMoveType} newMoveType the new movement type to set
+         */
+        set moveType (newMoveType : BallMoveType)
+        {
+            this._moveType = newMoveType;
         }
 
         /**
@@ -113,6 +158,9 @@ module nurdz.game
             // that the ball is properly represented by playing the appropriate
             // idle animation.
             this.ballType = typeOfBall;
+
+            // The ball does not start rolling
+            this.moveType = BallMoveType.BALL_MOVE_NONE;
         }
 
         /**

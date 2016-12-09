@@ -305,6 +305,23 @@ var nurdz;
         })(game.BallType || (game.BallType = {}));
         var BallType = game.BallType;
         /**
+         * As the ball is being moved through the maze, a value of this type is
+         * stored into it to indicate under what circumstances it moved. This allows
+         * a ball or other entity to make a decision about how to move the ball
+         * based on prior movement.
+         *
+         * The prime case of this is allowed a ball pushed by an arrow to roll over
+         * other stationary balls.
+         */
+        (function (BallMoveType) {
+            BallMoveType[BallMoveType["BALL_MOVE_NONE"] = 0] = "BALL_MOVE_NONE";
+            BallMoveType[BallMoveType["BALL_MOVE_DROP"] = 1] = "BALL_MOVE_DROP";
+            BallMoveType[BallMoveType["BALL_MOVE_LEFT"] = 2] = "BALL_MOVE_LEFT";
+            BallMoveType[BallMoveType["BALL_MOVE_RIGHT"] = 3] = "BALL_MOVE_RIGHT";
+            BallMoveType[BallMoveType["BALL_MOVE_JUMP"] = 4] = "BALL_MOVE_JUMP";
+        })(game.BallMoveType || (game.BallMoveType = {}));
+        var BallMoveType = game.BallMoveType;
+        /**
          * The entity that represents the bricks in the game. These can be used for
          * level geometry or in the actual play area. Some of them are statically
          * displayed while some of them can animate themselves appearing or
@@ -358,6 +375,8 @@ var nurdz;
                 // that the ball is properly represented by playing the appropriate
                 // idle animation.
                 this.ballType = typeOfBall;
+                // The ball does not start rolling
+                this.moveType = BallMoveType.BALL_MOVE_NONE;
             }
             Object.defineProperty(Ball.prototype, "ballType", {
                 /**
@@ -381,6 +400,28 @@ var nurdz;
                     // ball to idle.
                     this._ballType = newType;
                     this.idle();
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Ball.prototype, "moveType", {
+                /**
+                 * Get the movement type that was most recently set on this ball. This
+                 * can be used during movement to influence how an entity moves the
+                 * ball.
+                 *
+                 * @returns {BallMoveType} the last set movement type of this ball
+                 */
+                get: function () { return this._moveType; },
+                /**
+                 * Change the movement type of this ball to the type passed in; this
+                 * value can be retreived and used by entities to influence how they
+                 * operate.
+                 *
+                 * @param {BallMoveType} newMoveType the new movement type to set
+                 */
+                set: function (newMoveType) {
+                    this._moveType = newMoveType;
                 },
                 enumerable: true,
                 configurable: true
