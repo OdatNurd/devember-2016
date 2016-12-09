@@ -336,6 +336,24 @@ module nurdz.game
         }
 
         /**
+         * When the ball touches us, we collide with it but shift it to either
+         * the left or right, depending on what direction we're pointing.
+         *
+         * @param   {Maze}  maze     the maze containing us and the ball
+         * @param   {Ball}  ball     the ball that is coliding with us
+         * @param   {Point} location the location in the maze that we are at
+         *
+         * @returns {Point}          the location provided, update to be to the
+         * left or right of where it currently sits.
+         */
+        ballCollision (maze : Maze, ball : Ball, location : Point) : Point
+        {
+            // Return a translated copy
+            return location.copyTranslatedXY (
+                this._arrowDirection == ArrowDirection.ARROW_LEFT ? -1 : 1, 0);
+        }
+
+        /**
          * This is invoked if we successfully pushed the ball to the side that
          * we're currently facing.
          *
@@ -347,6 +365,18 @@ module nurdz.game
             this.flip ();
         }
 
+        /**
+         * This is invoked if we successfully pushed the ball to the side that
+         * we're currently facing.
+         *
+         * We take this opportunity to flip ourselves to face the other
+         * direction.
+         *
+         * @param {Ball} ball the ball that we moved
+         */
+        didMoveBall (ball : Ball) : void
+        {
+            this.flip ();
+        }
     }
-
 }
