@@ -131,40 +131,6 @@ module nurdz.game
 
         /**
          * When the ball is sitting on top of us, we transfer it to a different
-         * location in the grid, which has been previously given to us.
-         *
-         * @param {Point} ballPosition the position of the ball when it touched
-         * us
-         */
-        touchingBall (ballPosition : Point) : void
-        {
-            // Do we have any destinations set?
-            if (this._destinations.length > 0)
-            {
-                // Get a destination out.
-                let newPos = this.destination;
-
-                // As long as the new position is the same as the position that
-                // was given to us, select a new position (if possible), so that
-                // we don't try to teleport the ball to where it already is.
-                while (newPos.equals (ballPosition))
-                {
-                    // If there is only a single destination, leave; we can't
-                    // teleport because the ball is already there.
-                    if (this.length == 1)
-                        return;
-
-                    // Try again.
-                    newPos = this.destination;
-                }
-
-                // Change the position to the new one.
-                ballPosition.setTo (newPos);
-            }
-        }
-
-        /**
-         * When the ball is sitting on top of us, we transfer it to a different
          * location in the grid, which has been previously given to us, if
          * possible
          *

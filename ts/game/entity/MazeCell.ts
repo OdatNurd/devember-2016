@@ -46,29 +46,6 @@ module nurdz.game
         }
 
         /**
-         * Returns a determination on where the ball would go if it was not
-         * allowed to enter this cell. This only gets invoked in the case where
-         * the ball is blocked from entering the cell (i.e. blockBall() returns
-         * true).
-         *
-         * If this cell thinks that the ball would change locations by touching
-         * it, it will modify the location provided to specify where the ball
-         * should end up and then return true. Otherwise, it will leave the
-         * location alone and only return false.
-         *
-         * @param   {Point}   location the location of where the ball currently
-         * is; this will be modified if we return true to indicate where the
-         * ball should have ended up.
-         *
-         * @returns {boolean} true if we changed the location passed in or false
-         * if we left it alone.
-         */
-        changeBallLocation (location : Point) : boolean
-        {
-            return false;
-        }
-
-        /**
          * If this Maze cell blocks the ball (blocksBall() returns true), then
          * this method will be invoked to indicate that the ball tried to enter
          * the same maze cell as it is currently occupies..
@@ -100,17 +77,6 @@ module nurdz.game
         }
 
         /**
-         * This is invoked after a call to changeBallLocation() that returned
-         * true if the ball was actually changed to that location. That allows
-         * this cell to do something in response to having successfully moved
-         * the ball.
-         */
-        didChangeDirection () : void
-        {
-
-        }
-
-        /**
          * This is invoked after a call to ballCollsiion() indicated that the
          * ball location should be changed as a result of colliding with us, and
          * the position of the ball was actually changed as a result of what we
@@ -122,23 +88,6 @@ module nurdz.game
          * @param {Ball} ball the ball that we moved
          */
         didMoveBall (ball : Ball) : void
-        {
-
-        }
-
-        /**
-         * This method will be invoked on this maze cell when the ball enters
-         * the cell that it contains.
-         *
-         * This can only happen if blocksBall() returns false, as otherwise the
-         * ball would be blocked from entering this entity.
-         *
-         * The position of the ball (and thus of this grid entity) is passed in.
-         * The ball will be shifted to the location of this point when this call
-         * completes, which allows this entity to move this ball when it touches
-         * it.
-         */
-        touchingBall (ballPosition : Point) : void
         {
 
         }

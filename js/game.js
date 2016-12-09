@@ -182,27 +182,6 @@ var nurdz;
                 return true;
             };
             /**
-             * Returns a determination on where the ball would go if it was not
-             * allowed to enter this cell. This only gets invoked in the case where
-             * the ball is blocked from entering the cell (i.e. blockBall() returns
-             * true).
-             *
-             * If this cell thinks that the ball would change locations by touching
-             * it, it will modify the location provided to specify where the ball
-             * should end up and then return true. Otherwise, it will leave the
-             * location alone and only return false.
-             *
-             * @param   {Point}   location the location of where the ball currently
-             * is; this will be modified if we return true to indicate where the
-             * ball should have ended up.
-             *
-             * @returns {boolean} true if we changed the location passed in or false
-             * if we left it alone.
-             */
-            MazeCell.prototype.changeBallLocation = function (location) {
-                return false;
-            };
-            /**
              * If this Maze cell blocks the ball (blocksBall() returns true), then
              * this method will be invoked to indicate that the ball tried to enter
              * the same maze cell as it is currently occupies..
@@ -232,14 +211,6 @@ var nurdz;
                 return null;
             };
             /**
-             * This is invoked after a call to changeBallLocation() that returned
-             * true if the ball was actually changed to that location. That allows
-             * this cell to do something in response to having successfully moved
-             * the ball.
-             */
-            MazeCell.prototype.didChangeDirection = function () {
-            };
-            /**
              * This is invoked after a call to ballCollsiion() indicated that the
              * ball location should be changed as a result of colliding with us, and
              * the position of the ball was actually changed as a result of what we
@@ -251,20 +222,6 @@ var nurdz;
              * @param {Ball} ball the ball that we moved
              */
             MazeCell.prototype.didMoveBall = function (ball) {
-            };
-            /**
-             * This method will be invoked on this maze cell when the ball enters
-             * the cell that it contains.
-             *
-             * This can only happen if blocksBall() returns false, as otherwise the
-             * ball would be blocked from entering this entity.
-             *
-             * The position of the ball (and thus of this grid entity) is passed in.
-             * The ball will be shifted to the location of this point when this call
-             * completes, which allows this entity to move this ball when it touches
-             * it.
-             */
-            MazeCell.prototype.touchingBall = function (ballPosition) {
             };
             /**
              * This is invoked when the ball enters the same cell as this maze
@@ -649,25 +606,6 @@ var nurdz;
              * ball enters our cell in the maze.
              *
              * This is only true for gray bricks that are gone or for bonus bricks
-             * that are still visible.
-             *
-             * @param {Point} ballPosition the position of the ball when it touched
-             * us; we ignore this
-             */
-            Brick.prototype.touchingBall = function (ballPosition) {
-                // If this is a bonus brick and it is visible, then switch the
-                // animation to indicate that it has been touched and is thus now
-                // collected.
-                if (this._brickType == BrickType.BRICK_BONUS &&
-                    (this.animations.current == "bonus_idle" ||
-                        this.animations.current == "bonus_appear"))
-                    this.playAnimation("bonus_vanish");
-            };
-            /**
-             * For bricks that allow us to enter them, this will get invoked if the
-             * ball enters our cell in the maze.
-             *
-             * This is only true for gray bricks that are gone or for bonus bricks
              * that are still visible. In the case of a bonus brick, this handles
              * the removal of the bonus brick.
              *
@@ -806,33 +744,6 @@ var nurdz;
              */
             Teleport.prototype.blocksBall = function () {
                 return false;
-            };
-            /**
-             * When the ball is sitting on top of us, we transfer it to a different
-             * location in the grid, which has been previously given to us.
-             *
-             * @param {Point} ballPosition the position of the ball when it touched
-             * us
-             */
-            Teleport.prototype.touchingBall = function (ballPosition) {
-                // Do we have any destinations set?
-                if (this._destinations.length > 0) {
-                    // Get a destination out.
-                    var newPos = this.destination;
-                    // As long as the new position is the same as the position that
-                    // was given to us, select a new position (if possible), so that
-                    // we don't try to teleport the ball to where it already is.
-                    while (newPos.equals(ballPosition)) {
-                        // If there is only a single destination, leave; we can't
-                        // teleport because the ball is already there.
-                        if (this.length == 1)
-                            return;
-                        // Try again.
-                        newPos = this.destination;
-                    }
-                    // Change the position to the new one.
-                    ballPosition.setTo(newPos);
-                }
             };
             /**
              * When the ball is sitting on top of us, we transfer it to a different
@@ -1136,23 +1047,6 @@ var nurdz;
                     this.setAutoFlipTimer();
             };
             /**
-             * When the ball touches us, we block it but change the direction of it
-             * based on what direction we're facing. We then flip our direction.
-             *
-             * @param   {Point}   location the current ball location, which will be
-             * shifted by our location.
-             *
-             * @returns {boolean}          always true
-             */
-            Arrow.prototype.changeBallLocation = function (location) {
-                // Modify the location depending on what direction we're currently
-                // facing.
-                location.x = location.x +
-                    (this._arrowDirection == ArrowDirection.ARROW_LEFT ? -1 : 1);
-                // We modified the position.
-                return true;
-            };
-            /**
              * When the ball touches us, we collide with it but shift it to either
              * the left or right, depending on what direction we're pointing.
              *
@@ -1166,16 +1060,6 @@ var nurdz;
             Arrow.prototype.ballCollision = function (maze, ball, location) {
                 // Return a translated copy
                 return location.copyTranslatedXY(this._arrowDirection == ArrowDirection.ARROW_LEFT ? -1 : 1, 0);
-            };
-            /**
-             * This is invoked if we successfully pushed the ball to the side that
-             * we're currently facing.
-             *
-             * We take this opportunity to flip ourselves to face the other
-             * direction.
-             */
-            Arrow.prototype.didChangeDirection = function () {
-                this.flip();
             };
             /**
              * This is invoked if we successfully pushed the ball to the side that

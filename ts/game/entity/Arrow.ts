@@ -316,26 +316,6 @@ module nurdz.game
         }
 
         /**
-         * When the ball touches us, we block it but change the direction of it
-         * based on what direction we're facing. We then flip our direction.
-         *
-         * @param   {Point}   location the current ball location, which will be
-         * shifted by our location.
-         *
-         * @returns {boolean}          always true
-         */
-        changeBallLocation (location : Point) : boolean
-        {
-            // Modify the location depending on what direction we're currently
-            // facing.
-            location.x = location.x +
-                (this._arrowDirection == ArrowDirection.ARROW_LEFT ? -1 : 1);
-
-            // We modified the position.
-            return true;
-        }
-
-        /**
          * When the ball touches us, we collide with it but shift it to either
          * the left or right, depending on what direction we're pointing.
          *
@@ -351,18 +331,6 @@ module nurdz.game
             // Return a translated copy
             return location.copyTranslatedXY (
                 this._arrowDirection == ArrowDirection.ARROW_LEFT ? -1 : 1, 0);
-        }
-
-        /**
-         * This is invoked if we successfully pushed the ball to the side that
-         * we're currently facing.
-         *
-         * We take this opportunity to flip ourselves to face the other
-         * direction.
-         */
-        didChangeDirection () : void
-        {
-            this.flip ();
         }
 
         /**
