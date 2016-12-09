@@ -1460,8 +1460,12 @@ var nurdz;
                         this.setMarkerAt(ballPos.x, ballPos.y);
                     // The loop stopped at the location where the ball should have
                     // stopped. Put the ball entity that we started with at that
-                    // position now.
-                    this.setCellAt(ballPos.x, ballPos.y, ball);
+                    // position now, unless it was at the bottom of the grid, in
+                    // which case the ball is just gone now.
+                    if (ballPos.y == MAZE_HEIGHT - 2)
+                        this._balls.killEntity(ball);
+                    else
+                        this.setCellAt(ballPos.x, ballPos.y, ball);
                     return true;
                 }
                 // We care not for this click.
