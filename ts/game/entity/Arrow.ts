@@ -344,6 +344,12 @@ module nurdz.game
          */
         didMoveBall (ball : Ball) : void
         {
+            // Mark the direction that we moved the ball.
+            ball.moveType = (this._arrowDirection == ArrowDirection.ARROW_LEFT)
+                ? BallMoveType.BALL_MOVE_LEFT
+                : BallMoveType.BALL_MOVE_RIGHT;
+
+            // Flip our orientation now.
             this.flip ();
         }
     }

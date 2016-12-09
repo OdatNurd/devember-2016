@@ -221,5 +221,39 @@ module nurdz.game
                 ? "p_appear"
                 : "c_appear");
         }
+
+        /**
+         * When a ball touches us, we will push it to the left or to the right
+         * as long as the last time the ball moved, it was because of a move
+         * left or right.
+         *
+         * This means that for the specific case of a ball moving because it
+         * was pushed with an arrow, it will "roll over" us and keep going as
+         * if we were an arrow.
+         *
+         * @param   {Maze}  maze     the maze containing us and the ball
+         * @param   {Ball}  ball     the ball that is coliding with us
+         * @param   {Point} location the location in the maze that we are at
+         *
+         * @returns {Point}          the location provided, update to be to the
+         * left or right of where it currently sits.
+         */
+        ballCollision (maze : Maze, ball : Ball, location : Point) : Point
+        {
+            // Depending on the type of move the ball made last, act
+            // accordingly. As long as the ball is trying to drop into us and it
+            // was last pushed laterally, keep it moving in that direction.
+            switch (ball.moveType)
+            {
+                case BallMoveType.BALL_MOVE_LEFT:
+                    return location.copyTranslatedXY (-1 , 0);
+
+                case BallMoveType.BALL_MOVE_RIGHT:
+                    return location.copyTranslatedXY (1 , 0);
+
+                default:
+                    return null;
+            }
+        }
     }
 }
