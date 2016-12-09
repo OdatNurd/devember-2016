@@ -1268,10 +1268,6 @@ var nurdz;
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
                 this._blackHole = new game.Teleport(stage);
-                // Since we haven't moved any ball yet, make sure the flag is turned
-                // off; this should always happen right before we start a ball
-                // moving.
-                this._lastMoveTouched = false;
                 // Pre-populate all of our actor pools with the maximum possible
                 // number of actors that we could need. For the case of the gray
                 // bricks and bonus bricks, this creates more than we technically
@@ -1444,9 +1440,6 @@ var nurdz;
                     // We're going to move the ball, so remove all markers from
                     // the maze.
                     this.removeAllMarkers();
-                    // Ensure that the flag that indicates that the last move was
-                    // handled by a touch is turned off.
-                    this._lastMoveTouched = false;
                     // Get the ball entity at this location.
                     var ball = entity;
                     // Remove the ball from this position, since it will (probably)
@@ -1499,8 +1492,10 @@ var nurdz;
             Maze.prototype.nextBallPosition = function (ball, position) {
                 // If this position is in the second to last row of the maze, it has
                 // reached the goal line, so movement stops.
-                if (position.y == MAZE_HEIGHT - 2)
+                if (position.y == MAZE_HEIGHT - 2) {
+                    ball.moveType = game.BallMoveType.BALL_MOVE_NONE;
                     return false;
+                }
                 // Get the contents of the cell where the ball is currently at, if
                 // any; if there is one, tell it that the ball touched it, and also
                 // possibly allow it to move the ball, as long as that's not how we
@@ -1513,22 +1508,22 @@ var nurdz;
                     // If we're allowed to move the ball because of a touch and the
                     // entity below us actually changed the location, then that is
                     // the move for this cycle.
-                    if (this._lastMoveTouched == false && newPos_1 != null) {
-                        // Set the flag so we know we can't do this next time.
-                        this._lastMoveTouched = true;
+                    if (ball.moveType != game.BallMoveType.BALL_MOVE_JUMP && newPos_1 != null) {
+                        // The movement type of a touch is a jump; the entity itself
+                        // can't stamp this in because we never tell it if it
+                        // successfully moved the ball or not.
+                        ball.moveType = game.BallMoveType.BALL_MOVE_JUMP;
                         // Set the position to the one the entity provided.
                         position.setTo(newPos_1);
                         return true;
                     }
                 }
-                // Whatever happens here, any movement that happens is not because
-                // of a touch.
-                this._lastMoveTouched = false;
                 // Get the contents of the cell below us in the grid. If that cell
                 // is empty or does not block the ball, then change position to drop
                 // the ball there and we're done.
                 var below = this.getCellAt(position.x, position.y + 1);
                 if (below == null || below.blocksBall() == false) {
+                    ball.moveType = game.BallMoveType.BALL_MOVE_DROP;
                     position.y++;
                     return true;
                 }
@@ -1536,8 +1531,10 @@ var nurdz;
                 // routine with it. If this returns null, we're blocked and cannot
                 // move, so return now.
                 var newPos = below.ballCollision(this, ball, position);
-                if (newPos == null)
+                if (newPos == null) {
+                    ball.moveType = game.BallMoveType.BALL_MOVE_NONE;
                     return false;
+                }
                 // Check the contents of the new location and see if the ball is
                 // allowed to enter that cell or not; the ball can enter if the cell
                 // is empty or does not block ball movement.
@@ -1545,12 +1542,16 @@ var nurdz;
                 if (movedCell == null || movedCell.blocksBall() == false) {
                     // Tell the cell that moved the ball that we actually moved it,
                     // and then return back the position that it gave.
+                    //
+                    // In this case, it is up to the entity that moved the ball to
+                    // mark how it moved it, as we can't know.
                     below.didMoveBall(ball);
                     position.setTo(newPos);
                     return true;
                 }
                 // The cell below us wants to shift our location to somewhere that
                 // we're not allowed to enter, so just leave.
+                ball.moveType = game.BallMoveType.BALL_MOVE_NONE;
                 return false;
             };
             /**

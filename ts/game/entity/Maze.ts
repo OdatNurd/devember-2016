@@ -136,22 +136,6 @@ module nurdz.game
         private _balls : ActorPool<Ball>;
 
         /**
-         * The rules of moving the ball through the maze say that when the cycle
-         * starts, if the ball is on top of an entity, that entity can change
-         * its position to somewhere else in the maze.
-         *
-         * In order to stop a potential endless cascade, we institute a rule by
-         * which if the ball is transferred to a location that also contains such
-         * an entity, that one will not be allowed to change the ball location
-         * again before it drops.
-         *
-         * Hence, when a movement cycle jumps the ball in this manner, this flag
-         * gets set to let the code know that on the next trip through this
-         * cannot happen.
-         */
-        private _lastMoveTouched : boolean;
-
-        /**
          * Get the size (in pixels) of the cells in the maze based on the
          * current sprite set. The cells are square, so this represents both
          * dimensions.
@@ -190,11 +174,6 @@ module nurdz.game
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
             this._blackHole = new Teleport (stage);
-
-            // Since we haven't moved any ball yet, make sure the flag is turned
-            // off; this should always happen right before we start a ball
-            // moving.
-            this._lastMoveTouched = false;
 
             // Pre-populate all of our actor pools with the maximum possible
             // number of actors that we could need. For the case of the gray
@@ -415,10 +394,6 @@ module nurdz.game
                 // the maze.
                 this.removeAllMarkers ();
 
-                // Ensure that the flag that indicates that the last move was
-                // handled by a touch is turned off.
-                this._lastMoveTouched = false;
-
                 // Get the ball entity at this location.
                 let ball = <Ball> entity;
 
@@ -479,7 +454,10 @@ module nurdz.game
             // If this position is in the second to last row of the maze, it has
             // reached the goal line, so movement stops.
             if (position.y == MAZE_HEIGHT - 2)
+            {
+                ball.moveType = BallMoveType.BALL_MOVE_NONE;
                 return false;
+            }
 
             // Get the contents of the cell where the ball is currently at, if
             // any; if there is one, tell it that the ball touched it, and also
@@ -495,10 +473,12 @@ module nurdz.game
                 // If we're allowed to move the ball because of a touch and the
                 // entity below us actually changed the location, then that is
                 // the move for this cycle.
-                if (this._lastMoveTouched == false && newPos != null)
+                if (ball.moveType != BallMoveType.BALL_MOVE_JUMP && newPos != null)
                 {
-                    // Set the flag so we know we can't do this next time.
-                    this._lastMoveTouched = true;
+                    // The movement type of a touch is a jump; the entity itself
+                    // can't stamp this in because we never tell it if it
+                    // successfully moved the ball or not.
+                    ball.moveType = BallMoveType.BALL_MOVE_JUMP;
 
                     // Set the position to the one the entity provided.
                     position.setTo (newPos);
@@ -506,16 +486,13 @@ module nurdz.game
                 }
             }
 
-            // Whatever happens here, any movement that happens is not because
-            // of a touch.
-            this._lastMoveTouched = false;
-
             // Get the contents of the cell below us in the grid. If that cell
             // is empty or does not block the ball, then change position to drop
             // the ball there and we're done.
             let below = this.getCellAt (position.x, position.y + 1);
             if (below == null || below.blocksBall () == false)
             {
+                ball.moveType = BallMoveType.BALL_MOVE_DROP;
                 position.y++;
                 return true;
             }
@@ -525,7 +502,10 @@ module nurdz.game
             // move, so return now.
             let newPos = below.ballCollision (this, ball, position);
             if (newPos == null)
+            {
+                ball.moveType = BallMoveType.BALL_MOVE_NONE;
                 return false;
+            }
 
             // Check the contents of the new location and see if the ball is
             // allowed to enter that cell or not; the ball can enter if the cell
@@ -535,6 +515,9 @@ module nurdz.game
             {
                 // Tell the cell that moved the ball that we actually moved it,
                 // and then return back the position that it gave.
+                //
+                // In this case, it is up to the entity that moved the ball to
+                // mark how it moved it, as we can't know.
                 below.didMoveBall (ball);
                 position.setTo (newPos);
                 return true;
@@ -542,6 +525,7 @@ module nurdz.game
 
             // The cell below us wants to shift our location to somewhere that
             // we're not allowed to enter, so just leave.
+            ball.moveType = BallMoveType.BALL_MOVE_NONE;
             return false;
         }
 
