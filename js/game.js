@@ -834,6 +834,39 @@ var nurdz;
                     ballPosition.setTo(newPos);
                 }
             };
+            /**
+             * When the ball is sitting on top of us, we transfer it to a different
+             * location in the grid, which has been previously given to us, if
+             * possible
+             *
+             * @param   {Maze}  maze     the maze containing us and the ball
+             * @param   {Ball}  ball     the ball that is touching us
+             * @param   {Point} location the location in the mazer that we are at
+             *
+             * @returns {Point}          the potential landing location, if we can
+             * find one that is not blocked
+             */
+            Teleport.prototype.ballTouch = function (maze, ball, location) {
+                // If there are no destinations stored, we can't teleport, so do
+                // nothing.
+                if (this.length == 0)
+                    return null;
+                // There are some destinations registered; get one out randomly.
+                var newPos = this.destination;
+                // As long as the new position is the same as the position that was
+                // given to us, select a new position (if possible), so that we
+                // don't try to teleport the ball to where it already is.
+                while (newPos.equals(location)) {
+                    // If there is only a single destination, leave; we can't
+                    // teleport because the ball is already there.
+                    if (this.length == 1)
+                        return null;
+                    // Try again.
+                    newPos = this.destination;
+                }
+                // Indicate the new position
+                return newPos;
+            };
             return Teleport;
         }(game.MazeCell));
         game.Teleport = Teleport;
