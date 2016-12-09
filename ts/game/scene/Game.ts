@@ -8,10 +8,13 @@ module nurdz.game
     {
         /**
          * The maze, which holds most of the game entities.
-         *
-         * @type {Maze}
          */
         private _maze : Maze;
+
+        /**
+         * The last known position of the mouse on the stage.
+         */
+        private _mouse : Point;
 
         /**
          * Construct a new game screen scene that will display on the provided
@@ -34,6 +37,9 @@ module nurdz.game
             // renders itself.
             this._maze = new Maze (stage);
             this.addActor (this._maze);
+
+            // Start out with a default mouse location.
+            this._mouse = new Point (0, 0);
         }
 
         /**
@@ -65,6 +71,14 @@ module nurdz.game
                 case KeyCodes.KEY_G:
                     this._maze.reset ();
                     return true;
+
+                // Toggle mouse tracking of the debug location, then update the
+                // tracking with the last known mouse location.
+                case KeyCodes.KEY_T:
+                    this._maze.debugTracking = !this._maze.debugTracking;
+                    if (this._maze.debugTracking)
+                        this._maze.setDebugPoint (this._mouse);
+                    return true;
             }
 
             // We did not handle it
@@ -90,7 +104,7 @@ module nurdz.game
             // of the maze, localize the point to the bounds of the maze and
             // have the maze handle it.
             let mousePos = this._stage.calculateMousePos (eventObj);
-            if (this._maze.contains (mousePos) == true)
+            if (this._maze.contains (mousePos))
             {
                 let pos = this._maze.position;
                 return this._maze.handleClick (mousePos.translateXY (-pos.x, -pos.y));
@@ -98,6 +112,27 @@ module nurdz.game
 
             return false;
         }
+
+        /**
+         * This is triggered whenever the mouse is moved over the canvas.
+         *
+         * @param eventObj the event that represents the mouse movement.
+         * @returns {boolean} true if we handled this event or false if not.
+         */
+        inputMouseMove (eventObj : MouseEvent) : boolean
+        {
+            // Get the current mouse position, and then update tracking with it.
+            this._mouse = this._stage.calculateMousePos (eventObj, this._mouse);
+
+            // If we're tracking a debug location, tell the maze about this
+            // point.
+            if (this._maze.debugTracking)
+                this._maze.setDebugPoint (this._mouse);
+
+            // We handled it.
+            return true;
+        }
+
 
         /**
          * This is invoked every frame to render the current scene to the stage.

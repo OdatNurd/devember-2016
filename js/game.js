@@ -2115,6 +2115,8 @@ var nurdz;
                 // renders itself.
                 this._maze = new game.Maze(stage);
                 this.addActor(this._maze);
+                // Start out with a default mouse location.
+                this._mouse = new game.Point(0, 0);
             }
             /**
              * Invoked every time a key is pressed on the game screen
@@ -2141,6 +2143,13 @@ var nurdz;
                     case game.KeyCodes.KEY_G:
                         this._maze.reset();
                         return true;
+                    // Toggle mouse tracking of the debug location, then update the
+                    // tracking with the last known mouse location.
+                    case game.KeyCodes.KEY_T:
+                        this._maze.debugTracking = !this._maze.debugTracking;
+                        if (this._maze.debugTracking)
+                            this._maze.setDebugPoint(this._mouse);
+                        return true;
                 }
                 // We did not handle it
                 return false;
@@ -2163,11 +2172,27 @@ var nurdz;
                 // of the maze, localize the point to the bounds of the maze and
                 // have the maze handle it.
                 var mousePos = this._stage.calculateMousePos(eventObj);
-                if (this._maze.contains(mousePos) == true) {
+                if (this._maze.contains(mousePos)) {
                     var pos = this._maze.position;
                     return this._maze.handleClick(mousePos.translateXY(-pos.x, -pos.y));
                 }
                 return false;
+            };
+            /**
+             * This is triggered whenever the mouse is moved over the canvas.
+             *
+             * @param eventObj the event that represents the mouse movement.
+             * @returns {boolean} true if we handled this event or false if not.
+             */
+            GameScene.prototype.inputMouseMove = function (eventObj) {
+                // Get the current mouse position, and then update tracking with it.
+                this._mouse = this._stage.calculateMousePos(eventObj, this._mouse);
+                // If we're tracking a debug location, tell the maze about this
+                // point.
+                if (this._maze.debugTracking)
+                    this._maze.setDebugPoint(this._mouse);
+                // We handled it.
+                return true;
             };
             /**
              * This is invoked every frame to render the current scene to the stage.
