@@ -197,6 +197,31 @@ module nurdz.game
                 this.playAnimation ("bonus_vanish");
         }
 
-    }
+        /**
+         * For bricks that allow us to enter them, this will get invoked if the
+         * ball enters our cell in the maze.
+         *
+         * This is only true for gray bricks that are gone or for bonus bricks
+         * that are still visible. In the case of a bonus brick, this handles
+         * the removal of the bonus brick.
+         *
+         * @param   {Maze}  maze     the maze containing us and the ball
+         * @param   {Ball}  ball     the ball that is touching us
+         * @param   {Point} location the location in the mazer that we are at
+         *
+         * @returns {Point}          always null; we never move the ball
+         */
+        ballTouch (maze : Maze, ball : Ball, location : Point) : Point
+        {
+            // If this is a bonus brick and it is visible, then switch the
+            // animation to indicate that it has been touched and is thus now
+            // collected.
+            if (this._brickType == BrickType.BRICK_BONUS &&
+                (this.animations.current == "bonus_idle" ||
+                 this.animations.current == "bonus_appear"))
+                this.playAnimation ("bonus_vanish");
 
+            return null;
+        }
+    }
 }
