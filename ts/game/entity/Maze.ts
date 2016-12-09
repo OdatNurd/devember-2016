@@ -136,6 +136,53 @@ module nurdz.game
         private _balls : ActorPool<Ball>;
 
         /**
+         * True if we are debugging, false otherwise.
+         *
+         * When this is true, the current debug cell in the grid (controlled via
+         * the mouse) has a marker to show where it is.
+         */
+        private _debugTracking : boolean;
+
+        /**
+         * A point that represents a grid cell that is the current debug cell.
+         *
+         * The position of this cell is controlled by the mouse while debugging
+         * it turned on.
+         */
+        private _debugPoint : Point;
+
+        /**
+         * A special marker instance that is used to show the current debug
+         * point while debug tracking is turned on.
+         *
+         * This is like a regular marker but displays in an alternate color to
+         * distinguish it.
+         */
+        private _debugMarker : Marker;
+
+        /**
+         * Get the current state of the debug tracking variable.
+         *
+         * When this is set to true, we display a marker on the stage at the
+         * current debug position.
+         *
+         * @returns {boolean} true if debugging is enabled, false otherwise.
+         */
+        get debugTracking () : boolean
+        { return this._debugTracking; }
+
+        /**
+         * Change the current state of the debug tracking variable.
+         *
+         * True enables debugging, which causes the maze to display a red marker
+         * at the current debug location.
+         *
+         * @param {boolean} newValue new debugging state
+         */
+        set debugTracking (newValue : boolean)
+        { this._debugTracking = newValue; }
+
+        /**
          * Get the size (in pixels) of the cells in the maze based on the
          * current sprite set. The cells are square, so this represents both
          * dimensions.
@@ -204,6 +251,12 @@ module nurdz.game
 
             // Create the marker overlay.
             this._markers = new Array (MAZE_WIDTH * MAZE_HEIGHT);
+
+            // No debugging by default, but the debugging point is the upper
+            // left grid corner; the marker is created later when we know the
+            // grid size.
+            this._debugTracking = false;
+            this._debugPoint = new Point (0, 0);
 
             // Reset the maze
             this.reset ();
@@ -305,12 +358,72 @@ module nurdz.game
             // so it's not safe to reference it here.
             this._marker = new Marker (this._stage, sheet.width);
 
+            // Create the debug marker. This is as above, but we modify its
+            // debug color to visually distinguish it. We need to violate the
+            // privacy rules here because this is not supposed to be externally
+            // touchable.
+            this._debugMarker = new Marker (this._stage, sheet.width);
+            this._debugMarker["_debugColor"] = 'red';
+
             // Set our position to center us on the screen horizontally and be
             // just slightly up from the bottom of the screen. We use half of
             // the remainder of the width, so that the bottom edge is as far
             // from the bottom of the screen as the side edges are.
             this.setStagePositionXY ((this._stage.width / 2) - (this.width  / 2),
                                      this._stage.height - this.height - (remainder / 2));
+        }
+
+        /**
+         * Take a point in stage coordinates and use it to set the current debug
+         * location, if possible.
+         *
+         * If the point is within the bounds of this maze on the stage, it will
+         * be used to change the current debug point. Otherwise, nothing
+         * happens.
+         *
+         * This can be invoked even when the debug flag is turned off, although
+         * in that case the set value is not used.
+         *
+         * @param {Point} position the position to track on the stage
+         */
+        setDebugPoint (position : Point) : void
+        {
+            // Use this point as long as it is contained inside of us.
+            if (this.contains (position))
+            {
+                // Set our debug position the one provided, translate it to make
+                // it local to our location on the stage, and then reduce it to
+                // a cell coordinate.
+                this._debugPoint.setTo (position);
+                this._debugPoint.translateXY (-this._position.x, - this._position.y);
+                this._debugPoint.reduce (this.cellSize);
+            }
+        }
+
+        /**
+         * Get the cell at the current debug location in the maze grid.
+         *
+         * This calls getCellAt() with the last known debug location, which
+         * means that the return value may return null to indicate that there is
+         * no maze contents at this location.
+         *
+         * @returns {MazeCell|null} the cell at this location in the maze, if
+         * any
+         */
+        getDebugCell () : MazeCell
+        {
+            return this.getCellAt (this._debugPoint.x, this._debugPoint.y);
+        }
+
+        /**
+         * Set the cell at the current debug location in the grid to the cell
+         * provided.
+         *
+         * @param {MazeCell} newCell the new cell to insert into the grid
+         */
+        setDebugCell (newCell : MazeCell) : void
+        {
+            this.setCellAt (this._debugPoint.x, this._debugPoint.y, newCell);
         }
 
         /**
@@ -673,6 +786,12 @@ module nurdz.game
                         this._marker.render (x + (blitX * 25), y + (blitY * 25), renderer);
                 }
             }
+
+            // Now the debug marker, if it's turned on.
+            if (this._debugTracking)
+                this._debugMarker.render (x + (this._debugPoint.x * 25),
+                                          y + (this._debugPoint.y * 25),
+                                          renderer);
         }
 
         /**

@@ -1247,6 +1247,12 @@ var nurdz;
                     // that of the _empty entity that our cellSize property returns,
                     // so it's not safe to reference it here.
                     _this._marker = new game.Marker(_this._stage, sheet.width);
+                    // Create the debug marker. This is as above, but we modify its
+                    // debug color to visually distinguish it. We need to violate the
+                    // privacy rules here because this is not supposed to be externally
+                    // touchable.
+                    _this._debugMarker = new game.Marker(_this._stage, sheet.width);
+                    _this._debugMarker["_debugColor"] = 'red';
                     // Set our position to center us on the screen horizontally and be
                     // just slightly up from the bottom of the screen. We use half of
                     // the remainder of the width, so that the bottom edge is as far
@@ -1294,9 +1300,36 @@ var nurdz;
                 this._contents = new Array(MAZE_WIDTH * MAZE_HEIGHT);
                 // Create the marker overlay.
                 this._markers = new Array(MAZE_WIDTH * MAZE_HEIGHT);
+                // No debugging by default, but the debugging point is the upper
+                // left grid corner; the marker is created later when we know the
+                // grid size.
+                this._debugTracking = false;
+                this._debugPoint = new game.Point(0, 0);
                 // Reset the maze
                 this.reset();
             }
+            Object.defineProperty(Maze.prototype, "debugTracking", {
+                /**
+                 * Get the current state of the debug tracking variable.
+                 *
+                 * When this is set to true, we display a marker on the stage at the
+                 * current debug position.
+                 *
+                 * @returns {boolean} true if debugging is enabled, false otherwise.
+                 */
+                get: function () { return this._debugTracking; },
+                /**
+                 * Change the current state of the debug tracking variable.
+                 *
+                 * True enables debugging, which causes the maze to display a red marker
+                 * at the current debug location.
+                 *
+                 * @param {boolean} newValue new debugging state
+                 */
+                set: function (newValue) { this._debugTracking = newValue; },
+                enumerable: true,
+                configurable: true
+            });
             Object.defineProperty(Maze.prototype, "cellSize", {
                 /**
                  * Get the size (in pixels) of the cells in the maze based on the
@@ -1371,6 +1404,52 @@ var nurdz;
                         this.clearMarkerAt(col, row);
                     }
                 }
+            };
+            /**
+             * Take a point in stage coordinates and use it to set the current debug
+             * location, if possible.
+             *
+             * If the point is within the bounds of this maze on the stage, it will
+             * be used to change the current debug point. Otherwise, nothing
+             * happens.
+             *
+             * This can be invoked even when the debug flag is turned off, although
+             * in that case the set value is not used.
+             *
+             * @param {Point} position the position to track on the stage
+             */
+            Maze.prototype.setDebugPoint = function (position) {
+                // Use this point as long as it is contained inside of us.
+                if (this.contains(position)) {
+                    // Set our debug position the one provided, translate it to make
+                    // it local to our location on the stage, and then reduce it to
+                    // a cell coordinate.
+                    this._debugPoint.setTo(position);
+                    this._debugPoint.translateXY(-this._position.x, -this._position.y);
+                    this._debugPoint.reduce(this.cellSize);
+                }
+            };
+            /**
+             * Get the cell at the current debug location in the maze grid.
+             *
+             * This calls getCellAt() with the last known debug location, which
+             * means that the return value may return null to indicate that there is
+             * no maze contents at this location.
+             *
+             * @returns {MazeCell|null} the cell at this location in the maze, if
+             * any
+             */
+            Maze.prototype.getDebugCell = function () {
+                return this.getCellAt(this._debugPoint.x, this._debugPoint.y);
+            };
+            /**
+             * Set the cell at the current debug location in the grid to the cell
+             * provided.
+             *
+             * @param {MazeCell} newCell the new cell to insert into the grid
+             */
+            Maze.prototype.setDebugCell = function (newCell) {
+                this.setCellAt(this._debugPoint.x, this._debugPoint.y, newCell);
             };
             /**
              * DEBUG METHOD
@@ -1678,6 +1757,9 @@ var nurdz;
                             this._marker.render(x + (blitX * 25), y + (blitY * 25), renderer);
                     }
                 }
+                // Now the debug marker, if it's turned on.
+                if (this._debugTracking)
+                    this._debugMarker.render(x + (this._debugPoint.x * 25), y + (this._debugPoint.y * 25), renderer);
             };
             /**
              * Prepare for maze generation by resetting the contents of the maze to
