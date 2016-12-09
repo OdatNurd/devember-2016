@@ -1550,50 +1550,44 @@ var nurdz;
                 if (current != null) {
                     // Copy the position provided and then hand it to the entity
                     // that we're currently on top of.
-                    var newPos = position.copy();
-                    current.touchingBall(newPos);
+                    var newPos_1 = current.ballTouch(this, ball, position);
                     // If we're allowed to move the ball because of a touch and the
                     // entity below us actually changed the location, then that is
                     // the move for this cycle.
-                    if (this._lastMoveTouched == false &&
-                        newPos.equals(position) == false) {
+                    if (this._lastMoveTouched == false && newPos_1 != null) {
                         // Set the flag so we know we can't do this next time.
                         this._lastMoveTouched = true;
                         // Set the position to the one the entity provided.
-                        position.setTo(newPos);
+                        position.setTo(newPos_1);
                         return true;
                     }
                 }
                 // Whatever happens here, any movement that happens is not because
                 // of a touch.
                 this._lastMoveTouched = false;
-                // Get the contents of the cell below us in the grid.
+                // Get the contents of the cell below us in the grid. If that cell
+                // is empty or does not block the ball, then change position to drop
+                // the ball there and we're done.
                 var below = this.getCellAt(position.x, position.y + 1);
-                // If that cell is empty, or the ball is allowed to pass through it,
-                // then change the position to drop down and return true.
                 if (below == null || below.blocksBall() == false) {
-                    // The ball is not being blocked, so alter the position to drop
-                    // it down onto the cell below us.
                     position.y++;
                     return true;
                 }
-                // The cell below has blocked our movement. Make a duplicate of the
-                // current position and then ask that cell if it thinks the ball
-                // should be moved.
-                //
-                // If that returns false it doesn't think the ball should move, so
-                // we can just leave.
-                var testPos = position.copy();
-                if (below.changeBallLocation(testPos) == false)
+                // The cell below has blocked our movement. Invoke the collision
+                // routine with it. If this returns null, we're blocked and cannot
+                // move, so return now.
+                var newPos = below.ballCollision(this, ball, position);
+                if (newPos == null)
                     return false;
                 // Check the contents of the new location and see if the ball is
-                // allowed to enter that cell or not.
-                var movedCell = this.getCellAt(testPos.x, testPos.y);
+                // allowed to enter that cell or not; the ball can enter if the cell
+                // is empty or does not block ball movement.
+                var movedCell = this.getCellAt(newPos.x, newPos.y);
                 if (movedCell == null || movedCell.blocksBall() == false) {
                     // Tell the cell that moved the ball that we actually moved it,
                     // and then return back the position that it gave.
-                    below.didChangeDirection();
-                    position.setTo(testPos);
+                    below.didMoveBall(ball);
+                    position.setTo(newPos);
                     return true;
                 }
                 // The cell below us wants to shift our location to somewhere that
