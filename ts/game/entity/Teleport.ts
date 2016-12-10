@@ -92,19 +92,40 @@ module nurdz.game
         }
 
         /**
+         * Internal helper; given a point, scan the list of destinations to see
+         * if this destination appears anywhere in it. If it does, its index in
+         * the desination array is returned; otherwise -1 is returned.
+         *
+         * @param   {Point}  destination the desintionation to check
+         *
+         * @returns {number}             the index of the desintation in the
+         * list, or -1 if it does not exist.
+         */
+        private indexOfDestination (destination : Point) : number
+        {
+            // Simple scan.
+            for (let i = 0 ; i < this._destinations.length ; i++)
+            {
+                if (destination.equals (this._destinations[i]))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        /**
          * Add a potential destination to this teleport instance. This can be
          * invoked more than once, in which case when activated the teleport
          * will randomly select the destination from those provided.
          *
-         * This does not verify that the location provided has not already been
-         * added; this allows you to bias one destination over another by adding
-         * it more than once.
+         * If this destination is already in the list, nothing happens.
          *
-         * @param {Point} location the location to add
+         * @param {Point} destination the destination to add
          */
-        addDestination (location : Point) : void
+        addDestination (destination : Point) : void
         {
-            this._destinations.push (location.copy ());
+            if (this.indexOfDestination (destination) == -1)
+                this._destinations.push (destination.copy ());
         }
 
         /**
@@ -115,6 +136,21 @@ module nurdz.game
         {
             // Throw away all known destinations.
             this._destinations.length = 0;
+        }
+
+        /**
+         * Remove a single destination from the list of destinations allowed by
+         * this teleport instance.
+         *
+         * If the destination is not in the list, nothing happens.
+         *
+         * @param {Point} destination the destination to remove
+         */
+        clearDestination (destination : Point) : void
+        {
+            let index = this.indexOfDestination (destination);
+            if (index != -1)
+                this._destinations.splice (index, 1);
         }
 
         /**
