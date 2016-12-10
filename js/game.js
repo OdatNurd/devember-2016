@@ -1521,6 +1521,19 @@ var nurdz;
                         arrow.arrowType = game.ArrowType.ARROW_AUTOMATIC;
                     return;
                 }
+                // If the cell is a ball, toggle the type.
+                if (cell instanceof game.Ball) {
+                    var ball = cell;
+                    if (ball.ballType == game.BallType.BALL_PLAYER) {
+                        ball.ballType = game.BallType.BALL_COMPUTER;
+                        ball.playAnimation("c_appear");
+                    }
+                    else {
+                        ball.ballType = game.BallType.BALL_PLAYER;
+                        ball.playAnimation("p_appear");
+                    }
+                    return;
+                }
                 // If the cell is a brick, toggle the type. This will change the visual
                 // representation back to the idle state for this brick type.
                 //

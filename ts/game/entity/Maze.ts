@@ -517,6 +517,23 @@ module nurdz.game
                 return;
             }
 
+            // If the cell is a ball, toggle the type.
+            if (cell instanceof Ball)
+            {
+                let ball = <Ball> cell;
+                if (ball.ballType == BallType.BALL_PLAYER)
+                {
+                    ball.ballType = BallType.BALL_COMPUTER;
+                    ball.playAnimation ("c_appear");
+                }
+                else
+                {
+                    ball.ballType = BallType.BALL_PLAYER;
+                    ball.playAnimation ("p_appear");
+                }
+                return;
+            }
+
             // If the cell is a brick, toggle the type. This will change the visual
             // representation back to the idle state for this brick type.
             //
