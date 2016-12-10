@@ -1454,6 +1454,72 @@ var nurdz;
             /**
              * DEBUG METHOD
              *
+             * The debug code contains the ability to toggle existing cells through
+             * their types (for cells that support this).
+             *
+             * This is invoked for that key combination to perform the appropriate
+             * toggle operation on the currently set debug location.
+             *
+             * If the debug point is empty or not of a toggle-able type, this does
+             * nothing.
+             */
+            Maze.prototype.debugToggleCell = function () {
+                // Get the debug cell and leave if there isn't one.
+                var cell = this.getDebugCell();
+                if (cell == null)
+                    return;
+                // If the cell is an arrow, toggle the type. Doing this will also
+                // implicitly set an auto-flip timer on the arrow when it becomes
+                // such an arrow.
+                if (cell instanceof game.Arrow) {
+                    var arrow = cell;
+                    if (arrow.arrowType == game.ArrowType.ARROW_AUTOMATIC)
+                        arrow.arrowType = game.ArrowType.ARROW_NORMAL;
+                    else
+                        arrow.arrowType = game.ArrowType.ARROW_AUTOMATIC;
+                    return;
+                }
+                // If the cell is a brick, toggle the type. This will change the visual
+                // representation back to the idle state for this brick type.
+                //
+                // This is skipped for solid bricks; they're just used on the outer
+                // edges and should not be messed with.
+                if (cell instanceof game.Brick && cell != this._solid) {
+                    // Get the brick at the current location.
+                    var currentBrick = cell;
+                    var currentBrickPool = null;
+                    var newBrick = null;
+                    var animation = null;
+                    // We keep a separate pool of bonus bricks and gray bricks.
+                    //
+                    // In order to swap, we need to get an existing brick from the
+                    // opposite pool, then put it into place and kill the other one.
+                    if (currentBrick.brickType == game.BrickType.BRICK_BONUS) {
+                        newBrick = this._grayBricks.resurrectEntity();
+                        animation = "gray_appear";
+                        currentBrickPool = this._bonusBricks;
+                    }
+                    else if (currentBrick.brickType == game.BrickType.BRICK_GRAY) {
+                        newBrick = this._bonusBricks.resurrectEntity();
+                        animation = "bonus_appear";
+                        currentBrickPool = this._grayBricks;
+                    }
+                    // If we got a brick, play the animation to cause it to appear,
+                    // then put it into the maze and kill the current brick in the
+                    // pool that it came from.
+                    if (newBrick != null) {
+                        newBrick.playAnimation(animation);
+                        this.setDebugCell(newBrick);
+                        currentBrickPool.killEntity(currentBrick);
+                    }
+                    else
+                        console.log("Cannot toggle brick; not enough entities in currentBrickPool");
+                    return;
+                }
+            };
+            /**
+             * DEBUG METHOD
+             *
              * This takes a point that is representative of a mouse click inside of
              * the maze (i.e. the point (0, 0) is the upper left corner of this
              * entity) and "handles" it, using whatever debug logic we deem
@@ -2150,6 +2216,14 @@ var nurdz;
                         if (this._maze.debugTracking)
                             this._maze.setDebugPoint(this._mouse);
                         return true;
+                    // Toggle the type of the entity under the debug cursor through
+                    // its various states.
+                    case game.KeyCodes.KEY_SPACEBAR:
+                        if (this._maze.debugTracking) {
+                            this._maze.debugToggleCell();
+                            return true;
+                        }
+                        break;
                 }
                 // We did not handle it
                 return false;

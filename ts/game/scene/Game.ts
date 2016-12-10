@@ -79,6 +79,16 @@ module nurdz.game
                     if (this._maze.debugTracking)
                         this._maze.setDebugPoint (this._mouse);
                     return true;
+
+                // Toggle the type of the entity under the debug cursor through
+                // its various states.
+                case KeyCodes.KEY_SPACEBAR:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugToggleCell ();
+                        return true;
+                    }
+                    break;
             }
 
             // We did not handle it
