@@ -149,6 +149,31 @@ module nurdz.game
                         return true;
                     }
                     break;
+
+                // Scan the entire maze for all entities that are currently
+                // playing the animation that causes them to be hidden, and get
+                // them to play the animation that causes them to be visible
+                // instead.
+                case KeyCodes.KEY_U:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugUnhideAll ();
+                        return true;
+                    }
+                    break;
+
+                // Vanish away all of the gray or bonus bricks that are still
+                // visible.
+                case KeyCodes.KEY_V:
+                case KeyCodes.KEY_C:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugVanishBricks (eventObj.keyCode == KeyCodes.KEY_V);
+                        return true;
+                    }
+                    break;
+
+
             }
 
             // We did not handle it

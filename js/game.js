@@ -1639,6 +1639,60 @@ var nurdz;
                     console.log("Cannot add brick; cell is not empty");
             };
             /**
+             * Scan the entire grid for Brick entities that are currently being hidden
+             * by virtue of their playing a hidden or idle_gone animations and have
+             * them become visible again.
+             */
+            Maze.prototype.debugUnhideAll = function () {
+                for (var row = 0; row < MAZE_HEIGHT; row++) {
+                    for (var col = 0; col < MAZE_WIDTH; col++) {
+                        var cell = this.getCellAt(col, row);
+                        if (cell != null || cell instanceof game.Brick) {
+                            var brick = cell;
+                            switch (brick.animations.current) {
+                                case "gray_idle_gone":
+                                case "gray_vanish":
+                                    brick.playAnimation("gray_appear");
+                                    break;
+                                case "bonus_idle_gone":
+                                case "bonus_vanish":
+                                    brick.playAnimation("bonus_appear");
+                                    break;
+                            }
+                        }
+                    }
+                }
+            };
+            /**
+             * Vanish all of the bricks of a set type based on the parameter. Any
+             * brick of the given type that is not already gone will vanish away.
+             *
+             * @param {boolean} grayBricks true to vanish gray bricks, false to
+             * vanish bonus bricks.
+             */
+            Maze.prototype.debugVanishBricks = function (grayBricks) {
+                for (var row = 0; row < MAZE_HEIGHT; row++) {
+                    for (var col = 0; col < MAZE_WIDTH; col++) {
+                        var cell = this.getCellAt(col, row);
+                        if (cell != null || cell instanceof game.Brick) {
+                            var brick = cell;
+                            switch (brick.animations.current) {
+                                case "gray_idle":
+                                case "gray_appear":
+                                    if (grayBricks)
+                                        brick.playAnimation("gray_vanish");
+                                    break;
+                                case "bonus_idle":
+                                case "bonus_appear":
+                                    if (grayBricks == false)
+                                        brick.playAnimation("bonus_vanish");
+                                    break;
+                            }
+                        }
+                    }
+                }
+            };
+            /**
              * DEBUG METHOD
              *
              * Add a teleport destination to the maze at the current debug location
@@ -2466,6 +2520,25 @@ var nurdz;
                     case game.KeyCodes.KEY_L:
                         if (this._maze.debugTracking) {
                             this._maze.debugAddBall();
+                            return true;
+                        }
+                        break;
+                    // Scan the entire maze for all entities that are currently
+                    // playing the animation that causes them to be hidden, and get
+                    // them to play the animation that causes them to be visible
+                    // instead.
+                    case game.KeyCodes.KEY_U:
+                        if (this._maze.debugTracking) {
+                            this._maze.debugUnhideAll();
+                            return true;
+                        }
+                        break;
+                    // Vanish away all of the gray or bonus bricks that are still
+                    // visible.
+                    case game.KeyCodes.KEY_V:
+                    case game.KeyCodes.KEY_C:
+                        if (this._maze.debugTracking) {
+                            this._maze.debugVanishBricks(eventObj.keyCode == game.KeyCodes.KEY_V);
                             return true;
                         }
                         break;

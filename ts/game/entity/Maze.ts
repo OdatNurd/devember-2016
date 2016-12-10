@@ -622,6 +622,74 @@ module nurdz.game
         }
 
         /**
+         * Scan the entire grid for Brick entities that are currently being hidden
+         * by virtue of their playing a hidden or idle_gone animations and have
+         * them become visible again.
+         */
+        debugUnhideAll () : void
+        {
+            for (let row = 0 ; row < MAZE_HEIGHT ; row++)
+            {
+                for (let col = 0 ; col < MAZE_WIDTH ; col++)
+                {
+                    let cell = this.getCellAt (col, row);
+                    if (cell != null || cell instanceof Brick)
+                    {
+                        let brick = <Brick> cell;
+                        switch (brick.animations.current)
+                        {
+                            case "gray_idle_gone":
+                            case "gray_vanish":
+                                brick.playAnimation ("gray_appear")
+                                break;
+
+                            case "bonus_idle_gone":
+                            case "bonus_vanish":
+                                brick.playAnimation ("bonus_appear")
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
+         * Vanish all of the bricks of a set type based on the parameter. Any
+         * brick of the given type that is not already gone will vanish away.
+         *
+         * @param {boolean} grayBricks true to vanish gray bricks, false to
+         * vanish bonus bricks.
+         */
+        debugVanishBricks (grayBricks : boolean) : void
+        {
+            for (let row = 0 ; row < MAZE_HEIGHT ; row++)
+            {
+                for (let col = 0 ; col < MAZE_WIDTH ; col++)
+                {
+                    let cell = this.getCellAt (col, row);
+                    if (cell != null || cell instanceof Brick)
+                    {
+                        let brick = <Brick> cell;
+                        switch (brick.animations.current)
+                        {
+                            case "gray_idle":
+                            case "gray_appear":
+                                if (grayBricks)
+                                    brick.playAnimation ("gray_vanish")
+                                break;
+
+                            case "bonus_idle":
+                            case "bonus_appear":
+                                if (grayBricks == false)
+                                    brick.playAnimation ("bonus_vanish")
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        /**
          * DEBUG METHOD
          *
          * Add a teleport destination to the maze at the current debug location
