@@ -1495,11 +1495,10 @@ var nurdz;
                 var cell = this.getDebugCell();
                 if (cell == null)
                     return;
-                // If the cell is a Teleport, we can't remove it yet.
-                if (cell instanceof game.Teleport) {
-                    console.log("Cannot delete Teleports (yet)");
-                    return;
-                }
+                // There is a single Teleport entity, so all we have to do is remove
+                // the current location as a destination.
+                if (cell instanceof game.Teleport)
+                    this._blackHole.clearDestination(this._debugPoint);
                 else if (cell instanceof game.Ball)
                     this._balls.killEntity(cell);
                 else if (cell instanceof game.Arrow)
@@ -1601,6 +1600,7 @@ var nurdz;
                         console.log("Cannot toggle brick; not enough entities in currentBrickPool");
                     return;
                 }
+                console.log("Cannot toggle entity; it does not support toggling");
             };
             /**
              * DEBUG METHOD
@@ -1637,6 +1637,27 @@ var nurdz;
                 }
                 else
                     console.log("Cannot add brick; cell is not empty");
+            };
+            /**
+             * DEBUG METHOD
+             *
+             * Add a teleport destination to the maze at the current debug location
+             * (assuming one is available).
+             *
+             * There is only a single Teleport instance, so this always works and
+             * just adds another potential destination to the list.
+             *
+             * If the current location is not empty, this does nothing.
+             */
+            Maze.prototype.debugAddTeleport = function () {
+                // We can only add an exit point if the current cell is empty.
+                if (this.getDebugCell() == null) {
+                    // Add the destination and the entity
+                    this._blackHole.addDestination(this._debugPoint);
+                    this.setDebugCell(this._blackHole);
+                }
+                else
+                    console.log("Cannot add teleport; cell is not empty");
             };
             /**
              * DEBUG METHOD
@@ -2427,6 +2448,15 @@ var nurdz;
                     case game.KeyCodes.KEY_A:
                         if (this._maze.debugTracking) {
                             this._maze.debugAddArrow();
+                            return true;
+                        }
+                        break;
+                    // Add a teleport to the maze at the current debug cursor; this
+                    // only works if the cell is currentlye empty. This just adds an
+                    // extra exit point to the black hole system.
+                    case game.KeyCodes.KEY_H:
+                        if (this._maze.debugTracking) {
+                            this._maze.debugAddTeleport();
                             return true;
                         }
                         break;

@@ -128,6 +128,17 @@ module nurdz.game
                     }
                     break;
 
+                // Add a teleport to the maze at the current debug cursor; this
+                // only works if the cell is currentlye empty. This just adds an
+                // extra exit point to the black hole system.
+                case KeyCodes.KEY_H:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugAddTeleport ();
+                        return true;
+                    }
+                    break;
+
                 // Add a ball to the maze at the current debug cursor; this only
                 // works if the cell is currently empty. This will add a player
                 // ball by default, but this can be toggled with the 'T' key.

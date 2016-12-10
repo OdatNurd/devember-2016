@@ -442,12 +442,10 @@ module nurdz.game
             if (cell == null)
                 return;
 
-            // If the cell is a Teleport, we can't remove it yet.
+            // There is a single Teleport entity, so all we have to do is remove
+            // the current location as a destination.
             if (cell instanceof Teleport)
-            {
-                console.log ("Cannot delete Teleports (yet)");
-                return;
-            }
+                this._blackHole.clearDestination (this._debugPoint);
 
             // If it is a ball, remove it from the ball entity pool.
             else if (cell instanceof Ball)
@@ -578,6 +576,8 @@ module nurdz.game
 
                 return;
             }
+
+            console.log ("Cannot toggle entity; it does not support toggling");
         }
 
         /**
@@ -619,6 +619,30 @@ module nurdz.game
             }
             else
                 console.log ("Cannot add brick; cell is not empty");
+        }
+
+        /**
+         * DEBUG METHOD
+         *
+         * Add a teleport destination to the maze at the current debug location
+         * (assuming one is available).
+         *
+         * There is only a single Teleport instance, so this always works and
+         * just adds another potential destination to the list.
+         *
+         * If the current location is not empty, this does nothing.
+         */
+        debugAddTeleport () : void
+        {
+            // We can only add an exit point if the current cell is empty.
+            if (this.getDebugCell () == null)
+            {
+                // Add the destination and the entity
+                this._blackHole.addDestination (this._debugPoint);
+                this.setDebugCell (this._blackHole);
+            }
+            else
+                console.log ("Cannot add teleport; cell is not empty");
         }
 
         /**
