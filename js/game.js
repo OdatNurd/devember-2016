@@ -2272,14 +2272,14 @@ var nurdz;
                         return true;
                     // Toggle mouse tracking of the debug location, then update the
                     // tracking with the last known mouse location.
-                    case game.KeyCodes.KEY_T:
+                    case game.KeyCodes.KEY_SPACEBAR:
                         this._maze.debugTracking = !this._maze.debugTracking;
                         if (this._maze.debugTracking)
                             this._maze.setDebugPoint(this._mouse);
                         return true;
                     // Toggle the type of the entity under the debug cursor through
                     // its various states.
-                    case game.KeyCodes.KEY_SPACEBAR:
+                    case game.KeyCodes.KEY_T:
                         if (this._maze.debugTracking) {
                             this._maze.debugToggleCell();
                             return true;

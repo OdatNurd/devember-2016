@@ -74,7 +74,7 @@ module nurdz.game
 
                 // Toggle mouse tracking of the debug location, then update the
                 // tracking with the last known mouse location.
-                case KeyCodes.KEY_T:
+                case KeyCodes.KEY_SPACEBAR:
                     this._maze.debugTracking = !this._maze.debugTracking;
                     if (this._maze.debugTracking)
                         this._maze.setDebugPoint (this._mouse);
@@ -82,7 +82,7 @@ module nurdz.game
 
                 // Toggle the type of the entity under the debug cursor through
                 // its various states.
-                case KeyCodes.KEY_SPACEBAR:
+                case KeyCodes.KEY_T:
                     if (this._maze.debugTracking)
                     {
                         this._maze.debugToggleCell ();
