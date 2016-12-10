@@ -89,6 +89,17 @@ module nurdz.game
                         return true;
                     }
                     break;
+
+                // Add a brick to the maze at the current debug cursor; this
+                // only works if the cell is currently empty. This will try
+                // to add a gray brick, and failing that a bonus brick.
+                case KeyCodes.KEY_B:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugAddBrick ();
+                        return true;
+                    }
+                    break;
             }
 
             // We did not handle it

@@ -429,11 +429,8 @@ module nurdz.game
         /**
          * DEBUG METHOD
          *
-         * The debug code contains the ability to toggle existing cells through
-         * their types (for cells that support this).
-         *
-         * This is invoked for that key combination to perform the appropriate
-         * toggle operation on the currently set debug location.
+         * Toggle an existing cell through its subtypes (for cells that support
+         * this).
          *
          * If the debug point is empty or not of a toggle-able type, this does
          * nothing.
@@ -502,6 +499,47 @@ module nurdz.game
 
                 return;
             }
+        }
+
+        /**
+         * DEBUG METHOD
+         *
+         * Add a brick to the maze at the current debug location (assuming one
+         * is available).
+         *
+         * This will add a gray brick, unless there are none left in the pool,
+         * in which case it will try to add a bonus brick instead.
+         *
+         * If the current location is not empty, this does nothing.
+         */
+        debugAddBrick () : void
+        {
+            // We can only add a brick if the current cell is empty.
+            if (this.getDebugCell () == null)
+            {
+                // Try to get a gray brick first, since that's the most common
+                // type so the pool is larger. If this works, play the animation
+                // to appear it.
+                let newBrick = this._grayBricks.resurrectEntity ();
+                if (newBrick != null)
+                    newBrick.playAnimation ("gray_appear");
+                else
+                {
+                    // No gray bricks were available, so try a bonus brick
+                    // instead.
+                    newBrick = this._bonusBricks.resurrectEntity ();
+                    if (newBrick != null)
+                        newBrick.playAnimation ("bonus_appear");
+                }
+
+                // If we got a brick, add it to the maze.
+                if (newBrick)
+                    this.setDebugCell (newBrick);
+                else
+                    console.log ("Unable to add brick; no entities left in either pool");
+            }
+            else
+                console.log ("Cannot add brick; cell is not empty");
         }
 
         /**
