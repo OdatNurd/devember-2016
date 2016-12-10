@@ -429,6 +429,68 @@ module nurdz.game
         /**
          * DEBUG METHOD
          *
+         * Remove the contents of an existing cell from the maze, returning the
+         * object back into its pool.
+         *
+         * This currently does not work on Teleport entities, since they need
+         * special action to work.
+         */
+        debugClearCell () : void
+        {
+            // Get the debug cell and leave if there isn't one.
+            let cell = this.getDebugCell ();
+            if (cell == null)
+                return;
+
+            // If the cell is a Teleport, we can't remove it yet.
+            if (cell instanceof Teleport)
+            {
+                console.log ("Cannot delete Teleports (yet)");
+                return;
+            }
+
+            // If it is a ball, remove it from the ball entity pool.
+            else if (cell instanceof Ball)
+                this._balls.killEntity (cell);
+
+            // If it is an arrow, remove it from the arrow entity pool.
+            else if (cell instanceof Arrow)
+                this._arrows.killEntity (cell);
+
+            // If it is a brick, we need to be a bit more careful; remove it
+            // from the correct pool AND don't delete the solid boundary cell.
+            else if (cell instanceof Brick)
+            {
+                let brick = <Brick> cell;
+                if (brick == this._solid)
+                {
+                    console.log ("Cannot delete boundary bricks");
+                    return;
+                }
+                else if (brick.brickType == BrickType.BRICK_GRAY)
+                    this._grayBricks.killEntity (brick);
+                else if (brick.brickType == BrickType.BRICK_BONUS)
+                    this._bonusBricks.killEntity (brick);
+                else
+                {
+                    console.log ("This brick is not a brick. Double Yew Tee Eff");
+                    return;
+                }
+            }
+
+            else if (cell instanceof Ball == false)
+            {
+                console.log ("Unable to delete entity; I don't know what it is");
+                return;
+            }
+
+            // Clear the contents of the cell now.
+            this.setDebugCell (null);
+        }
+
+        /**
+         * DEBUG METHOD
+         *
          * Toggle an existing cell through its subtypes (for cells that support
          * this).
          *

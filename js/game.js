@@ -1454,6 +1454,51 @@ var nurdz;
             /**
              * DEBUG METHOD
              *
+             * Remove the contents of an existing cell from the maze, returning the
+             * object back into its pool.
+             *
+             * This currently does not work on Teleport entities, since they need
+             * special action to work.
+             */
+            Maze.prototype.debugClearCell = function () {
+                // Get the debug cell and leave if there isn't one.
+                var cell = this.getDebugCell();
+                if (cell == null)
+                    return;
+                // If the cell is a Teleport, we can't remove it yet.
+                if (cell instanceof game.Teleport) {
+                    console.log("Cannot delete Teleports (yet)");
+                    return;
+                }
+                else if (cell instanceof game.Ball)
+                    this._balls.killEntity(cell);
+                else if (cell instanceof game.Arrow)
+                    this._arrows.killEntity(cell);
+                else if (cell instanceof game.Brick) {
+                    var brick = cell;
+                    if (brick == this._solid) {
+                        console.log("Cannot delete boundary bricks");
+                        return;
+                    }
+                    else if (brick.brickType == game.BrickType.BRICK_GRAY)
+                        this._grayBricks.killEntity(brick);
+                    else if (brick.brickType == game.BrickType.BRICK_BONUS)
+                        this._bonusBricks.killEntity(brick);
+                    else {
+                        console.log("This brick is not a brick. Double Yew Tee Eff");
+                        return;
+                    }
+                }
+                else if (cell instanceof game.Ball == false) {
+                    console.log("Unable to delete entity; I don't know what it is");
+                    return;
+                }
+                // Clear the contents of the cell now.
+                this.setDebugCell(null);
+            };
+            /**
+             * DEBUG METHOD
+             *
              * Toggle an existing cell through its subtypes (for cells that support
              * this).
              *
@@ -2277,6 +2322,19 @@ var nurdz;
                         if (this._maze.debugTracking)
                             this._maze.setDebugPoint(this._mouse);
                         return true;
+                    // Delete the contents of the current cell, if anything is
+                    // there.
+                    //
+                    // These correspond to Backspace and Delete respectively; the
+                    // engine does not have a code for these yet. Note that the
+                    // delete key on the numeric keypad may or may not work.
+                    case 8:
+                    case 46:
+                        if (this._maze.debugTracking) {
+                            this._maze.debugClearCell();
+                            return true;
+                        }
+                        break;
                     // Toggle the type of the entity under the debug cursor through
                     // its various states.
                     case game.KeyCodes.KEY_T:

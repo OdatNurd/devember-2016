@@ -80,6 +80,21 @@ module nurdz.game
                         this._maze.setDebugPoint (this._mouse);
                     return true;
 
+                // Delete the contents of the current cell, if anything is
+                // there.
+                //
+                // These correspond to Backspace and Delete respectively; the
+                // engine does not have a code for these yet. Note that the
+                // delete key on the numeric keypad may or may not work.
+                case 8:
+                case 46:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugClearCell ();
+                        return true;
+                    }
+                    break;
+
                 // Toggle the type of the entity under the debug cursor through
                 // its various states.
                 case KeyCodes.KEY_T:
