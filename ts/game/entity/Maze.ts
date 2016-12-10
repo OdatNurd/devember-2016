@@ -639,6 +639,35 @@ module nurdz.game
         /**
          * DEBUG METHOD
          *
+         * Add a player ball to the maze at the current debug location (assuming
+         * one is available).
+         *
+         * If the current location is not empty, this does nothing.
+         */
+        debugAddBall () : void
+        {
+            // We can only add a ball if the current cell is empty.
+            if (this.getDebugCell () == null)
+            {
+                // Try to get the ball out of the pool; if it works, we can
+                // set it's type and add it.
+                let ball = this._balls.resurrectEntity ();
+                if (ball != null)
+                {
+                    ball.ballType = BallType.BALL_PLAYER;
+                    ball.playAnimation ("p_appear");
+                    this.setDebugCell (ball);
+                }
+                else
+                    console.log ("Cannot add ball; no entities left in pool");
+            }
+            else
+                console.log ("Cannot add ball; cell is not empty");
+        }
+
+        /**
+         * DEBUG METHOD
+         *
          * This takes a point that is representative of a mouse click inside of
          * the maze (i.e. the point (0, 0) is the upper left corner of this
          * entity) and "handles" it, using whatever debug logic we deem

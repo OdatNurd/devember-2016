@@ -117,13 +117,24 @@ module nurdz.game
                     break;
 
                 // Add an arrow to the maze at the current debug cursor; this
-                // only works if the cell is currentlye mpty. This will add a
+                // only works if the cell is currentlye empty. This will add a
                 // normal arrow by default, but this can be toggled with the
-                // spacebar.
+                // 'T" key'.
                 case KeyCodes.KEY_A:
                     if (this._maze.debugTracking)
                     {
                         this._maze.debugAddArrow ();
+                        return true;
+                    }
+                    break;
+
+                // Add a ball to the maze at the current debug cursor; this only
+                // works if the cell is currently empty. This will add a player
+                // ball by default, but this can be toggled with the 'T' key.
+                case KeyCodes.KEY_L:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugAddBall ();
                         return true;
                     }
                     break;

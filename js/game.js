@@ -1626,6 +1626,31 @@ var nurdz;
             /**
              * DEBUG METHOD
              *
+             * Add a player ball to the maze at the current debug location (assuming
+             * one is available).
+             *
+             * If the current location is not empty, this does nothing.
+             */
+            Maze.prototype.debugAddBall = function () {
+                // We can only add a ball if the current cell is empty.
+                if (this.getDebugCell() == null) {
+                    // Try to get the ball out of the pool; if it works, we can
+                    // set it's type and add it.
+                    var ball = this._balls.resurrectEntity();
+                    if (ball != null) {
+                        ball.ballType = game.BallType.BALL_PLAYER;
+                        ball.playAnimation("p_appear");
+                        this.setDebugCell(ball);
+                    }
+                    else
+                        console.log("Cannot add ball; no entities left in pool");
+                }
+                else
+                    console.log("Cannot add ball; cell is not empty");
+            };
+            /**
+             * DEBUG METHOD
+             *
              * This takes a point that is representative of a mouse click inside of
              * the maze (i.e. the point (0, 0) is the upper left corner of this
              * entity) and "handles" it, using whatever debug logic we deem
@@ -2353,12 +2378,21 @@ var nurdz;
                         }
                         break;
                     // Add an arrow to the maze at the current debug cursor; this
-                    // only works if the cell is currentlye mpty. This will add a
+                    // only works if the cell is currentlye empty. This will add a
                     // normal arrow by default, but this can be toggled with the
-                    // spacebar.
+                    // 'T" key'.
                     case game.KeyCodes.KEY_A:
                         if (this._maze.debugTracking) {
                             this._maze.debugAddArrow();
+                            return true;
+                        }
+                        break;
+                    // Add a ball to the maze at the current debug cursor; this only
+                    // works if the cell is currently empty. This will add a player
+                    // ball by default, but this can be toggled with the 'T' key.
+                    case game.KeyCodes.KEY_L:
+                        if (this._maze.debugTracking) {
+                            this._maze.debugAddBall();
                             return true;
                         }
                         break;
