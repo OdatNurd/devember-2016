@@ -100,6 +100,18 @@ module nurdz.game
                         return true;
                     }
                     break;
+
+                // Add an arrow to the maze at the current debug cursor; this
+                // only works if the cell is currentlye mpty. This will add a
+                // normal arrow by default, but this can be toggled with the
+                // spacebar.
+                case KeyCodes.KEY_A:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugAddArrow ();
+                        return true;
+                    }
+                    break;
             }
 
             // We did not handle it

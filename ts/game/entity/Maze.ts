@@ -545,6 +545,38 @@ module nurdz.game
         /**
          * DEBUG METHOD
          *
+         * Add an arrow to the maze at the current debug location (assuming one
+         * is available).
+         *
+         * This will add a normal, right facing arrow. The type of the arrow can
+         * be toggled with the toggle command.
+         *
+         * If the current location is not empty, this does nothing.
+         */
+        debugAddArrow () : void
+        {
+            // We can only add an arrow if the current cell is empty.
+            if (this.getDebugCell () == null)
+            {
+                // Try to get the arrow out of the pool; if it works, we can
+                // set it's type and add it.
+                let arrow = this._arrows.resurrectEntity ();
+                if (arrow != null)
+                {
+                    arrow.arrowType = ArrowType.ARROW_NORMAL;
+                    arrow.arrowDirection = ArrowDirection.ARROW_RIGHT;
+                    this.setDebugCell (arrow);
+                }
+                else
+                    console.log ("Cannot add arrow; no entities left in pool");
+            }
+            else
+                console.log ("Cannot add arrow; cell is not empty");
+        }
+
+        /**
+         * DEBUG METHOD
+         *
          * This takes a point that is representative of a mouse click inside of
          * the maze (i.e. the point (0, 0) is the upper left corner of this
          * entity) and "handles" it, using whatever debug logic we deem

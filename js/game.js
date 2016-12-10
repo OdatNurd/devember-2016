@@ -1553,6 +1553,34 @@ var nurdz;
             /**
              * DEBUG METHOD
              *
+             * Add an arrow to the maze at the current debug location (assuming one
+             * is available).
+             *
+             * This will add a normal, right facing arrow. The type of the arrow can
+             * be toggled with the toggle command.
+             *
+             * If the current location is not empty, this does nothing.
+             */
+            Maze.prototype.debugAddArrow = function () {
+                // We can only add an arrow if the current cell is empty.
+                if (this.getDebugCell() == null) {
+                    // Try to get the arrow out of the pool; if it works, we can
+                    // set it's type and add it.
+                    var arrow = this._arrows.resurrectEntity();
+                    if (arrow != null) {
+                        arrow.arrowType = game.ArrowType.ARROW_NORMAL;
+                        arrow.arrowDirection = game.ArrowDirection.ARROW_RIGHT;
+                        this.setDebugCell(arrow);
+                    }
+                    else
+                        console.log("Cannot add arrow; no entities left in pool");
+                }
+                else
+                    console.log("Cannot add arrow; cell is not empty");
+            };
+            /**
+             * DEBUG METHOD
+             *
              * This takes a point that is representative of a mouse click inside of
              * the maze (i.e. the point (0, 0) is the upper left corner of this
              * entity) and "handles" it, using whatever debug logic we deem
@@ -2263,6 +2291,16 @@ var nurdz;
                     case game.KeyCodes.KEY_B:
                         if (this._maze.debugTracking) {
                             this._maze.debugAddBrick();
+                            return true;
+                        }
+                        break;
+                    // Add an arrow to the maze at the current debug cursor; this
+                    // only works if the cell is currentlye mpty. This will add a
+                    // normal arrow by default, but this can be toggled with the
+                    // spacebar.
+                    case game.KeyCodes.KEY_A:
+                        if (this._maze.debugTracking) {
+                            this._maze.debugAddArrow();
                             return true;
                         }
                         break;
