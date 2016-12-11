@@ -2086,33 +2086,39 @@ var nurdz;
              * @param {Renderer} renderer the renderer to use to render
              */
             Maze.prototype.render = function (x, y, renderer) {
+                // Get the cell size of our cells so we know how to blit.
+                var cSize = this.cellSize;
                 // Iterate over all columns and rows of bricks, and get them to
                 // render themselves at the appropriate offset from the position
                 // we've been given.
-                for (var blitY = 0; blitY < MAZE_HEIGHT; blitY++) {
-                    for (var blitX = 0; blitX < MAZE_WIDTH; blitX++) {
+                for (var cellY = 0, blitY = y; cellY < MAZE_HEIGHT; cellY++, blitY += cSize) {
+                    for (var cellX = 0, blitX = x; cellX < MAZE_WIDTH; cellX++, blitX += cSize) {
                         // Get the cell at this position, using the empty brick
                         // cell if there isn't anything.
-                        var cell = this.getCellAt(blitX, blitY) || this._empty;
+                        var cell = this.getCellAt(cellX, cellY) || this._empty;
                         // If the cell is not a brick entity of some kind, then it
                         // probably has a transparent background. So we should first
                         // render the empty cell to provide a background for it.
                         if (cell instanceof game.Brick == false)
-                            this._empty.render(x + (blitX * 25), y + (blitY * 25), renderer);
+                            this._empty.render(blitX, blitY, renderer);
                         // Render this cell.
-                        cell.render(x + (blitX * 25), y + (blitY * 25), renderer);
+                        cell.render(blitX, blitY, renderer);
                         // If this position contains a marker, render one here.
-                        if (this.hasMarkerAt(blitX, blitY))
-                            this._marker.render(x + (blitX * 25), y + (blitY * 25), renderer);
+                        if (this.hasMarkerAt(cellX, cellY))
+                            this._marker.render(blitX, blitY, renderer);
                     }
                 }
                 // If we are dropping a ball, then we need to render it now; while
                 // it is dropping, it's not stored in the grid.
-                if (this._droppingBall)
-                    this._droppingBall.render(x + (this._droppingBall.mapPosition.x * 25), y + (this._droppingBall.mapPosition.y * 25), renderer);
+                if (this._droppingBall) {
+                    var pos = this._droppingBall.mapPosition;
+                    this._droppingBall.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
+                }
                 // Now the debug marker, if it's turned on.
-                if (this._debugTracking)
-                    this._debugMarker.render(x + (this._debugPoint.x * 25), y + (this._debugPoint.y * 25), renderer);
+                if (this._debugTracking) {
+                    var pos = this._debugPoint;
+                    this._debugMarker.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
+                }
             };
             /**
              * Prepare for maze generation by resetting the contents of the maze to
