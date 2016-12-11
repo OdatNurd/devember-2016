@@ -1799,46 +1799,6 @@ var nurdz;
                 // that location (if any).
                 position.reduce(this.cellSize);
                 var entity = this.getCellAt(position.x, position.y);
-                // If this cell in the maze does not contain anything, then toggle
-                // the marker at this location/
-                if (entity == null) {
-                    // If there a marker here, then clear it; otherwise, add it.
-                    if (this.hasMarkerAt(position.x, position.y))
-                        this.clearMarkerAt(position.x, position.y);
-                    else
-                        this.setMarkerAt(position.x, position.y);
-                }
-                // If this is a brick, we might want to vanish or appear it in the
-                // maze.
-                if (entity instanceof game.Brick) {
-                    // Since it's a brick, change it's animation based on the type.
-                    // We can tell if the brick is visible or not by checking what
-                    // the currently playing animation is.
-                    var brick = entity;
-                    switch (brick.brickType) {
-                        case game.BrickType.BRICK_GRAY:
-                            if (brick.animations.current == "gray_vanish")
-                                brick.playAnimation("gray_appear");
-                            else
-                                brick.playAnimation("gray_vanish");
-                            return true;
-                        case game.BrickType.BRICK_BONUS:
-                            if (brick.animations.current == "bonus_vanish")
-                                brick.playAnimation("bonus_appear");
-                            else
-                                brick.playAnimation("bonus_vanish");
-                            return true;
-                        default:
-                            return false;
-                    }
-                }
-                // If it is an arrow, flip it. This works for any type of arrow; an
-                // automatic arrow will reset its random flip time in this case.
-                if (entity instanceof game.Arrow) {
-                    var arrow = entity;
-                    arrow.flip();
-                    return true;
-                }
                 // If the entity is a ball, try to move it downwards
                 if (entity instanceof game.Ball) {
                     // We're going to move the ball, so remove all markers from
@@ -1870,6 +1830,53 @@ var nurdz;
                         this._balls.killEntity(ball);
                     else
                         this.setCellAt(ballPos.x, ballPos.y, ball);
+                    return true;
+                }
+                // If we're not tracking debug action, the rest of these actions
+                // should not be allowed;
+                if (this._debugTracking == false)
+                    return;
+                // If this cell in the maze does not contain anything, or it
+                // contains the black hole, then toggle the marker at this location.
+                if (entity == null || entity == this._blackHole) {
+                    // If there a marker here, then clear it; otherwise, add it.
+                    if (this.hasMarkerAt(position.x, position.y))
+                        this.clearMarkerAt(position.x, position.y);
+                    else
+                        this.setMarkerAt(position.x, position.y);
+                }
+                // If this is a brick, we might want to vanish or appear it in the
+                // maze.
+                if (entity instanceof game.Brick) {
+                    // Clear any marker that might be here; these can only appear if
+                    // the ball drops through, so lets be able to remove them.
+                    this.clearMarkerAt(position.x, position.y);
+                    // Since it's a brick, change it's animation based on the type.
+                    // We can tell if the brick is visible or not by checking what
+                    // the currently playing animation is.
+                    var brick = entity;
+                    switch (brick.brickType) {
+                        case game.BrickType.BRICK_GRAY:
+                            if (brick.animations.current == "gray_vanish")
+                                brick.playAnimation("gray_appear");
+                            else
+                                brick.playAnimation("gray_vanish");
+                            return true;
+                        case game.BrickType.BRICK_BONUS:
+                            if (brick.animations.current == "bonus_vanish")
+                                brick.playAnimation("bonus_appear");
+                            else
+                                brick.playAnimation("bonus_vanish");
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+                // If it is an arrow, flip it. This works for any type of arrow; an
+                // automatic arrow will reset its random flip time in this case.
+                if (entity instanceof game.Arrow) {
+                    var arrow = entity;
+                    arrow.flip();
                     return true;
                 }
                 // We care not for this click.
