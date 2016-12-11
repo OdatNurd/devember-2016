@@ -136,6 +136,33 @@ module nurdz.game
         private _balls : ActorPool<Ball>;
 
         /**
+         * If a ball is actively dropping through the maze, this value will be
+         * the ball entity that is dropping down. In this case the ball is not
+         * currently considered a part of the maze (it is removed from the
+         * grid entirely) and will be added back when it starts moving.
+         *
+         * When this value is null, no ball is currently dropping.
+         */
+        private _droppingBall : Ball;
+
+        /**
+         * The entire tick the last time the ball dropped down or otherwise moved.
+         *
+         * When this value plus _dropSpeed meets or exceeds the current engine
+         * tick, the ball needs to take a new movement step.
+         */
+        private _lastDropTick : number;
+
+        /**
+         * The number of ticks between drop movements in the ball. Ticks are
+         * counted in frames per second and the engine runs at 30fps (or tries
+         * to), so a value of 30 means 1 second between steps.
+         *
+         * @type {number}
+         */
+        private _dropSpeed : number;
+
+        /**
          * True if we are debugging, false otherwise.
          *
          * When this is true, the current debug cell in the grid (controlled via
@@ -221,6 +248,13 @@ module nurdz.game
             this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
             this._solid = new Brick (stage, BrickType.BRICK_SOLID);
             this._blackHole = new Teleport (stage);
+
+            // There is no ball dropping by default; also set up default values
+            // for the drop time and speed (drop time is not consulted unless
+            // a ball is dropping).
+            this._droppingBall = null;
+            this._dropSpeed = 3;
+            this._lastDropTick = 0;
 
             // Pre-populate all of our actor pools with the maximum possible
             // number of actors that we could need. For the case of the gray
@@ -811,43 +845,30 @@ module nurdz.game
             position.reduce (this.cellSize);
             let entity = this.getCellAt (position.x, position.y);
 
-            // If the entity is a ball, try to move it downwards
-            if (entity instanceof Ball)
+            // If the entity is a ball and we're not already trying to drop a
+            // ball, try to move it downwards.
+            if (entity instanceof Ball && this._droppingBall == null)
             {
-                // We're going to move the ball, so remove all markers from
-                // the maze.
-                this.removeAllMarkers ();
-
-                // Get the ball entity at this location.
-                let ball = <Ball> entity;
-
-                // Remove the ball from this position, since it will (probably)
-                // be moving, and set a marker here so that we know where the
-                // ball started.
+                // The ball entity at this location is the one that is dropping,
+                // so get it and then remove it from the grid for the duration
+                // of it's move.
+                this._droppingBall = <Ball> entity;
                 this.setCellAt (position.x, position.y, null);
-                this.setMarkerAt (position.x, position.y);
 
-                // Duplicate the position that the ball started out at.
-                let ballPos = position.copy ();
+                // In the dropping ball, set the current position to the maze
+                // position that it currently holds; that will allow us to track
+                // it, since by default maze cells don't know where they are.
+                this._droppingBall.setMapPosition (position);
 
-                // Keep looping, deciding if the ball should move or not. When
-                // the function returns true, it has modified the position to
-                // be where the ball is moving to; when it is false, the ball
-                // could not move from this point.
-                //
-                // When the position has changed, we set a marker at the new
-                // position.
-                while (this.nextBallPosition (ball, ballPos))
-                    this.setMarkerAt (ballPos.x, ballPos.y);
+                // Ensure that the ball knows before we start that it started
+                // out not moving.
+                this._droppingBall.moveType = BallMoveType.BALL_MOVE_NONE;
 
-                // The loop stopped at the location where the ball should have
-                // stopped. Put the ball entity that we started with at that
-                // position now, unless it was at the bottom of the grid, in
-                // which case the ball is just gone now.
-                if (ballPos.y == MAZE_HEIGHT - 2)
-                    this._balls.killEntity (ball);
-                else
-                    this.setCellAt (ballPos.x, ballPos.y, ball);
+                // Now indicate that the last time the ball dropped was right now
+                // so that the next step in the drop happens in the future.
+                this._lastDropTick = this._stage.tick;
+
+                // All done now
                 return true;
             }
 
@@ -1041,6 +1062,36 @@ module nurdz.game
             this._grayBricks.update (stage, tick);
             this._bonusBricks.update (stage, tick);
             this._balls.update (stage, tick);
+
+            // If there is a dropping ball and it's time to drop it, take a step
+            // now.
+            if (this._droppingBall && tick >= this._lastDropTick + this._dropSpeed)
+            {
+                // We are going to drop the ball (or try to), so reset the last
+                // drop tick to this tick.
+                this._lastDropTick = tick;
+
+                // Get the current position of the ball; this is just an alias
+                // to the actual object.
+                let pos = this._droppingBall.mapPosition;
+
+                // Check to see what the next position of the ball is. If this
+                // returns false, the ball is not going to move, so we are done
+                // moving it now.
+                if (this.nextBallPosition (this._droppingBall, pos) == false)
+                {
+                    // Add the ball back to the maze at it's current position.
+                    this.setCellAt (pos.x, pos.y, this._droppingBall);
+
+                    // If the ball position is at the bottom of the maze,
+                    // get it to play it's vanish animation.
+                    if (pos.y == MAZE_HEIGHT - 2)
+                        this._droppingBall.vanish ();
+
+                    // Now clear the flag so we know we're done.
+                    this._droppingBall = null;
+                }
+            }
         }
 
         /**
@@ -1156,6 +1207,13 @@ module nurdz.game
                         this._marker.render (x + (blitX * 25), y + (blitY * 25), renderer);
                 }
             }
+
+            // If we are dropping a ball, then we need to render it now; while
+            // it is dropping, it's not stored in the grid.
+            if (this._droppingBall)
+                this._droppingBall.render (x + (this._droppingBall.mapPosition.x * 25),
+                                           y + (this._droppingBall.mapPosition.y * 25),
+                                           renderer);
 
             // Now the debug marker, if it's turned on.
             if (this._debugTracking)

@@ -1304,6 +1304,12 @@ var nurdz;
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
                 this._blackHole = new game.Teleport(stage);
+                // There is no ball dropping by default; also set up default values
+                // for the drop time and speed (drop time is not consulted unless
+                // a ball is dropping).
+                this._droppingBall = null;
+                this._dropSpeed = 3;
+                this._lastDropTick = 0;
                 // Pre-populate all of our actor pools with the maximum possible
                 // number of actors that we could need. For the case of the gray
                 // bricks and bonus bricks, this creates more than we technically
@@ -1799,37 +1805,25 @@ var nurdz;
                 // that location (if any).
                 position.reduce(this.cellSize);
                 var entity = this.getCellAt(position.x, position.y);
-                // If the entity is a ball, try to move it downwards
-                if (entity instanceof game.Ball) {
-                    // We're going to move the ball, so remove all markers from
-                    // the maze.
-                    this.removeAllMarkers();
-                    // Get the ball entity at this location.
-                    var ball = entity;
-                    // Remove the ball from this position, since it will (probably)
-                    // be moving, and set a marker here so that we know where the
-                    // ball started.
+                // If the entity is a ball and we're not already trying to drop a
+                // ball, try to move it downwards.
+                if (entity instanceof game.Ball && this._droppingBall == null) {
+                    // The ball entity at this location is the one that is dropping,
+                    // so get it and then remove it from the grid for the duration
+                    // of it's move.
+                    this._droppingBall = entity;
                     this.setCellAt(position.x, position.y, null);
-                    this.setMarkerAt(position.x, position.y);
-                    // Duplicate the position that the ball started out at.
-                    var ballPos = position.copy();
-                    // Keep looping, deciding if the ball should move or not. When
-                    // the function returns true, it has modified the position to
-                    // be where the ball is moving to; when it is false, the ball
-                    // could not move from this point.
-                    //
-                    // When the position has changed, we set a marker at the new
-                    // position.
-                    while (this.nextBallPosition(ball, ballPos))
-                        this.setMarkerAt(ballPos.x, ballPos.y);
-                    // The loop stopped at the location where the ball should have
-                    // stopped. Put the ball entity that we started with at that
-                    // position now, unless it was at the bottom of the grid, in
-                    // which case the ball is just gone now.
-                    if (ballPos.y == MAZE_HEIGHT - 2)
-                        this._balls.killEntity(ball);
-                    else
-                        this.setCellAt(ballPos.x, ballPos.y, ball);
+                    // In the dropping ball, set the current position to the maze
+                    // position that it currently holds; that will allow us to track
+                    // it, since by default maze cells don't know where they are.
+                    this._droppingBall.setMapPosition(position);
+                    // Ensure that the ball knows before we start that it started
+                    // out not moving.
+                    this._droppingBall.moveType = game.BallMoveType.BALL_MOVE_NONE;
+                    // Now indicate that the last time the ball dropped was right now
+                    // so that the next step in the drop happens in the future.
+                    this._lastDropTick = this._stage.tick;
+                    // All done now
                     return true;
                 }
                 // If we're not tracking debug action, the rest of these actions
@@ -1991,6 +1985,29 @@ var nurdz;
                 this._grayBricks.update(stage, tick);
                 this._bonusBricks.update(stage, tick);
                 this._balls.update(stage, tick);
+                // If there is a dropping ball and it's time to drop it, take a step
+                // now.
+                if (this._droppingBall && tick >= this._lastDropTick + this._dropSpeed) {
+                    // We are going to drop the ball (or try to), so reset the last
+                    // drop tick to this tick.
+                    this._lastDropTick = tick;
+                    // Get the current position of the ball; this is just an alias
+                    // to the actual object.
+                    var pos = this._droppingBall.mapPosition;
+                    // Check to see what the next position of the ball is. If this
+                    // returns false, the ball is not going to move, so we are done
+                    // moving it now.
+                    if (this.nextBallPosition(this._droppingBall, pos) == false) {
+                        // Add the ball back to the maze at it's current position.
+                        this.setCellAt(pos.x, pos.y, this._droppingBall);
+                        // If the ball position is at the bottom of the maze,
+                        // get it to play it's vanish animation.
+                        if (pos.y == MAZE_HEIGHT - 2)
+                            this._droppingBall.vanish();
+                        // Now clear the flag so we know we're done.
+                        this._droppingBall = null;
+                    }
+                }
             };
             /**
              * Fetch the internal contents of the maze at the provided X and Y
@@ -2089,6 +2106,10 @@ var nurdz;
                             this._marker.render(x + (blitX * 25), y + (blitY * 25), renderer);
                     }
                 }
+                // If we are dropping a ball, then we need to render it now; while
+                // it is dropping, it's not stored in the grid.
+                if (this._droppingBall)
+                    this._droppingBall.render(x + (this._droppingBall.mapPosition.x * 25), y + (this._droppingBall.mapPosition.y * 25), renderer);
                 // Now the debug marker, if it's turned on.
                 if (this._debugTracking)
                     this._debugMarker.render(x + (this._debugPoint.x * 25), y + (this._debugPoint.y * 25), renderer);
