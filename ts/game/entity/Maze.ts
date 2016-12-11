@@ -258,8 +258,9 @@ module nurdz.game
             this._debugTracking = false;
             this._debugPoint = new Point (0, 0);
 
-            // Reset the maze
-            this.reset ();
+            // Generate a new maze; we require a reset here since the side walls
+            // have not been placed yet.
+            this.generateMaze (true);
         }
 
         /**
@@ -484,6 +485,17 @@ module nurdz.game
 
             // Clear the contents of the cell now.
             this.setDebugCell (null);
+        }
+
+        /**
+         * Wipe the entire contents of the maze, killing all entities. This will
+         * leave only the bounding bricks that stop the ball from going out of
+         * bounds.
+         */
+        debugWipeMaze ()
+        {
+            // As simple as a reset.
+            this.reset ();
         }
 
         /**
@@ -1494,8 +1506,8 @@ module nurdz.game
         /**
          * Reset the maze.
          *
-         * This will modify the bricks in the maze to represent a new randomly
-         * created, empty maze.
+         * This will erase the entire contents of the maze and all of the markers
+         * that might be in it, leaving only the side walls.
          */
         reset () : void
         {
@@ -1515,6 +1527,24 @@ module nurdz.game
             // and gives us a plain empty maze that is surrounded with the
             // bounding bricks that we need.
             this.emptyMaze ();
+        }
+
+        /**
+         * Generate a new maze; this sets everything up for a new round of the
+         * game.
+         *
+         * If doReset is true, reset () is invoked before the maze is generated.
+         * You can skip this if you want to pre-populate some parts of the maze
+         * before you generate the rest randomly.
+         *
+         * @param {boolean} doReset true to reset the maze contents first, false
+         * to generate as-is.
+         */
+        generateMaze (doReset : boolean) : void
+        {
+            // If asked, reset the maze too
+            if (doReset)
+                this.reset ();
 
             // Now generate the contents of the maze.
             this.genBlackHoles ();
@@ -1526,5 +1556,4 @@ module nurdz.game
             this.placeBalls ();
         }
     }
-
 }

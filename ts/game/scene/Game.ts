@@ -173,7 +173,15 @@ module nurdz.game
                     }
                     break;
 
-
+                // Wipe the entire maze contents; this is like a reset except
+                // no new maze is generated first.
+                case KeyCodes.KEY_W:
+                    if (this._maze.debugTracking)
+                    {
+                        this._maze.debugWipeMaze ();
+                        return true;
+                    }
+                    break;
             }
 
             // We did not handle it
