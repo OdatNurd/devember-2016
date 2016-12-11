@@ -2489,7 +2489,7 @@ var nurdz;
                         return true;
                     // Trigger a new maze generation.
                     case game.KeyCodes.KEY_G:
-                        this._maze.reset();
+                        this._maze.generateMaze(true);
                         return true;
                     // Toggle mouse tracking of the debug location, then update the
                     // tracking with the last known mouse location.

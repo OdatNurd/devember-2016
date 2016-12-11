@@ -69,7 +69,7 @@ module nurdz.game
 
                 // Trigger a new maze generation.
                 case KeyCodes.KEY_G:
-                    this._maze.reset ();
+                    this._maze.generateMaze (true);
                     return true;
 
                 // Toggle mouse tracking of the debug location, then update the
