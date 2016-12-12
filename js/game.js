@@ -2169,18 +2169,21 @@ var nurdz;
                 // Render the background of the maze first. This will draw the
                 // background and the walls along the sides.
                 this.renderMazeBacking(x, y, cSize, renderer);
-                // Render our entities now.
-                this._balls.render(renderer);
-                this._arrows.render(renderer);
-                this._grayBricks.render(renderer);
-                this._bonusBricks.render(renderer);
                 // Render all of the black holes; for this we have to iterate the
                 // list of known destinations and use them to calculate the
                 // appropriate position.
+                //
+                // Black holes have to come first so that if the ball comes to
+                // rest on top of them, we can still see it.
                 for (var i = 0; i < this._blackHole.length; i++) {
                     var pos = this._blackHole.destinationList[i];
                     this._blackHole.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
                 }
+                // Now render everything else.
+                this._balls.render(renderer);
+                this._arrows.render(renderer);
+                this._grayBricks.render(renderer);
+                this._bonusBricks.render(renderer);
                 // We can render the markers now.
                 this.renderMazeMarkers(x, y, cSize, renderer);
                 // Now the debug marker, if it's turned on.
