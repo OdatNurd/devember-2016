@@ -1138,40 +1138,6 @@ module nurdz.game
         }
 
         /**
-         * Check the internal contents of the maze at the provided X and Y
-         * values and fetch the brick that is stored at that location.
-         *
-         * @param   {number} x the maze X value to check
-         * @param   {number} y the maze Y value to check
-         *
-         * @returns {Brick} the brick at the given location; this will be the
-         * background brick if this location does not contain a brick
-         */
-        getBrickAt (x : number, y : number) : Brick
-        {
-            // Get the cell at this location, and return it back, returning the
-            // empty brick if needed.
-            return (<Brick>this.getCellAt (x, y)) || this._empty;
-        }
-
-        /**
-         * Change the brick at at the provided Z and Y values in the maze to the
-         * brick provided; if brick is null, this essentially sets an empty
-         * brick into this position in the grid.
-         *
-         * If the bounds provided are not valid for the maze, nothing happens.
-         *
-         * @param {number} x     the maze X value to set
-         * @param {number} y     the maze Y value to set
-         * @param {Brick}  brick the new brick to set, or null to set the empty
-         * brick
-         */
-        setBrickAt (x : number, y : number, brick : Brick) : void
-        {
-            this.setCellAt (x, y, brick);
-        }
-
-        /**
          * Render us onto the stage provided at the given position.
          *
          * This renders us by displaying all entities stored in the maze.
@@ -1249,14 +1215,14 @@ module nurdz.game
             // Now the left and right sides need to be solid bricks.
             for (let y = 0 ; y < MAZE_HEIGHT ; y++)
             {
-                this.setBrickAt (0, y, this._solid);
-                this.setBrickAt (MAZE_WIDTH - 1, y, this._solid);
+                this.setCellAt (0, y, this._solid);
+                this.setCellAt (MAZE_WIDTH - 1, y, this._solid);
             }
 
             // Lastly, the bottom row needs to be made solid, except for the
             // first and last columns, which have already been filled out.
             for (let x = 1 ; x < MAZE_WIDTH - 1 ; x++)
-                this.setBrickAt (x, MAZE_HEIGHT - 1, this._solid);
+                this.setCellAt (x, MAZE_HEIGHT - 1, this._solid);
         }
 
         /**
