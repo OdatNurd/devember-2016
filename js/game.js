@@ -131,6 +131,26 @@ var nurdz;
                 for (var i = 0; i < this._liveContents.length; i++)
                     this._liveContents[i].update(stage, tick);
             };
+            /**
+             * Invoke the render method on all entities contained in the pool which
+             * are currently marked as being alive.
+             *
+             * This will render all living entities by invoking their render method
+             * using their current world position (entity.position) and the renderer
+             * provided.
+             *
+             * As such this method is not for use in instances where there is a
+             * scrolling viewport unless you are modifying the position of everything
+             * in the pool as needed.
+             *
+             * @param {Renderer} renderer the renderer used to do the rendering
+             */
+            ActorPool.prototype.render = function (renderer) {
+                for (var i = 0; i < this._liveContents.length; i++) {
+                    var actor = this._liveContents[i];
+                    actor.render(actor.position.x, actor.position.y, renderer);
+                }
+            };
             return ActorPool;
         }());
         game.ActorPool = ActorPool;
@@ -1253,6 +1273,8 @@ var nurdz;
                     // Alter our collision properties so that our bounds represent the
                     // entire maze area.
                     _this.makeRectangle(sheet.width * MAZE_WIDTH, sheet.height * MAZE_HEIGHT);
+                    // Set the cell size now.
+                    _this._cellSize = sheet.width;
                     // Determine how much width is left on the stage that is not taken
                     // up by us.
                     var remainder = _this._stage.width - _this.width;
@@ -1271,7 +1293,13 @@ var nurdz;
                     // just slightly up from the bottom of the screen. We use half of
                     // the remainder of the width, so that the bottom edge is as far
                     // from the bottom of the screen as the side edges are.
-                    _this.setStagePositionXY((_this._stage.width / 2) - (_this.width / 2), _this._stage.height - _this.height - (remainder / 2));
+                    _this.setStagePositionXY(Math.floor((_this._stage.width / 2) - (_this.width / 2)), Math.floor(_this._stage.height - _this.height - (remainder / 2)));
+                    // Generate a new maze; we require a reset here since the side walls
+                    // have not been placed yet.
+                    //
+                    // This has to be here because we can't generate the maze without
+                    // knowing the size of the cells.
+                    _this.generateMaze(true);
                 };
                 // Set up a preload for the same sprite sheet that the brick entities
                 // are using. This will allow us to capture the callback that
@@ -1325,9 +1353,6 @@ var nurdz;
                 // grid size.
                 this._debugTracking = false;
                 this._debugPoint = new game.Point(0, 0);
-                // Generate a new maze; we require a reset here since the side walls
-                // have not been placed yet.
-                this.generateMaze(true);
             }
             Object.defineProperty(Maze.prototype, "debugTracking", {
                 /**
@@ -1359,7 +1384,7 @@ var nurdz;
                  *
                  * @returns {number} the pixel size of the cells in the grid
                  */
-                get: function () { return this._empty.width; },
+                get: function () { return this._cellSize; },
                 enumerable: true,
                 configurable: true
             });
@@ -2029,6 +2054,18 @@ var nurdz;
                     return;
                 // Set the brick at the location to the one provided.
                 this._contents[y * MAZE_WIDTH + x] = cell;
+                // If there is a cell here, update its internal position information
+                // based on what we have been given.
+                if (cell) {
+                    // The position we provided is a direct map position, so set
+                    // that first.
+                    cell.mapPosition.setToXY(x, y);
+                    // Now set the screen position to a scaled version of the map
+                    // position, which we offset by the position of our maze.
+                    cell.position.setTo(cell.mapPosition);
+                    cell.position.scale(this.cellSize);
+                    cell.position.translate(this._position);
+                }
             };
             /**
              * This will render the backing portion of the maze, which will draw in
@@ -2037,14 +2074,12 @@ var nurdz;
              *
              * This effectively draws what looks like a completely empty grid.
              *
+             * @param {number}   x        the X coordinate to start drawing at
+             * @param {number}   y        the y coordinate to start drawing at
+             * @param {number}   cSize    the size of the grid cells, in pixels
              * @param {Renderer} renderer the render to use during rendering
              */
-            Maze.prototype.renderMazeBacking = function (renderer) {
-                // Get the cell size of our cells so we know how to blit.
-                var cSize = this.cellSize;
-                // Rendering is offset from our position.
-                var x = this._position.x;
-                var y = this._position.y;
+            Maze.prototype.renderMazeBacking = function (x, y, cSize, renderer) {
                 // Iterate over all of the cells that make up the maze, rendering
                 // as appropriate.
                 for (var cellY = 0, blitY = y; cellY < MAZE_HEIGHT; cellY++, blitY += cSize) {
@@ -2057,6 +2092,26 @@ var nurdz;
                             cell = this._solid;
                         // Render this cell.
                         cell.render(blitX, blitY, renderer);
+                    }
+                }
+            };
+            /**
+             * Render the markers in the maze; these are set manually by the user
+             * clicking on the grid while in debug mode.
+             *
+             * @param {number}   x        the X coordinate to start drawing at
+             * @param {number}   y        the y coordinate to start drawing at
+             * @param {number}   cSize    the size of the grid cells, in pixels
+             * @param {Renderer} renderer the renderer to use to render the markers.
+             */
+            Maze.prototype.renderMazeMarkers = function (x, y, cSize, renderer) {
+                // Iterate over all columns and rows and render any markers that
+                // might exist.
+                for (var cellY = 0, blitY = y; cellY < MAZE_HEIGHT; cellY++, blitY += cSize) {
+                    for (var cellX = 0, blitX = x; cellX < MAZE_WIDTH; cellX++, blitX += cSize) {
+                        // If this position contains a marker, render one here.
+                        if (this.hasMarkerAt(cellX, cellY))
+                            this._marker.render(blitX, blitY, renderer);
                     }
                 }
             };
@@ -2074,28 +2129,23 @@ var nurdz;
                 var cSize = this.cellSize;
                 // Render the background of the maze first. This will draw the
                 // background and the walls along the sides.
-                this.renderMazeBacking(renderer);
-                // Iterate over all columns and rows of bricks, and get them to
-                // render themselves at the appropriate offset from the position
-                // we've been given.
-                for (var cellY = 0, blitY = y; cellY < MAZE_HEIGHT; cellY++, blitY += cSize) {
-                    for (var cellX = 0, blitX = x; cellX < MAZE_WIDTH; cellX++, blitX += cSize) {
-                        // Get the cell at this position, using the empty brick
-                        // cell if there isn't anything.
-                        var cell = this.getCellAt(cellX, cellY) || this._empty;
-                        // Render this cell.
-                        cell.render(blitX, blitY, renderer);
-                        // If this position contains a marker, render one here.
-                        if (this.hasMarkerAt(cellX, cellY))
-                            this._marker.render(blitX, blitY, renderer);
-                    }
-                }
+                this.renderMazeBacking(x, y, cSize, renderer);
+                // Render our entities now.
+                this._balls.render(renderer);
+                this._arrows.render(renderer);
+                this._grayBricks.render(renderer);
+                this._bonusBricks.render(renderer);
                 // If we are dropping a ball, then we need to render it now; while
                 // it is dropping, it's not stored in the grid.
+                //
+                // This should not really be needed, but it's still here for the
+                // moment while we clean up some other code.
                 if (this._droppingBall) {
                     var pos = this._droppingBall.mapPosition;
                     this._droppingBall.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
                 }
+                // We can render the markers now.
+                this.renderMazeMarkers(x, y, cSize, renderer);
                 // Now the debug marker, if it's turned on.
                 if (this._debugTracking) {
                     var pos = this._debugPoint;

@@ -157,5 +157,28 @@ module nurdz.game
             for (let i = 0 ; i < this._liveContents.length ; i++)
                 this._liveContents[i].update (stage, tick);
         }
+
+        /**
+         * Invoke the render method on all entities contained in the pool which
+         * are currently marked as being alive.
+         *
+         * This will render all living entities by invoking their render method
+         * using their current world position (entity.position) and the renderer
+         * provided.
+         *
+         * As such this method is not for use in instances where there is a
+         * scrolling viewport unless you are modifying the position of everything
+         * in the pool as needed.
+         *
+         * @param {Renderer} renderer the renderer used to do the rendering
+         */
+        render (renderer : Renderer) : void
+        {
+            for (let i = 0 ; i < this._liveContents.length ; i++)
+            {
+                let actor = this._liveContents[i];
+                actor.render (actor.position.x, actor.position.y, renderer);
+            }
+        }
     }
 }

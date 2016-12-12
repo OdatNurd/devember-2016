@@ -73,6 +73,13 @@ module nurdz.game
     export class Maze extends Entity
     {
         /**
+         * The size (in pixels) of the cells that make up the maze grid.
+         *
+         * @type {number}
+         */
+        private _cellSize : number;
+
+        /**
          * This is an array the same size as the _contents array which contains
          * a boolean that indicates if this position should be marked with a
          * debug marker or not.
@@ -217,7 +224,7 @@ module nurdz.game
          * @returns {number} the pixel size of the cells in the grid
          */
         get cellSize () : number
-        { return this._empty.width; }
+        { return this._cellSize; }
 
         /**
          * Construct a new empty maze entity.
@@ -291,10 +298,6 @@ module nurdz.game
             // grid size.
             this._debugTracking = false;
             this._debugPoint = new Point (0, 0);
-
-            // Generate a new maze; we require a reset here since the side walls
-            // have not been placed yet.
-            this.generateMaze (true);
         }
 
         /**
@@ -383,6 +386,9 @@ module nurdz.game
             // entire maze area.
             this.makeRectangle (sheet.width * MAZE_WIDTH, sheet.height * MAZE_HEIGHT);
 
+            // Set the cell size now.
+            this._cellSize = sheet.width;
+
             // Determine how much width is left on the stage that is not taken
             // up by us.
             let remainder = this._stage.width - this.width;
@@ -404,8 +410,15 @@ module nurdz.game
             // just slightly up from the bottom of the screen. We use half of
             // the remainder of the width, so that the bottom edge is as far
             // from the bottom of the screen as the side edges are.
-            this.setStagePositionXY ((this._stage.width / 2) - (this.width  / 2),
-                                     this._stage.height - this.height - (remainder / 2));
+            this.setStagePositionXY (Math.floor ((this._stage.width / 2) - (this.width  / 2)),
+                                     Math.floor (this._stage.height - this.height - (remainder / 2)));
+
+            // Generate a new maze; we require a reset here since the side walls
+            // have not been placed yet.
+            //
+            // This has to be here because we can't generate the maze without
+            // knowing the size of the cells.
+            this.generateMaze (true);
         }
 
         /**
@@ -1135,6 +1148,21 @@ module nurdz.game
 
             // Set the brick at the location to the one provided.
             this._contents[y * MAZE_WIDTH + x] = cell;
+
+            // If there is a cell here, update its internal position information
+            // based on what we have been given.
+            if (cell)
+            {
+                // The position we provided is a direct map position, so set
+                // that first.
+                cell.mapPosition.setToXY (x, y);
+
+                // Now set the screen position to a scaled version of the map
+                // position, which we offset by the position of our maze.
+                cell.position.setTo (cell.mapPosition);
+                cell.position.scale (this.cellSize);
+                cell.position.translate (this._position);
+            }
         }
 
         /**
@@ -1144,17 +1172,13 @@ module nurdz.game
          *
          * This effectively draws what looks like a completely empty grid.
          *
+         * @param {number}   x        the X coordinate to start drawing at
+         * @param {number}   y        the y coordinate to start drawing at
+         * @param {number}   cSize    the size of the grid cells, in pixels
          * @param {Renderer} renderer the render to use during rendering
          */
-        private renderMazeBacking (renderer : Renderer) : void
+        private renderMazeBacking (x : number, y : number, cSize : number, renderer : Renderer) : void
         {
-            // Get the cell size of our cells so we know how to blit.
-            let cSize = this.cellSize;
-
-            // Rendering is offset from our position.
-            let x = this._position.x;
-            let y = this._position.y;
-
             // Iterate over all of the cells that make up the maze, rendering
             // as appropriate.
             for (let cellY = 0, blitY = y ; cellY < MAZE_HEIGHT ; cellY++, blitY += cSize)
@@ -1175,6 +1199,30 @@ module nurdz.game
         }
 
         /**
+         * Render the markers in the maze; these are set manually by the user
+         * clicking on the grid while in debug mode.
+         *
+         * @param {number}   x        the X coordinate to start drawing at
+         * @param {number}   y        the y coordinate to start drawing at
+         * @param {number}   cSize    the size of the grid cells, in pixels
+         * @param {Renderer} renderer the renderer to use to render the markers.
+         */
+        private renderMazeMarkers (x : number, y : number, cSize : number, renderer : Renderer) : void
+        {
+            // Iterate over all columns and rows and render any markers that
+            // might exist.
+            for (let cellY = 0, blitY = y ; cellY < MAZE_HEIGHT ; cellY++, blitY += cSize)
+            {
+                for (let cellX = 0, blitX = x ; cellX < MAZE_WIDTH ; cellX++, blitX += cSize)
+                {
+                    // If this position contains a marker, render one here.
+                    if (this.hasMarkerAt (cellX, cellY))
+                        this._marker.render (blitX, blitY, renderer);
+                }
+            }
+        }
+
+        /**
          * Render us onto the stage provided at the given position.
          *
          * This renders us by displaying all entities stored in the maze.
@@ -1190,30 +1238,19 @@ module nurdz.game
 
             // Render the background of the maze first. This will draw the
             // background and the walls along the sides.
-            this.renderMazeBacking (renderer);
+            this.renderMazeBacking (x, y, cSize, renderer);
 
-            // Iterate over all columns and rows of bricks, and get them to
-            // render themselves at the appropriate offset from the position
-            // we've been given.
-            for (let cellY = 0, blitY = y ; cellY < MAZE_HEIGHT ; cellY++, blitY += cSize)
-            {
-                for (let cellX = 0, blitX = x ; cellX < MAZE_WIDTH ; cellX++, blitX += cSize)
-                {
-                    // Get the cell at this position, using the empty brick
-                    // cell if there isn't anything.
-                    let cell = this.getCellAt (cellX, cellY) || this._empty;
-
-                    // Render this cell.
-                    cell.render (blitX, blitY, renderer);
-
-                    // If this position contains a marker, render one here.
-                    if (this.hasMarkerAt (cellX, cellY))
-                        this._marker.render (blitX, blitY, renderer);
-                }
-            }
+            // Render our entities now.
+            this._balls.render (renderer);
+            this._arrows.render (renderer);
+            this._grayBricks.render (renderer);
+            this._bonusBricks.render (renderer);
 
             // If we are dropping a ball, then we need to render it now; while
             // it is dropping, it's not stored in the grid.
+            //
+            // This should not really be needed, but it's still here for the
+            // moment while we clean up some other code.
             if (this._droppingBall)
             {
                 let pos = this._droppingBall.mapPosition;
@@ -1221,6 +1258,9 @@ module nurdz.game
                                            y + (pos.y * cSize),
                                            renderer);
             }
+
+            // We can render the markers now.
+            this.renderMazeMarkers (x, y, cSize, renderer);
 
             // Now the debug marker, if it's turned on.
             if (this._debugTracking)
