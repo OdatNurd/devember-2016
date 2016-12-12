@@ -528,6 +528,29 @@ var nurdz;
                     : "c_appear");
             };
             /**
+             * Balls only block other balls while they are still visible.
+             *
+             * @returns {boolean} true if this ball should block the ball or false
+             * if the ball should be allowed to pass through it.
+             */
+            Ball.prototype.blocksBall = function () {
+                switch (this._ballType) {
+                    case BallType.BALL_PLAYER:
+                        if (this.animations.current == "p_appear" ||
+                            this.animations.current == "p_idle")
+                            return true;
+                        return false;
+                    case BallType.BALL_COMPUTER:
+                        if (this.animations.current == "c_appear" ||
+                            this.animations.current == "c_idle")
+                            return true;
+                        return false;
+                    // Everything else blocks movement.
+                    default:
+                        return true;
+                }
+            };
+            /**
              * When a ball touches us, we will push it to the left or to the right
              * as long as the last time the ball moved, it was because of a move
              * left or right.
