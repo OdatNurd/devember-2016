@@ -261,13 +261,13 @@ var nurdz;
     var game;
     (function (game) {
         /**
-         * This is a simple (debug) entity; it is used to debug the tracking for
-         * ball progress through the maze by leaving a trail of "bread crumbs".
+         * This is a simple entity for use during debugging. It can mark a cell in
+         * the maze by rendering its bounds.
          */
         var Marker = (function (_super) {
             __extends(Marker, _super);
             /**
-             * Construct a new arrow entity that will render on the stage provided.
+             * Construct a new marker entity that will render on the stage provided.
              *
              * This needs to know the size of the cells in the grid so that it knows
              * how to render itself; this means an instance cannot be created until
@@ -278,16 +278,12 @@ var nurdz;
              */
             function Marker(stage, cellSize) {
                 // Invoke the super; note that this does not set a position because
-                // that is set by whoever created us. Dimensions come from the cell
-                // size provided.
-                _super.call(this, stage, "marker");
-                this.makeRectangle(cellSize, cellSize);
-                // ALl of our rendering is handled by the super class, so all we
-                // have to do is set the color we want to render with.
-                this._debugColor = 'white';
+                // we're rendered wherever we are needed. We do set our dimensions
+                // however.
+                _super.call(this, "marker", stage, 0, 0, cellSize, cellSize, 1, {}, {}, 'white');
             }
             return Marker;
-        }(game.MazeCell));
+        }(game.Entity));
         game.Marker = Marker;
     })(game = nurdz.game || (nurdz.game = {}));
 })(nurdz || (nurdz = {}));
