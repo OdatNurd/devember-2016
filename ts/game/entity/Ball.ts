@@ -136,6 +136,9 @@ module nurdz.game
             // our sprites, so we don't set anything here.
             super (stage, "ball");
 
+            // This entity has transparency.
+            this._transparent = true;
+
             // Set up all of the animations that will be used for this entity.
             // There are two sets; one for the player ball and one for the
             // computer ball.

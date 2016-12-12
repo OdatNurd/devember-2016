@@ -167,6 +167,15 @@ var nurdz;
                 // our sprites, so we don't set anything here.
                 _super.call(this, name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
                 /**
+                 * When this value is set to true, the render method will first render
+                 * the background of the empty cell before it renders the entity however
+                 * it would normally be rendered.
+                 *
+                 * This defaults to off; subclasses should turn it on if they know that
+                 * they are transparent at any point.
+                 */
+                this._transparent = false;
+                /**
                  * This callback is invoked when the preload of our sprite sheet is
                  * finished and the image is fully loaded.
                  *
@@ -196,6 +205,35 @@ var nurdz;
                 // Set our bounds based on the dimensions of the sprites in the
                 // loaded sheet.
                 this.makeRectangle(sheet.width, sheet.height);
+            };
+            /**
+             * Render this cell using the renderer provided. The positionprovided
+             * represents the actual position of this cell as realized on the
+             * screen, which means that assumes that is relative to the screen and
+             * not the Maze entity.
+             *
+             * This overridden method just invokes the super, but if this MazeCell
+             * has marked itself as transparent, it will render the background brick
+             * before it renders as it normally would.
+             *
+             * @param x the x location to render the actor at, in stage coordinates
+             * (NOT world)
+             * @param y the y location to render the actor at, in stage coordinates
+             * (NOT world)
+             * @param renderer the class to use to render the actor
+             */
+            MazeCell.prototype.render = function (x, y, renderer) {
+                // If we're transparent, render the background first.
+                if (this._transparent) {
+                    // Translate to our origin (which is an offset from the location
+                    // that we were given) and then rotate the canvas to the
+                    // appropriate angle.
+                    renderer.translateAndRotate(x, y, this._angle);
+                    this._sheet.blit(1, -this._origin.x, -this._origin.y, renderer);
+                    renderer.restore();
+                }
+                // Let the super do the rest of our work.
+                _super.prototype.render.call(this, x, y, renderer);
             };
             /**
              * Returns a determination on whether this maze cell, in its current
@@ -370,6 +408,8 @@ var nurdz;
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, stage, "ball");
+                // This entity has transparency.
+                this._transparent = true;
                 // Set up all of the animations that will be used for this entity.
                 // There are two sets; one for the player ball and one for the
                 // computer ball.
@@ -718,6 +758,8 @@ var nurdz;
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, stage, "blackHole");
+                // This entity has transparency.
+                this._transparent = true;
                 // Set up an animation. As this is the first animation, it will play
                 // by default.
                 this.addAnimation("idle", 10, true, [35, 36, 37, 38, 39]);
@@ -2034,11 +2076,6 @@ var nurdz;
                         // Get the cell at this position, using the empty brick
                         // cell if there isn't anything.
                         var cell = this.getCellAt(cellX, cellY) || this._empty;
-                        // If the cell is not a brick entity of some kind, then it
-                        // probably has a transparent background. So we should first
-                        // render the empty cell to provide a background for it.
-                        if (cell instanceof game.Brick == false)
-                            this._empty.render(blitX, blitY, renderer);
                         // Render this cell.
                         cell.render(blitX, blitY, renderer);
                         // If this position contains a marker, render one here.

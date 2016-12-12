@@ -1162,12 +1162,6 @@ module nurdz.game
                     // cell if there isn't anything.
                     let cell = this.getCellAt (cellX, cellY) || this._empty;
 
-                    // If the cell is not a brick entity of some kind, then it
-                    // probably has a transparent background. So we should first
-                    // render the empty cell to provide a background for it.
-                    if (cell instanceof Brick == false)
-                        this._empty.render (blitX, blitY, renderer);
-
                     // Render this cell.
                     cell.render (blitX, blitY, renderer);
 
