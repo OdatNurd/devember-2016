@@ -2689,7 +2689,7 @@ var nurdz;
         nurdz.contentLoaded(window, function () {
             try {
                 // Set up the stage.
-                var stage = new nurdz.game.Stage('gameContent', 'black', true);
+                var stage = new nurdz.game.Stage('gameContent', 'black', window.location.search == "?noscale" ? false : true);
                 // Set up the default values used for creating a screen shot.
                 nurdz.game.Stage.screenshotFilenameBase = "devember2016-";
                 nurdz.game.Stage.screenshotWindowTitle = "devember2016-";

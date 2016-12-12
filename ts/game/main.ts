@@ -66,7 +66,8 @@ module nurdz.main
         try
         {
             // Set up the stage.
-            var stage = new game.Stage ('gameContent', 'black', true);
+            var stage = new game.Stage ('gameContent', 'black',
+                window.location.search == "?noscale" ? false : true);
 
             // Set up the default values used for creating a screen shot.
             game.Stage.screenshotFilenameBase = "devember2016-";
