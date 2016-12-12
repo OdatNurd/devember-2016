@@ -67,9 +67,6 @@ module nurdz.game
             // our sprites, so we don't set anything here.
             super (stage, "blackHole");
 
-            // This entity has transparency.
-            this._transparent = true;
-
             // Set up an animation. As this is the first animation, it will play
             // by default.
             this.addAnimation ("idle", 10, true, [35, 36, 37, 38, 39]);

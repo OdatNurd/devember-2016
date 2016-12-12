@@ -1138,6 +1138,43 @@ module nurdz.game
         }
 
         /**
+         * This will render the backing portion of the maze, which will draw in
+         * the bounding walls on the outer edges as well as a complete grid of
+         * background tiles.
+         *
+         * This effectively draws what looks like a completely empty grid.
+         *
+         * @param {Renderer} renderer the render to use during rendering
+         */
+        private renderMazeBacking (renderer : Renderer) : void
+        {
+            // Get the cell size of our cells so we know how to blit.
+            let cSize = this.cellSize;
+
+            // Rendering is offset from our position.
+            let x = this._position.x;
+            let y = this._position.y;
+
+            // Iterate over all of the cells that make up the maze, rendering
+            // as appropriate.
+            for (let cellY = 0, blitY = y ; cellY < MAZE_HEIGHT ; cellY++, blitY += cSize)
+            {
+                for (let cellX = 0, blitX = x ; cellX < MAZE_WIDTH ; cellX++, blitX += cSize)
+                {
+                    // The cell to render is empty, unless this is the side of
+                    // the maze or the bottom of it, in which case the wall is
+                    // solid.
+                    let cell = this._empty;
+                    if (cellX == 0 || cellX == MAZE_WIDTH - 1 || cellY == MAZE_HEIGHT - 1)
+                        cell = this._solid;
+
+                    // Render this cell.
+                    cell.render (blitX, blitY, renderer);
+                }
+            }
+        }
+
+        /**
          * Render us onto the stage provided at the given position.
          *
          * This renders us by displaying all entities stored in the maze.
@@ -1150,6 +1187,10 @@ module nurdz.game
         {
             // Get the cell size of our cells so we know how to blit.
             let cSize = this.cellSize;
+
+            // Render the background of the maze first. This will draw the
+            // background and the walls along the sides.
+            this.renderMazeBacking (renderer);
 
             // Iterate over all columns and rows of bricks, and get them to
             // render themselves at the appropriate offset from the position

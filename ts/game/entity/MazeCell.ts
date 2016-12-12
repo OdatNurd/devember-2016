@@ -9,16 +9,6 @@ module nurdz.game
     export class MazeCell extends Entity
     {
         /**
-         * When this value is set to true, the render method will first render
-         * the background of the empty cell before it renders the entity however
-         * it would normally be rendered.
-         *
-         * This defaults to off; subclasses should turn it on if they know that
-         * they are transparent at any point.
-         */
-        protected _transparent : boolean = false;
-
-        /**
          * Construct a new maze cell that will render on the stage provided and
          * which has the entity name provided.
          *
@@ -79,30 +69,15 @@ module nurdz.game
          * screen, which means that assumes that is relative to the screen and
          * not the Maze entity.
          *
-         * This overridden method just invokes the super, but if this MazeCell
-         * has marked itself as transparent, it will render the background brick
-         * before it renders as it normally would.
-         *
-         * @param x the x location to render the actor at, in stage coordinates
+         * @param x the x location to render the cell at, in stage coordinates
          * (NOT world)
-         * @param y the y location to render the actor at, in stage coordinates
+         * @param y the y location to render the cell at, in stage coordinates
          * (NOT world)
-         * @param renderer the class to use to render the actor
+         * @param renderer the class to use to render the cell
          */
         render (x : number, y : number, renderer : Renderer) : void
         {
-            // If we're transparent, render the background first.
-            if (this._transparent)
-            {
-                // Translate to our origin (which is an offset from the location
-                // that we were given) and then rotate the canvas to the
-                // appropriate angle.
-                renderer.translateAndRotate (x, y, this._angle);
-                this._sheet.blit (1, -this._origin.x, -this._origin.y, renderer);
-                renderer.restore ();
-            }
-
-            // Let the super do the rest of our work.
+            // Let the super do the work now.
             super.render (x, y, renderer);
         }
 

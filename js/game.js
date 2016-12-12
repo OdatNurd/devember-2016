@@ -167,15 +167,6 @@ var nurdz;
                 // our sprites, so we don't set anything here.
                 _super.call(this, name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
                 /**
-                 * When this value is set to true, the render method will first render
-                 * the background of the empty cell before it renders the entity however
-                 * it would normally be rendered.
-                 *
-                 * This defaults to off; subclasses should turn it on if they know that
-                 * they are transparent at any point.
-                 */
-                this._transparent = false;
-                /**
                  * This callback is invoked when the preload of our sprite sheet is
                  * finished and the image is fully loaded.
                  *
@@ -212,27 +203,14 @@ var nurdz;
              * screen, which means that assumes that is relative to the screen and
              * not the Maze entity.
              *
-             * This overridden method just invokes the super, but if this MazeCell
-             * has marked itself as transparent, it will render the background brick
-             * before it renders as it normally would.
-             *
-             * @param x the x location to render the actor at, in stage coordinates
+             * @param x the x location to render the cell at, in stage coordinates
              * (NOT world)
-             * @param y the y location to render the actor at, in stage coordinates
+             * @param y the y location to render the cell at, in stage coordinates
              * (NOT world)
-             * @param renderer the class to use to render the actor
+             * @param renderer the class to use to render the cell
              */
             MazeCell.prototype.render = function (x, y, renderer) {
-                // If we're transparent, render the background first.
-                if (this._transparent) {
-                    // Translate to our origin (which is an offset from the location
-                    // that we were given) and then rotate the canvas to the
-                    // appropriate angle.
-                    renderer.translateAndRotate(x, y, this._angle);
-                    this._sheet.blit(1, -this._origin.x, -this._origin.y, renderer);
-                    renderer.restore();
-                }
-                // Let the super do the rest of our work.
+                // Let the super do the work now.
                 _super.prototype.render.call(this, x, y, renderer);
             };
             /**
@@ -408,8 +386,6 @@ var nurdz;
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, stage, "ball");
-                // This entity has transparency.
-                this._transparent = true;
                 // Set up all of the animations that will be used for this entity.
                 // There are two sets; one for the player ball and one for the
                 // computer ball.
@@ -758,8 +734,6 @@ var nurdz;
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, stage, "blackHole");
-                // This entity has transparency.
-                this._transparent = true;
                 // Set up an animation. As this is the first animation, it will play
                 // by default.
                 this.addAnimation("idle", 10, true, [35, 36, 37, 38, 39]);
@@ -2057,6 +2031,36 @@ var nurdz;
                 this._contents[y * MAZE_WIDTH + x] = cell;
             };
             /**
+             * This will render the backing portion of the maze, which will draw in
+             * the bounding walls on the outer edges as well as a complete grid of
+             * background tiles.
+             *
+             * This effectively draws what looks like a completely empty grid.
+             *
+             * @param {Renderer} renderer the render to use during rendering
+             */
+            Maze.prototype.renderMazeBacking = function (renderer) {
+                // Get the cell size of our cells so we know how to blit.
+                var cSize = this.cellSize;
+                // Rendering is offset from our position.
+                var x = this._position.x;
+                var y = this._position.y;
+                // Iterate over all of the cells that make up the maze, rendering
+                // as appropriate.
+                for (var cellY = 0, blitY = y; cellY < MAZE_HEIGHT; cellY++, blitY += cSize) {
+                    for (var cellX = 0, blitX = x; cellX < MAZE_WIDTH; cellX++, blitX += cSize) {
+                        // The cell to render is empty, unless this is the side of
+                        // the maze or the bottom of it, in which case the wall is
+                        // solid.
+                        var cell = this._empty;
+                        if (cellX == 0 || cellX == MAZE_WIDTH - 1 || cellY == MAZE_HEIGHT - 1)
+                            cell = this._solid;
+                        // Render this cell.
+                        cell.render(blitX, blitY, renderer);
+                    }
+                }
+            };
+            /**
              * Render us onto the stage provided at the given position.
              *
              * This renders us by displaying all entities stored in the maze.
@@ -2068,6 +2072,9 @@ var nurdz;
             Maze.prototype.render = function (x, y, renderer) {
                 // Get the cell size of our cells so we know how to blit.
                 var cSize = this.cellSize;
+                // Render the background of the maze first. This will draw the
+                // background and the walls along the sides.
+                this.renderMazeBacking(renderer);
                 // Iterate over all columns and rows of bricks, and get them to
                 // render themselves at the appropriate offset from the position
                 // we've been given.
