@@ -788,6 +788,19 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Teleport.prototype, "destinationList", {
+                /**
+                 * Obtain the complete list of current destinations known to this
+                 * entity.
+                 *
+                 * This is an array which can have any number of elements, including 0.
+                 *
+                 * @returns {Array<Point>} [description]
+                 */
+                get: function () { return this._destinations; },
+                enumerable: true,
+                configurable: true
+            });
             Object.defineProperty(Teleport.prototype, "length", {
                 /**
                  * Get the number of destinations registered on this teleport instance.
@@ -2135,6 +2148,13 @@ var nurdz;
                 this._arrows.render(renderer);
                 this._grayBricks.render(renderer);
                 this._bonusBricks.render(renderer);
+                // Render all of the black holes; for this we have to iterate the
+                // list of known destinations and use them to calculate the
+                // appropriate position.
+                for (var i = 0; i < this._blackHole.length; i++) {
+                    var pos = this._blackHole.destinationList[i];
+                    this._blackHole.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
+                }
                 // If we are dropping a ball, then we need to render it now; while
                 // it is dropping, it's not stored in the grid.
                 //

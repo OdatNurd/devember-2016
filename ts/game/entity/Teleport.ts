@@ -42,6 +42,17 @@ module nurdz.game
         }
 
         /**
+         * Obtain the complete list of current destinations known to this
+         * entity.
+         *
+         * This is an array which can have any number of elements, including 0.
+         *
+         * @returns {Array<Point>} [description]
+         */
+        get destinationList () : Array<Point>
+        { return this._destinations; }
+
+        /**
          * Get the number of destinations registered on this teleport instance.
          *
          * This can be any number >= 0; when it is larger than 1, a destination

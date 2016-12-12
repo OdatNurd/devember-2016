@@ -1246,6 +1246,17 @@ module nurdz.game
             this._grayBricks.render (renderer);
             this._bonusBricks.render (renderer);
 
+            // Render all of the black holes; for this we have to iterate the
+            // list of known destinations and use them to calculate the
+            // appropriate position.
+            for (let i = 0 ; i < this._blackHole.length ; i++)
+            {
+                let pos = this._blackHole.destinationList[i];
+                this._blackHole.render (x + (pos.x * cSize),
+                                        y + (pos.y * cSize),
+                                        renderer);
+            }
+
             // If we are dropping a ball, then we need to render it now; while
             // it is dropping, it's not stored in the grid.
             //
