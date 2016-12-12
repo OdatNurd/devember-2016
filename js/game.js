@@ -1858,10 +1858,6 @@ var nurdz;
                     // of it's move.
                     this._droppingBall = entity;
                     this.setCellAt(position.x, position.y, null);
-                    // In the dropping ball, set the current position to the maze
-                    // position that it currently holds; that will allow us to track
-                    // it, since by default maze cells don't know where they are.
-                    this._droppingBall.setMapPosition(position);
                     // Ensure that the ball knows before we start that it started
                     // out not moving.
                     this._droppingBall.moveType = game.BallMoveType.BALL_MOVE_NONE;
@@ -2052,6 +2048,13 @@ var nurdz;
                         // Now clear the flag so we know we're done.
                         this._droppingBall = null;
                     }
+                    else {
+                        // The ball moved, so update it's location on the screen
+                        // as well.
+                        this._droppingBall.position.setTo(pos);
+                        this._droppingBall.position.scale(this.cellSize);
+                        this._droppingBall.position.translate(this._position);
+                    }
                 }
             };
             /**
@@ -2177,15 +2180,6 @@ var nurdz;
                 for (var i = 0; i < this._blackHole.length; i++) {
                     var pos = this._blackHole.destinationList[i];
                     this._blackHole.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
-                }
-                // If we are dropping a ball, then we need to render it now; while
-                // it is dropping, it's not stored in the grid.
-                //
-                // This should not really be needed, but it's still here for the
-                // moment while we clean up some other code.
-                if (this._droppingBall) {
-                    var pos = this._droppingBall.mapPosition;
-                    this._droppingBall.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
                 }
                 // We can render the markers now.
                 this.renderMazeMarkers(x, y, cSize, renderer);
