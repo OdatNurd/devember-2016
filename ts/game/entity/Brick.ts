@@ -110,11 +110,6 @@ module nurdz.game
             // our sprites, so we don't set anything here.
             super (stage, "brick");
 
-            // Load the sprite sheet that will contain our sprites. The size of
-            // the entity is based on the size of the sprites, so we let the
-            // callback handle that.
-            this._sheet = new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
-
             // The non-animated bricks don't have their update methods called,
             // so no special setup is needed here.
             //
@@ -134,17 +129,6 @@ module nurdz.game
             // is properly visually represented, either by playing the correct
             // animation or by selecting the appropriate sprite.
             this.brickType = typeOfBrick;
-        }
-
-        /**
-         * This callback is invoked when our sprite sheet finishes loading the
-         * underlying image for the sprites. It allows us to set our bounds to
-         * be a rectangle at the dimensions of the sprites in the sprite sheet.
-         */
-        private setDimensions = (sheet : SpriteSheet) : void =>
-        {
-            // Alter our collision properties
-            this.makeRectangle (sheet.width, sheet.height);
         }
 
         /**

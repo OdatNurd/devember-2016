@@ -150,24 +150,53 @@ var nurdz;
             __extends(MazeCell, _super);
             /**
              * Construct a new maze cell that will render on the stage provided and
-             * which will use the provided SpriteSheet.
+             * which has the entity name provided.
              *
-             * The dimensions of this entity are not set at construction time and
-             * are instead set based on the size of the sprites in the attached
-             * sprite sheet.
-             *
-             * Subclasses are responsible for setting the sprite sheet and for
-             * ensuring that all MazeCell subclasses use the same size sprites.
+             * This class will automatically set the sprite sheet to the sheet
+             * used by all MazeCell subclasses and invoke the setDimensions() method
+             * once the preload has completed, at which point dimensions and other
+             * handling can be done.
              *
              * @param {Stage}  stage the stage that we use to render ourselves
              * @param {String} name  the entity name for this subclass
              */
             function MazeCell(stage, name) {
+                var _this = this;
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+                /**
+                 * This callback is invoked when the preload of our sprite sheet is
+                 * finished and the image is fully loaded.
+                 *
+                 * This method is not overrideable due to the way it is implemented, so
+                 * we just invoke the client version of this method so that subclasses
+                 * can specialize if needed.
+                 *
+                 * @param {SpriteSheet} sheet the sprite sheet that was loaded
+                 */
+                this.preloadComplete = function (sheet) {
+                    // Invoke the regular method now.
+                    _this.spritesheetLoaded(sheet);
+                };
+                // Load the sprite sheet that will contain our sprites. The size of
+                // the entity is based on the size of the sprites, so we let the
+                // callback handle that.
+                this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.preloadComplete);
             }
+            /**
+             * This is invoked when our sprite sheet has finished loading, allowing
+             * us to perform any tasks that require information from the sprite
+             * sheet, such as the dimensions.
+             *
+             * @param {SpriteSheet} sheet the loaded sprite sheet
+             */
+            MazeCell.prototype.spritesheetLoaded = function (sheet) {
+                // Set our bounds based on the dimensions of the sprites in the
+                // loaded sheet.
+                this.makeRectangle(sheet.width, sheet.height);
+            };
             /**
              * Returns a determination on whether this maze cell, in its current
              * state, would block the ball from moving through it or not.
@@ -336,26 +365,11 @@ var nurdz;
              * @param {ballType} typeOfBall the type of ball entity this should be
              */
             function Ball(stage, typeOfBall) {
-                var _this = this;
                 if (typeOfBall === void 0) { typeOfBall = BallType.BALL_PLAYER; }
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, stage, "ball");
-                /**
-                 * This callback is invoked when our sprite sheet finishes loading the
-                 * underlying image for the sprites. It allows us to set our bounds to
-                 * be a rectangle at the dimensions of the sprites in the sprite sheet.
-                 */
-                this.setDimensions = function (sheet) {
-                    // Alter our collision properties; we remain a rectangle even though
-                    // we are represented by a circular sprite.
-                    _this.makeRectangle(sheet.width, sheet.height);
-                };
-                // Load the sprite sheet that will contain our sprites. The size of
-                // the entity is based on the size of the sprites, so we let the
-                // callback handle that.
-                this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
                 // Set up all of the animations that will be used for this entity.
                 // There are two sets; one for the player ball and one for the
                 // computer ball.
@@ -548,25 +562,11 @@ var nurdz;
              * be
              */
             function Brick(stage, typeOfBrick) {
-                var _this = this;
                 if (typeOfBrick === void 0) { typeOfBrick = BrickType.BRICK_SOLID; }
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, stage, "brick");
-                /**
-                 * This callback is invoked when our sprite sheet finishes loading the
-                 * underlying image for the sprites. It allows us to set our bounds to
-                 * be a rectangle at the dimensions of the sprites in the sprite sheet.
-                 */
-                this.setDimensions = function (sheet) {
-                    // Alter our collision properties
-                    _this.makeRectangle(sheet.width, sheet.height);
-                };
-                // Load the sprite sheet that will contain our sprites. The size of
-                // the entity is based on the size of the sprites, so we let the
-                // callback handle that.
-                this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
                 // The non-animated bricks don't have their update methods called,
                 // so no special setup is needed here.
                 //
@@ -714,24 +714,10 @@ var nurdz;
              * @param {Stage} stage the stage that we use to render ourselves
              */
             function Teleport(stage) {
-                var _this = this;
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, stage, "blackHole");
-                /**
-                 * This callback is invoked when our sprite sheet finishes loading the
-                 * underlying image for the sprites. It allows us to set our bounds to
-                 * be a rectangle at the dimensions of the sprites in the sprite sheet.
-                 */
-                this.setDimensions = function (sheet) {
-                    // Alter our collision properties
-                    _this.makeRectangle(sheet.width, sheet.height);
-                };
-                // Load the sprite sheet that will contain our sprites. The size of
-                // the entity is based on the size of the sprites, so we let the
-                // callback handle that.
-                this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
                 // Set up an animation. As this is the first animation, it will play
                 // by default.
                 this.addAnimation("idle", 10, true, [35, 36, 37, 38, 39]);
@@ -938,22 +924,12 @@ var nurdz;
              * @param {ArrowDirection} direction the direction the arrow is facing
              */
             function Arrow(stage, arrowType, direction) {
-                var _this = this;
                 if (arrowType === void 0) { arrowType = ArrowType.ARROW_NORMAL; }
                 if (direction === void 0) { direction = ArrowDirection.ARROW_LEFT; }
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
                 _super.call(this, stage, "arrow");
-                /**
-                 * This callback is invoked when our sprite sheet finishes loading the
-                 * underlying image for the sprites. It allows us to set our bounds to
-                 * be a rectangle at the dimensions of the sprites in the sprite sheet.
-                 */
-                this.setDimensions = function (sheet) {
-                    // Alter our collision properties
-                    _this.makeRectangle(sheet.width, sheet.height);
-                };
                 // Capture the type and direction of the arrow.
                 this._arrowType = arrowType;
                 this._arrowDirection = direction;
@@ -961,10 +937,6 @@ var nurdz;
                 // away.
                 if (arrowType == ArrowType.ARROW_AUTOMATIC)
                     this.setAutoFlipTimer();
-                // Load the sprite sheet that will contain our sprites. The size of
-                // the entity is based on the size of the sprites, so we let the
-                // callback handle that.
-                this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
                 // Set up animations for this entity. We need animations for two
                 // different types of entity, so animations are prefixed with 'n'
                 // for "normal" arrows and 'a' for "automatically rotating" arrows.

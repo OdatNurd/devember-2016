@@ -136,11 +136,6 @@ module nurdz.game
             // our sprites, so we don't set anything here.
             super (stage, "ball");
 
-            // Load the sprite sheet that will contain our sprites. The size of
-            // the entity is based on the size of the sprites, so we let the
-            // callback handle that.
-            this._sheet = new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
-
             // Set up all of the animations that will be used for this entity.
             // There are two sets; one for the player ball and one for the
             // computer ball.
@@ -161,18 +156,6 @@ module nurdz.game
 
             // The ball does not start rolling
             this.moveType = BallMoveType.BALL_MOVE_NONE;
-        }
-
-        /**
-         * This callback is invoked when our sprite sheet finishes loading the
-         * underlying image for the sprites. It allows us to set our bounds to
-         * be a rectangle at the dimensions of the sprites in the sprite sheet.
-         */
-        private setDimensions = (sheet : SpriteSheet) : void =>
-        {
-            // Alter our collision properties; we remain a rectangle even though
-            // we are represented by a circular sprite.
-            this.makeRectangle (sheet.width, sheet.height);
         }
 
         /**

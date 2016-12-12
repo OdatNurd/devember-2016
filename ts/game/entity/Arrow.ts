@@ -172,11 +172,6 @@ module nurdz.game
             if (arrowType == ArrowType.ARROW_AUTOMATIC)
                 this.setAutoFlipTimer ();
 
-            // Load the sprite sheet that will contain our sprites. The size of
-            // the entity is based on the size of the sprites, so we let the
-            // callback handle that.
-            this._sheet = new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
-
             // Set up animations for this entity. We need animations for two
             // different types of entity, so animations are prefixed with 'n'
             // for "normal" arrows and 'a' for "automatically rotating" arrows.
@@ -198,17 +193,6 @@ module nurdz.game
             // Based on the type and direction, set the appropriate animation
             // playing. We always start out being idle.
             this.resetAnimation ();
-        }
-
-        /**
-         * This callback is invoked when our sprite sheet finishes loading the
-         * underlying image for the sprites. It allows us to set our bounds to
-         * be a rectangle at the dimensions of the sprites in the sprite sheet.
-         */
-        private setDimensions = (sheet : SpriteSheet) : void =>
-        {
-            // Alter our collision properties
-            this.makeRectangle (sheet.width, sheet.height);
         }
 
         /**

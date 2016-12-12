@@ -67,28 +67,12 @@ module nurdz.game
             // our sprites, so we don't set anything here.
             super (stage, "blackHole");
 
-            // Load the sprite sheet that will contain our sprites. The size of
-            // the entity is based on the size of the sprites, so we let the
-            // callback handle that.
-            this._sheet = new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
-
             // Set up an animation. As this is the first animation, it will play
             // by default.
             this.addAnimation ("idle", 10, true, [35, 36, 37, 38, 39]);
 
             // Create the list of destinations
             this._destinations = new Array<Point> ();
-        }
-
-        /**
-         * This callback is invoked when our sprite sheet finishes loading the
-         * underlying image for the sprites. It allows us to set our bounds to
-         * be a rectangle at the dimensions of the sprites in the sprite sheet.
-         */
-        private setDimensions = (sheet : SpriteSheet) : void =>
-        {
-            // Alter our collision properties
-            this.makeRectangle (sheet.width, sheet.height);
         }
 
         /**

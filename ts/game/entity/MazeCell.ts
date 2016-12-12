@@ -10,14 +10,12 @@ module nurdz.game
     {
         /**
          * Construct a new maze cell that will render on the stage provided and
-         * which will use the provided SpriteSheet.
+         * which has the entity name provided.
          *
-         * The dimensions of this entity are not set at construction time and
-         * are instead set based on the size of the sprites in the attached
-         * sprite sheet.
-         *
-         * Subclasses are responsible for setting the sprite sheet and for
-         * ensuring that all MazeCell subclasses use the same size sprites.
+         * This class will automatically set the sprite sheet to the sheet
+         * used by all MazeCell subclasses and invoke the setDimensions() method
+         * once the preload has completed, at which point dimensions and other
+         * handling can be done.
          *
          * @param {Stage}  stage the stage that we use to render ourselves
          * @param {String} name  the entity name for this subclass
@@ -28,6 +26,41 @@ module nurdz.game
             // that is set by whoever created us. Our dimensions are based on
             // our sprites, so we don't set anything here.
             super (name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+
+            // Load the sprite sheet that will contain our sprites. The size of
+            // the entity is based on the size of the sprites, so we let the
+            // callback handle that.
+            this._sheet = new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.preloadComplete);
+        }
+
+        /**
+         * This callback is invoked when the preload of our sprite sheet is
+         * finished and the image is fully loaded.
+         *
+         * This method is not overrideable due to the way it is implemented, so
+         * we just invoke the client version of this method so that subclasses
+         * can specialize if needed.
+         *
+         * @param {SpriteSheet} sheet the sprite sheet that was loaded
+         */
+        private preloadComplete = (sheet : SpriteSheet) : void =>
+        {
+            // Invoke the regular method now.
+            this.spritesheetLoaded (sheet);
+        }
+
+        /**
+         * This is invoked when our sprite sheet has finished loading, allowing
+         * us to perform any tasks that require information from the sprite
+         * sheet, such as the dimensions.
+         *
+         * @param {SpriteSheet} sheet the loaded sprite sheet
+         */
+        protected spritesheetLoaded (sheet : SpriteSheet) : void
+        {
+            // Set our bounds based on the dimensions of the sprites in the
+            // loaded sheet.
+            this.makeRectangle (sheet.width, sheet.height);
         }
 
         /**
