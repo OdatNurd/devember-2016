@@ -2204,10 +2204,10 @@ var nurdz;
                     this._blackHole.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
                 }
                 // Now render everything else.
-                this._balls.render(renderer);
                 this._arrows.render(renderer);
                 this._grayBricks.render(renderer);
                 this._bonusBricks.render(renderer);
+                this._balls.render(renderer);
                 // We can render the markers now.
                 this.renderMazeMarkers(x, y, cSize, renderer);
                 // Now the debug marker, if it's turned on.
