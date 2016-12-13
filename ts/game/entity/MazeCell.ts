@@ -1,6 +1,31 @@
 module nurdz.game
 {
     /**
+     * This interface is used to mark MazeCell instances that can be hidden or
+     * shown, and by extension do an animated vanish or return.
+     */
+    export interface HideableMazeCell extends Actor
+    {
+        /**
+         * An indication as to whether the last command to this entity from the
+         * ones listed below told it to be hidden or not.
+         */
+        isHidden : boolean;
+
+        /**
+         * These methods make this entity visible.
+         */
+        idle () : void;
+        appear () : void;
+
+        /**
+         * These methods make this entity
+         */
+        hide () : void;
+        vanish () : void;
+    }
+
+    /**
      * The entity that represents a cell inside of the Maze entity.
      *
      * These are basically regular Entity objects with a slightly different
