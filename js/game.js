@@ -1684,7 +1684,7 @@ var nurdz;
                         return;
                     }
                 }
-                else if (cell instanceof game.Ball == false) {
+                else {
                     console.log("Unable to delete entity; I don't know what it is");
                     return;
                 }
@@ -1728,14 +1728,11 @@ var nurdz;
                 // If the cell is a ball, toggle the type.
                 if (cell instanceof game.Ball) {
                     var ball = cell;
-                    if (ball.ballType == game.BallType.BALL_PLAYER) {
+                    if (ball.ballType == game.BallType.BALL_PLAYER)
                         ball.ballType = game.BallType.BALL_COMPUTER;
-                        ball.playAnimation("c_appear");
-                    }
-                    else {
+                    else
                         ball.ballType = game.BallType.BALL_PLAYER;
-                        ball.playAnimation("p_appear");
-                    }
+                    ball.appear();
                     return;
                 }
                 // If the cell is a brick, toggle the type. This will change the visual
@@ -1809,23 +1806,6 @@ var nurdz;
                 }
                 else
                     console.log("Cannot add brick; cell is not empty");
-            };
-            /**
-             * Scan the entire grid for Brick entities that are currently being hidden
-             * by virtue of their playing a hidden or idle_gone animations and have
-             * them become visible again.
-             */
-            Maze.prototype.debugUnhideAll = function () {
-                for (var row = 0; row < MAZE_HEIGHT; row++) {
-                    for (var col = 0; col < MAZE_WIDTH; col++) {
-                        var cell = this.getCellAt(col, row);
-                        if (cell != null || cell instanceof game.Brick) {
-                            var brick = cell;
-                            if (brick.isHidden)
-                                brick.appear();
-                        }
-                    }
-                }
             };
             /**
              * Vanish all of the bricks of a set type based on the parameter. Any
@@ -1974,19 +1954,15 @@ var nurdz;
                     else
                         this.setMarkerAt(position.x, position.y);
                 }
-                // If this is a brick, we might want to vanish or appear it in the
-                // maze.
+                // If this is a brick that is not hidden, vanish it. We can't bring
+                // it back because once it's hidden the update loop will reap it.
                 if (entity instanceof game.Brick) {
                     // Clear any marker that might be here; these can only appear if
                     // the ball drops through, so lets be able to remove them.
                     this.clearMarkerAt(position.x, position.y);
-                    // Since it's a brick, change it's animation based on the type.
-                    // We can tell if the brick is visible or not by checking what
-                    // the currently playing animation is.
+                    // Get the brick; if its not hidden, vanish it.
                     var brick = entity;
-                    if (brick.isHidden)
-                        brick.appear();
-                    else
+                    if (brick.isHidden == false)
                         brick.vanish();
                 }
                 // If it is an arrow, flip it. This works for any type of arrow; an
@@ -2839,16 +2815,6 @@ var nurdz;
                     case game.KeyCodes.KEY_L:
                         if (this._maze.debugTracking) {
                             this._maze.debugAddBall();
-                            return true;
-                        }
-                        break;
-                    // Scan the entire maze for all entities that are currently
-                    // playing the animation that causes them to be hidden, and get
-                    // them to play the animation that causes them to be visible
-                    // instead.
-                    case game.KeyCodes.KEY_U:
-                        if (this._maze.debugTracking) {
-                            this._maze.debugUnhideAll();
                             return true;
                         }
                         break;

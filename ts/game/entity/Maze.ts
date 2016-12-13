@@ -551,7 +551,8 @@ module nurdz.game
                 }
             }
 
-            else if (cell instanceof Ball == false)
+            // We don't know what this is.
+            else
             {
                 console.log ("Unable to delete entity; I don't know what it is");
                 return;
@@ -606,15 +607,10 @@ module nurdz.game
             {
                 let ball = <Ball> cell;
                 if (ball.ballType == BallType.BALL_PLAYER)
-                {
                     ball.ballType = BallType.BALL_COMPUTER;
-                    ball.playAnimation ("c_appear");
-                }
                 else
-                {
                     ball.ballType = BallType.BALL_PLAYER;
-                    ball.playAnimation ("p_appear");
-                }
+                ball.appear ();
                 return;
             }
 
@@ -702,28 +698,6 @@ module nurdz.game
             }
             else
                 console.log ("Cannot add brick; cell is not empty");
-        }
-
-        /**
-         * Scan the entire grid for Brick entities that are currently being hidden
-         * by virtue of their playing a hidden or idle_gone animations and have
-         * them become visible again.
-         */
-        debugUnhideAll () : void
-        {
-            for (let row = 0 ; row < MAZE_HEIGHT ; row++)
-            {
-                for (let col = 0 ; col < MAZE_WIDTH ; col++)
-                {
-                    let cell = this.getCellAt (col, row);
-                    if (cell != null || cell instanceof Brick)
-                    {
-                        let brick = <Brick> cell;
-                        if (brick.isHidden)
-                            brick.appear ();
-                    }
-                }
-            }
         }
 
         /**
@@ -899,21 +873,17 @@ module nurdz.game
                     this.setMarkerAt (position.x, position.y);
             }
 
-            // If this is a brick, we might want to vanish or appear it in the
-            // maze.
+            // If this is a brick that is not hidden, vanish it. We can't bring
+            // it back because once it's hidden the update loop will reap it.
             if (entity instanceof Brick)
             {
                 // Clear any marker that might be here; these can only appear if
                 // the ball drops through, so lets be able to remove them.
                 this.clearMarkerAt (position.x, position.y);
 
-                // Since it's a brick, change it's animation based on the type.
-                // We can tell if the brick is visible or not by checking what
-                // the currently playing animation is.
+                // Get the brick; if its not hidden, vanish it.
                 let brick = <Brick> entity;
-                if (brick.isHidden)
-                    brick.appear ();
-                else
+                if (brick.isHidden == false)
                     brick.vanish ();
             }
 
@@ -925,7 +895,6 @@ module nurdz.game
                 arrow.flip ();
                 return true;
             }
-
 
             // We care not for this click.
             return false;
