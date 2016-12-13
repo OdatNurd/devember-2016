@@ -36,6 +36,26 @@ module nurdz.game
         private _liveContents : Array<T>;
 
         /**
+         * The list of entities in this pool that are currently marked as being
+         * alive. These are the entities for which our methods such as update()
+         * and render() operate over.
+         *
+         * @returns {Array<T>} the list of live entities, which may be empty
+         */
+        get liveEntities () : Array<T>
+        { return this._liveContents; }
+
+        /**
+         * The list of entities in this pool that are currently marked as being
+         * dead. These are the entities available to be resurrected for further
+         * use.
+         *
+         * @returns {Array<T>} the list of dead entities, which may be empty
+         */
+        get deadEntities () : Array<T>
+        { return this._deadPool; }
+
+        /**
          * Create a new empty entity pool.
          */
         constructor ()

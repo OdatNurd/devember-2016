@@ -31,6 +31,30 @@ var nurdz;
                 this._deadPool = new Array();
                 this._liveContents = new Array();
             }
+            Object.defineProperty(ActorPool.prototype, "liveEntities", {
+                /**
+                 * The list of entities in this pool that are currently marked as being
+                 * alive. These are the entities for which our methods such as update()
+                 * and render() operate over.
+                 *
+                 * @returns {Array<T>} the list of live entities, which may be empty
+                 */
+                get: function () { return this._liveContents; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(ActorPool.prototype, "deadEntities", {
+                /**
+                 * The list of entities in this pool that are currently marked as being
+                 * dead. These are the entities available to be resurrected for further
+                 * use.
+                 *
+                 * @returns {Array<T>} the list of dead entities, which may be empty
+                 */
+                get: function () { return this._deadPool; },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * Add a new entity to the pool of entities. The state of new entities
              * (alive or dead) is determined by the optional parameter.
