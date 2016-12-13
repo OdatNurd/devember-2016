@@ -1468,6 +1468,10 @@ var nurdz;
                 this._droppingBall = null;
                 this._dropSpeed = 3;
                 this._lastDropTick = 0;
+                // No ball has finished moving and no gray bricks have been removed.
+                // These also get reset on level generation.
+                this._ballMoveFinalized = false;
+                this._grayBricksRemoved = false;
                 // Pre-populate all of our actor pools with the maximum possible
                 // number of actors that we could need. For the case of the gray
                 // bricks and bonus bricks, this creates more than we technically
@@ -2083,14 +2087,51 @@ var nurdz;
                 return false;
             };
             /**
+             * This performs a check to see if all of the balls have been played by
+             * both players or not. This involves checking that the top row is
+             * either empty of all balls, or any balls that remain have a cell under
+             * them that is going to stop them from moving.
+             *
+             * When this determination is made, we vanish all of the gray bricks out
+             * of the level for the final phase of the round.
+             */
+            Maze.prototype.checkForAllBallsPlayed = function () {
+                console.log("Checking for all balls played");
+                // Scan every cell in the top row of the maze contents.
+                for (var cellX = 1; cellX < MAZE_WIDTH - 1; cellX++) {
+                    // Get the content of this cell. If there is content here, we
+                    // need to check below it.
+                    if (this.getCellAt(cellX, 0) != null) {
+                        // Get the cell below; if it is empty or it does not block a
+                        // ball from moving, then this ball is still playable, so
+                        // all balls are not played; we can leave now.
+                        var below = this.getCellAt(cellX, 1);
+                        if (below == null || below.blocksBall() == false) {
+                            console.log("Ball found still playable at column " + cellX);
+                            return;
+                        }
+                    }
+                }
+                // If we get here, all of the balls in the top row are either gone
+                // or blocked from moving. In either case, hide all of the gray
+                // bricks now.
+                console.log("Hiding all gray bricks");
+                for (var i = 0; i < this._grayBricks.liveEntities.length; i++)
+                    this._grayBricks.liveEntities[i].vanish();
+            };
+            /**
              * Given an ActorPool that contains maze cells that conform to the
              * hide-able maze cell interface, scan the pool for all live entities
              * that are currently hidden and not actively hiding themselves and
              * remove them from the maze grid, killing the entity in the process.
              *
              * @param {ActorPool<HideableMazeCell>} pool the pool to reap
+             *
+             * @returns {number} the number of entities that were reaped during the
+             * call, which may be 0.
              */
             Maze.prototype.reapHiddenEntitiesFromPool = function (pool) {
+                var retVal = 0;
                 // Scan all of the live entities in the pool.
                 for (var i = 0; i < pool.liveEntities.length; i++) {
                     // If this ball thinks it's hidden and it's animation is no
@@ -2099,9 +2140,10 @@ var nurdz;
                     if (cell.isHidden && cell.animations.isPlaying == false) {
                         this.setCellAt(cell.mapPosition.x, cell.mapPosition.y, null);
                         pool.killEntity(cell);
-                        console.log("Killed cell at: " + cell.mapPosition.toString());
+                        retVal++;
                     }
                 }
+                return retVal;
             };
             /**
              * This is called every frame update (tick tells us how many times this
@@ -2127,7 +2169,20 @@ var nurdz;
                 this._balls.update(stage, tick);
                 // Reap any dead balls; these are balls which are currently
                 // invisible but still alive; they can be removed from the grid now.
-                this.reapHiddenEntitiesFromPool(this._balls);
+                //
+                // When this happens, we can set the flag that indicates that the
+                // ball move is finalized, so that the update code can trigger a
+                // check to see if all balls have been played or not.
+                if (this.reapHiddenEntitiesFromPool(this._balls) > 0)
+                    this._ballMoveFinalized = true;
+                // Reap any dead gray bricks; these are the gray bricks that have
+                // been vanished out of the level because all of the balls have been
+                // played.
+                //
+                // If this collects any gray bricks, we can set the flag that
+                // indicates that we're done removing them now.
+                if (this.reapHiddenEntitiesFromPool(this._grayBricks) > 0)
+                    this._grayBricksRemoved = true;
                 // If there is a dropping ball and it's time to drop it, take a step
                 // now.
                 if (this._droppingBall && tick >= this._lastDropTick + this._dropSpeed) {
@@ -2143,10 +2198,20 @@ var nurdz;
                     if (this.nextBallPosition(this._droppingBall, pos) == false) {
                         // Add the ball back to the maze at it's current position.
                         this.setCellAt(pos.x, pos.y, this._droppingBall);
-                        // If the ball position is at the bottom of the maze,
-                        // get it to play it's vanish animation.
+                        // If the ball position is at the bottom of the maze, get it
+                        // to play it's vanish animation. When this is not the case,
+                        // the ball stopped somewhere in the maze. In this case we
+                        // set the flag that says the ball is done moving right
+                        // away.
+                        //
+                        // A ball that is vanishing sets this flag when it gets
+                        // reaped, so that the code that triggers when the flag
+                        // becomes set to true doesn't happen until the ball is
+                        // visibly gone.
                         if (pos.y == MAZE_HEIGHT - 2)
                             this._droppingBall.vanish();
+                        else
+                            this._ballMoveFinalized = true;
                         // Now clear the flag so we know we're done.
                         this._droppingBall = null;
                     }
@@ -2157,6 +2222,23 @@ var nurdz;
                         this._droppingBall.position.scale(this.cellSize);
                         this._droppingBall.position.translate(this._position);
                     }
+                }
+                // When this flag is set, it means that a ball has been dropped and
+                // is now finished moving. This can either have triggered from the
+                // code above, or if the code above vanished the ball, the code that
+                // reaps the dead ball when it is finished vanishing sets this flag
+                // for us.
+                //
+                // In either case, we use this to check and see if all of the balls
+                // have been played or not, so that we can trigger the vanish of the
+                // gray bricks and get on with things.
+                if (this._ballMoveFinalized) {
+                    // Reset the flag now for next time
+                    this._ballMoveFinalized = false;
+                    // If we have not already removed all of the gray bricks, now is
+                    // the time to see if we should.
+                    if (this._grayBricksRemoved == false)
+                        this.checkForAllBallsPlayed();
                 }
             };
             /**
@@ -2622,6 +2704,9 @@ var nurdz;
                 // If asked, reset the maze too
                 if (doReset)
                     this.reset();
+                // No ball has finished moving and no gray bricks have been removed.
+                this._ballMoveFinalized = false;
+                this._grayBricksRemoved = false;
                 // Now generate the contents of the maze.
                 this.genBlackHoles();
                 this.genArrows();
