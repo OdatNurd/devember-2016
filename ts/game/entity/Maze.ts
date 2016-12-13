@@ -328,6 +328,51 @@ module nurdz.game
         }
 
         /**
+         * This callback is invoked when our sprite sheet finishes loading the
+         * underlying image for the sprites.
+         */
+        private setDimensions = (sheet : SpriteSheet) : void =>
+        {
+            // Alter our collision properties so that our bounds represent the
+            // entire maze area.
+            this.makeRectangle (sheet.width * MAZE_WIDTH, sheet.height * MAZE_HEIGHT);
+
+            // Set the cell size now.
+            this._cellSize = sheet.width;
+
+            // Determine how much width is left on the stage that is not taken
+            // up by us.
+            let remainder = this._stage.width - this.width;
+
+            // Create a marker entity and set it's dimensions based on the
+            // sprite sheet we loaded. Our callback might get invoked before
+            // that of the _empty entity that our cellSize property returns,
+            // so it's not safe to reference it here.
+            this._marker = new Marker (this._stage, sheet.width);
+
+            // Create the debug marker. This is as above, but we modify its
+            // debug color to visually distinguish it. We need to violate the
+            // privacy rules here because this is not supposed to be externally
+            // touchable.
+            this._debugMarker = new Marker (this._stage, sheet.width);
+            this._debugMarker["_debugColor"] = 'red';
+
+            // Set our position to center us on the screen horizontally and be
+            // just slightly up from the bottom of the screen. We use half of
+            // the remainder of the width, so that the bottom edge is as far
+            // from the bottom of the screen as the side edges are.
+            this.setStagePositionXY (Math.floor ((this._stage.width / 2) - (this.width  / 2)),
+                                     Math.floor (this._stage.height - this.height - (remainder / 2)));
+
+            // Generate a new maze; we require a reset here since the side walls
+            // have not been placed yet.
+            //
+            // This has to be here because we can't generate the maze without
+            // knowing the size of the cells.
+            this.generateMaze (true);
+        }
+
+        /**
          * Set a debug marker on the cell at the given location in the maze.
          *
          * If the location is out of bounds of the maze or there is already a
@@ -401,51 +446,6 @@ module nurdz.game
                     this.clearMarkerAt (col, row);
                 }
             }
-        }
-
-        /**
-         * This callback is invoked when our sprite sheet finishes loading the
-         * underlying image for the sprites.
-         */
-        private setDimensions = (sheet : SpriteSheet) : void =>
-        {
-            // Alter our collision properties so that our bounds represent the
-            // entire maze area.
-            this.makeRectangle (sheet.width * MAZE_WIDTH, sheet.height * MAZE_HEIGHT);
-
-            // Set the cell size now.
-            this._cellSize = sheet.width;
-
-            // Determine how much width is left on the stage that is not taken
-            // up by us.
-            let remainder = this._stage.width - this.width;
-
-            // Create a marker entity and set it's dimensions based on the
-            // sprite sheet we loaded. Our callback might get invoked before
-            // that of the _empty entity that our cellSize property returns,
-            // so it's not safe to reference it here.
-            this._marker = new Marker (this._stage, sheet.width);
-
-            // Create the debug marker. This is as above, but we modify its
-            // debug color to visually distinguish it. We need to violate the
-            // privacy rules here because this is not supposed to be externally
-            // touchable.
-            this._debugMarker = new Marker (this._stage, sheet.width);
-            this._debugMarker["_debugColor"] = 'red';
-
-            // Set our position to center us on the screen horizontally and be
-            // just slightly up from the bottom of the screen. We use half of
-            // the remainder of the width, so that the bottom edge is as far
-            // from the bottom of the screen as the side edges are.
-            this.setStagePositionXY (Math.floor ((this._stage.width / 2) - (this.width  / 2)),
-                                     Math.floor (this._stage.height - this.height - (remainder / 2)));
-
-            // Generate a new maze; we require a reset here since the side walls
-            // have not been placed yet.
-            //
-            // This has to be here because we can't generate the maze without
-            // knowing the size of the cells.
-            this.generateMaze (true);
         }
 
         /**
