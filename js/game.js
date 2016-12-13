@@ -441,6 +441,9 @@ var nurdz;
                 this.addAnimation("c_idle_gone", 1, false, [19]);
                 this.addAnimation("c_vanish", 10, false, [15, 16, 17, 18, 19]);
                 this.addAnimation("c_appear", 10, false, [19, 18, 17, 16, 15]);
+                // The ball is not hidden by default (the first animation in the list
+                // is the one that plays by default).
+                this._hidden = false;
                 // Set the ball type to the value passed in. This will make sure
                 // that the ball is properly represented by playing the appropriate
                 // idle animation.
@@ -512,6 +515,24 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Ball.prototype, "isHidden", {
+                /**
+                 * Tells you if this ball is hidden or not based on its visual state.
+                 *
+                 * This is only an indication of whether the methods in the class have
+                 * told it to display or not. In particular, if you change the ball
+                 * animation without using a method in this class, the value here may
+                 * not track. Additionally, the ball may consider itself hidden while it
+                 * is still vanishing. If it matters, check if the current animation is
+                 * playing or not as well.
+                 *
+                 * @returns {boolean} true if this ball is currently hidden or false
+                 * otherwise
+                 */
+                get: function () { return this._hidden; },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * Set the visual state of the ball to idle; this is the normal state,
              * in which the ball just sits there, looking pretty.
@@ -520,6 +541,7 @@ var nurdz;
                 this.playAnimation(this._ballType == BallType.BALL_PLAYER
                     ? "p_idle"
                     : "c_idle");
+                this._hidden = false;
             };
             /**
              * Set the visual state of the ball to hidden; this is an idle state in
@@ -529,6 +551,7 @@ var nurdz;
                 this.playAnimation(this._ballType == BallType.BALL_PLAYER
                     ? "p_idle_gone"
                     : "c_idle_gone");
+                this._hidden = true;
             };
             /**
              * Set the visual state of the ball to vanish; this plays an animation
@@ -539,6 +562,7 @@ var nurdz;
                 this.playAnimation(this._ballType == BallType.BALL_PLAYER
                     ? "p_vanish"
                     : "c_vanish");
+                this._hidden = true;
             };
             /**
              * Set the visual state of the ball to appear; this plays an animation
@@ -550,6 +574,7 @@ var nurdz;
                 this.playAnimation(this._ballType == BallType.BALL_PLAYER
                     ? "p_appear"
                     : "c_appear");
+                this._hidden = false;
             };
             /**
              * Balls only block other balls while they are still visible.
@@ -726,6 +751,67 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Brick.prototype, "isHidden", {
+                /**
+                 * Tells you if this brick is hidden or not based on its visual state.
+                 *
+                 * This is only an indication of whether the methods in the class have
+                 * told it to display or not. In particular, if you change the brick
+                 * animation without using a method in this class, the value here may
+                 * not track. Additionally, the brick may consider itself hidden while
+                 * it is still vanishing. If it matters, check if the current animation
+                 * is playing or not as well.
+                 *
+                 * @returns {boolean} true if this brick is currently hidden or false
+                 * otherwise
+                 */
+                get: function () { return this._hidden; },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Set the visual state of the ball to idle; this is the normal state,
+             * in which the ball just sits there, looking pretty.
+             */
+            Brick.prototype.idle = function () {
+                this.playAnimation(this._brickType == BrickType.BRICK_GRAY
+                    ? "gray_idle"
+                    : "bonus_idle");
+                this._hidden = false;
+            };
+            /**
+             * Set the visual state of the ball to hidden; this is an idle state in
+             * which the ball is no longer visible on the screen.
+             */
+            Brick.prototype.hide = function () {
+                this.playAnimation(this._brickType == BrickType.BRICK_GRAY
+                    ? "gray_idle_gone"
+                    : "bonus_idle_gone");
+                this._hidden = true;
+            };
+            /**
+             * Set the visual state of the ball to vanish; this plays an animation
+             * that causes the ball to vanish from the screen. This is identical to
+             * the hidden state (see hide()) but you see the ball vanishing.
+             */
+            Brick.prototype.vanish = function () {
+                this.playAnimation(this._brickType == BrickType.BRICK_GRAY
+                    ? "gray_vanish"
+                    : "bonus_vanish");
+                this._hidden = true;
+            };
+            /**
+             * Set the visual state of the ball to appear; this plays an animation
+             * that causes the ball to transition from a hidden to idle state. This
+             * is identical to the idle state (see idle()) bvut you can see the ball
+             * appearing.
+             */
+            Brick.prototype.appear = function () {
+                this.playAnimation(this._brickType == BrickType.BRICK_GRAY
+                    ? "gray_appear"
+                    : "bonus_appear");
+                this._hidden = false;
+            };
             /**
              * The only bricks that block the ball are solid bricks and gray bricks
              * that are still visible on the screen.

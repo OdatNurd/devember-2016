@@ -34,7 +34,7 @@ module nurdz.game
      * displayed while some of them can animate themselves appearing or
      * vanishing away.
      */
-    export class Ball extends MazeCell
+    export class Ball extends MazeCell implements HideableMazeCell
     {
         /**
          * The type of this ball, which is used to determine the visual look
@@ -53,6 +53,17 @@ module nurdz.game
          * the ball gets.
          */
         private _score : number;
+
+        /**
+         * Whether this ball is hidden or not.
+         *
+         * This value only tracks if you use the methods on the Ball entity to
+         * vanish or appear it; if you modify it's animation yourself, this will
+         * get out of sync.
+         *
+         * @type {boolean}
+         */
+        private _hidden : boolean;
 
         /**
          * Get the type of ball that this is; this is used to set a visual
@@ -118,6 +129,21 @@ module nurdz.game
         set score (newScore : number)
         { this._score = newScore; }
 
+        /**
+         * Tells you if this ball is hidden or not based on its visual state.
+         *
+         * This is only an indication of whether the methods in the class have
+         * told it to display or not. In particular, if you change the ball
+         * animation without using a method in this class, the value here may
+         * not track. Additionally, the ball may consider itself hidden while it
+         * is still vanishing. If it matters, check if the current animation is
+         * playing or not as well.
+         *
+         * @returns {boolean} true if this ball is currently hidden or false
+         * otherwise
+         */
+        get isHidden () : boolean
+        { return this._hidden; }
 
         /**
          * Construct a new ball entity that will render on the stage provided.
@@ -149,6 +175,10 @@ module nurdz.game
             this.addAnimation ("c_vanish",    10, false, [15, 16, 17, 18, 19]);
             this.addAnimation ("c_appear",    10, false, [19, 18, 17, 16, 15]);
 
+            // The ball is not hidden by default (the first animation in the list
+            // is the one that plays by default).
+            this._hidden = false;
+
             // Set the ball type to the value passed in. This will make sure
             // that the ball is properly represented by playing the appropriate
             // idle animation.
@@ -167,6 +197,7 @@ module nurdz.game
             this.playAnimation (this._ballType == BallType.BALL_PLAYER
                 ? "p_idle"
                 : "c_idle");
+            this._hidden = false;
         }
 
         /**
@@ -178,6 +209,7 @@ module nurdz.game
             this.playAnimation (this._ballType == BallType.BALL_PLAYER
                 ? "p_idle_gone"
                 : "c_idle_gone");
+            this._hidden = true;
         }
 
         /**
@@ -190,6 +222,7 @@ module nurdz.game
             this.playAnimation (this._ballType == BallType.BALL_PLAYER
                 ? "p_vanish"
                 : "c_vanish");
+            this._hidden = true;
         }
 
         /**
@@ -203,6 +236,7 @@ module nurdz.game
             this.playAnimation (this._ballType == BallType.BALL_PLAYER
                 ? "p_appear"
                 : "c_appear");
+            this._hidden = false;
         }
 
         /**

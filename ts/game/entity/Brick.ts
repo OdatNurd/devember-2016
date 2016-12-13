@@ -19,7 +19,7 @@ module nurdz.game
      * displayed while some of them can animate themselves appearing or
      * vanishing away.
      */
-    export class Brick extends MazeCell
+    export class Brick extends MazeCell implements HideableMazeCell
     {
         /**
          * The type of this brick, which is used to determine how the player can
@@ -27,6 +27,17 @@ module nurdz.game
          * graphically.
          */
         private _brickType : BrickType;
+
+        /**
+         * Whether this ball is hidden or not.
+         *
+         * This value only tracks if you use the methods on the Ball entity to
+         * vanish or appear it; if you modify it's animation yourself, this will
+         * get out of sync.
+         *
+         * @type {boolean}
+         */
+        private _hidden : boolean;
 
         /**
          * Set the brick type for the current brick. This visually changes the
@@ -92,6 +103,22 @@ module nurdz.game
         }
 
         /**
+         * Tells you if this brick is hidden or not based on its visual state.
+         *
+         * This is only an indication of whether the methods in the class have
+         * told it to display or not. In particular, if you change the brick
+         * animation without using a method in this class, the value here may
+         * not track. Additionally, the brick may consider itself hidden while
+         * it is still vanishing. If it matters, check if the current animation
+         * is playing or not as well.
+         *
+         * @returns {boolean} true if this brick is currently hidden or false
+         * otherwise
+         */
+        get isHidden () : boolean
+        { return this._hidden; }
+
+        /**
          * Construct a new brick entity that will render on the stage provided.
          *
          * This supports all three kinds of bricks: The permanent bricks that
@@ -129,6 +156,57 @@ module nurdz.game
             // is properly visually represented, either by playing the correct
             // animation or by selecting the appropriate sprite.
             this.brickType = typeOfBrick;
+        }
+
+        /**
+         * Set the visual state of the ball to idle; this is the normal state,
+         * in which the ball just sits there, looking pretty.
+         */
+        idle () : void
+        {
+            this.playAnimation (this._brickType == BrickType.BRICK_GRAY
+                ? "gray_idle"
+                : "bonus_idle");
+            this._hidden = false;
+        }
+
+        /**
+         * Set the visual state of the ball to hidden; this is an idle state in
+         * which the ball is no longer visible on the screen.
+         */
+        hide () : void
+        {
+            this.playAnimation (this._brickType == BrickType.BRICK_GRAY
+                ? "gray_idle_gone"
+                : "bonus_idle_gone");
+            this._hidden = true;
+        }
+
+        /**
+         * Set the visual state of the ball to vanish; this plays an animation
+         * that causes the ball to vanish from the screen. This is identical to
+         * the hidden state (see hide()) but you see the ball vanishing.
+         */
+        vanish () : void
+        {
+            this.playAnimation (this._brickType == BrickType.BRICK_GRAY
+                ? "gray_vanish"
+                : "bonus_vanish");
+            this._hidden = true;
+        }
+
+        /**
+         * Set the visual state of the ball to appear; this plays an animation
+         * that causes the ball to transition from a hidden to idle state. This
+         * is identical to the idle state (see idle()) bvut you can see the ball
+         * appearing.
+         */
+        appear () : void
+        {
+            this.playAnimation (this._brickType == BrickType.BRICK_GRAY
+                ? "gray_appear"
+                : "bonus_appear");
+            this._hidden = false;
         }
 
         /**
