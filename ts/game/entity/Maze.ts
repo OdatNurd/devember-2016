@@ -1007,6 +1007,31 @@ module nurdz.game
         }
 
         /**
+         * Given an ActorPool that contains maze cells that conform to the
+         * hide-able maze cell interface, scan the pool for all live entities
+         * that are currently hidden and not actively hiding themselves and
+         * remove them from the maze grid, killing the entity in the process.
+         *
+         * @param {ActorPool<HideableMazeCell>} pool the pool to reap
+         */
+        private reapHiddenEntitiesFromPool (pool : ActorPool<HideableMazeCell>) : void
+        {
+            // Scan all of the live entities in the pool.
+            for (let i = 0 ; i < pool.liveEntities.length ; i++)
+            {
+                // If this ball thinks it's hidden and it's animation is no
+                // longer playing, we can remove it from the grid now.
+                let cell = pool.liveEntities[i];
+                if (cell.isHidden && cell.animations.isPlaying == false)
+                {
+                    this.setCellAt (cell.mapPosition.x, cell.mapPosition.y, null);
+                    pool.killEntity (cell);
+                    console.log ("Killed cell at: " + cell.mapPosition.toString ());
+                }
+            }
+        }
+
+        /**
          * This is called every frame update (tick tells us how many times this
          * has happened) to allow us to update ourselves.
          *
@@ -1031,6 +1056,10 @@ module nurdz.game
             this._grayBricks.update (stage, tick);
             this._bonusBricks.update (stage, tick);
             this._balls.update (stage, tick);
+
+            // Reap any dead balls; these are balls which are currently
+            // invisible but still alive; they can be removed from the grid now.
+            this.reapHiddenEntitiesFromPool (this._balls);
 
             // If there is a dropping ball and it's time to drop it, take a step
             // now.
