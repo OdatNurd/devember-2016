@@ -602,7 +602,6 @@ module nurdz.game
                 let currentBrick = <Brick> cell;
                 let currentBrickPool : ActorPool<MazeCell> = null;
                 let newBrick : Brick = null;
-                let animation : string = null;
 
                 // We keep a separate pool of bonus bricks and gray bricks.
                 //
@@ -611,13 +610,11 @@ module nurdz.game
                 if (currentBrick.brickType == BrickType.BRICK_BONUS)
                 {
                     newBrick = this._grayBricks.resurrectEntity ();
-                    animation = "gray_appear";
                     currentBrickPool = this._bonusBricks;
                 }
                 else if (currentBrick.brickType == BrickType.BRICK_GRAY)
                 {
                     newBrick = this._bonusBricks.resurrectEntity ();
-                    animation = "bonus_appear";
                     currentBrickPool = this._grayBricks;
                 }
 
@@ -626,7 +623,7 @@ module nurdz.game
                 // pool that it came from.
                 if (newBrick != null)
                 {
-                    newBrick.playAnimation (animation);
+                    newBrick.appear ();
                     this.setDebugCell (newBrick);
                     currentBrickPool.killEntity (currentBrick);
                 }
@@ -660,14 +657,14 @@ module nurdz.game
                 // to appear it.
                 let newBrick = this._grayBricks.resurrectEntity ();
                 if (newBrick != null)
-                    newBrick.playAnimation ("gray_appear");
+                    newBrick.appear ();
                 else
                 {
                     // No gray bricks were available, so try a bonus brick
                     // instead.
                     newBrick = this._bonusBricks.resurrectEntity ();
                     if (newBrick != null)
-                        newBrick.playAnimation ("bonus_appear");
+                        newBrick.appear ();
                 }
 
                 // If we got a brick, add it to the maze.
@@ -695,18 +692,8 @@ module nurdz.game
                     if (cell != null || cell instanceof Brick)
                     {
                         let brick = <Brick> cell;
-                        switch (brick.animations.current)
-                        {
-                            case "gray_idle_gone":
-                            case "gray_vanish":
-                                brick.playAnimation ("gray_appear")
-                                break;
-
-                            case "bonus_idle_gone":
-                            case "bonus_vanish":
-                                brick.playAnimation ("bonus_appear")
-                                break;
-                        }
+                        if (brick.isHidden)
+                            brick.appear ();
                     }
                 }
             }
@@ -729,20 +716,9 @@ module nurdz.game
                     if (cell != null || cell instanceof Brick)
                     {
                         let brick = <Brick> cell;
-                        switch (brick.animations.current)
-                        {
-                            case "gray_idle":
-                            case "gray_appear":
-                                if (grayBricks)
-                                    brick.playAnimation ("gray_vanish")
-                                break;
-
-                            case "bonus_idle":
-                            case "bonus_appear":
-                                if (grayBricks == false)
-                                    brick.playAnimation ("bonus_vanish")
-                                break;
-                        }
+                        if (brick.isHidden == false &&
+                            brick.brickType == (grayBricks ? BrickType.BRICK_GRAY : BrickType.BRICK_BONUS))
+                            brick.vanish ();
                     }
                 }
             }
@@ -908,25 +884,10 @@ module nurdz.game
                 // We can tell if the brick is visible or not by checking what
                 // the currently playing animation is.
                 let brick = <Brick> entity;
-                switch (brick.brickType)
-                {
-                    case BrickType.BRICK_GRAY:
-                        if (brick.animations.current == "gray_vanish")
-                            brick.playAnimation ("gray_appear");
-                        else
-                            brick.playAnimation ("gray_vanish");
-                        return true;
-
-                    case BrickType.BRICK_BONUS:
-                        if (brick.animations.current == "bonus_vanish")
-                            brick.playAnimation ("bonus_appear");
-                        else
-                            brick.playAnimation ("bonus_vanish");
-                        return true;
-
-                    default:
-                        return false;
-                }
+                if (brick.isHidden)
+                    brick.appear ();
+                else
+                    brick.vanish ();
             }
 
             // If it is an arrow, flip it. This works for any type of arrow; an
@@ -1527,7 +1488,7 @@ module nurdz.game
                     }
 
                     // Make sure the brick starts out growing into place.
-                    brick.playAnimation ("gray_appear");
+                    brick.appear ();
 
                     // Add it to the maze and count it as placed.
                     this.setCellAt (column, row, brick);
@@ -1585,7 +1546,7 @@ module nurdz.game
                     }
 
                     // Make sure the brick starts out growing into place.
-                    brick.playAnimation ("bonus_appear");
+                    brick.appear ();
 
                     // Add it to the maze and count it as placed.
                     this.setCellAt (column, row, brick);

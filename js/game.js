@@ -1744,26 +1744,23 @@ var nurdz;
                     var currentBrick = cell;
                     var currentBrickPool = null;
                     var newBrick = null;
-                    var animation = null;
                     // We keep a separate pool of bonus bricks and gray bricks.
                     //
                     // In order to swap, we need to get an existing brick from the
                     // opposite pool, then put it into place and kill the other one.
                     if (currentBrick.brickType == game.BrickType.BRICK_BONUS) {
                         newBrick = this._grayBricks.resurrectEntity();
-                        animation = "gray_appear";
                         currentBrickPool = this._bonusBricks;
                     }
                     else if (currentBrick.brickType == game.BrickType.BRICK_GRAY) {
                         newBrick = this._bonusBricks.resurrectEntity();
-                        animation = "bonus_appear";
                         currentBrickPool = this._grayBricks;
                     }
                     // If we got a brick, play the animation to cause it to appear,
                     // then put it into the maze and kill the current brick in the
                     // pool that it came from.
                     if (newBrick != null) {
-                        newBrick.playAnimation(animation);
+                        newBrick.appear();
                         this.setDebugCell(newBrick);
                         currentBrickPool.killEntity(currentBrick);
                     }
@@ -1792,13 +1789,13 @@ var nurdz;
                     // to appear it.
                     var newBrick = this._grayBricks.resurrectEntity();
                     if (newBrick != null)
-                        newBrick.playAnimation("gray_appear");
+                        newBrick.appear();
                     else {
                         // No gray bricks were available, so try a bonus brick
                         // instead.
                         newBrick = this._bonusBricks.resurrectEntity();
                         if (newBrick != null)
-                            newBrick.playAnimation("bonus_appear");
+                            newBrick.appear();
                     }
                     // If we got a brick, add it to the maze.
                     if (newBrick)
@@ -1820,16 +1817,8 @@ var nurdz;
                         var cell = this.getCellAt(col, row);
                         if (cell != null || cell instanceof game.Brick) {
                             var brick = cell;
-                            switch (brick.animations.current) {
-                                case "gray_idle_gone":
-                                case "gray_vanish":
-                                    brick.playAnimation("gray_appear");
-                                    break;
-                                case "bonus_idle_gone":
-                                case "bonus_vanish":
-                                    brick.playAnimation("bonus_appear");
-                                    break;
-                            }
+                            if (brick.isHidden)
+                                brick.appear();
                         }
                     }
                 }
@@ -1847,18 +1836,9 @@ var nurdz;
                         var cell = this.getCellAt(col, row);
                         if (cell != null || cell instanceof game.Brick) {
                             var brick = cell;
-                            switch (brick.animations.current) {
-                                case "gray_idle":
-                                case "gray_appear":
-                                    if (grayBricks)
-                                        brick.playAnimation("gray_vanish");
-                                    break;
-                                case "bonus_idle":
-                                case "bonus_appear":
-                                    if (grayBricks == false)
-                                        brick.playAnimation("bonus_vanish");
-                                    break;
-                            }
+                            if (brick.isHidden == false &&
+                                brick.brickType == (grayBricks ? game.BrickType.BRICK_GRAY : game.BrickType.BRICK_BONUS))
+                                brick.vanish();
                         }
                     }
                 }
@@ -2000,22 +1980,10 @@ var nurdz;
                     // We can tell if the brick is visible or not by checking what
                     // the currently playing animation is.
                     var brick = entity;
-                    switch (brick.brickType) {
-                        case game.BrickType.BRICK_GRAY:
-                            if (brick.animations.current == "gray_vanish")
-                                brick.playAnimation("gray_appear");
-                            else
-                                brick.playAnimation("gray_vanish");
-                            return true;
-                        case game.BrickType.BRICK_BONUS:
-                            if (brick.animations.current == "bonus_vanish")
-                                brick.playAnimation("bonus_appear");
-                            else
-                                brick.playAnimation("bonus_vanish");
-                            return true;
-                        default:
-                            return false;
-                    }
+                    if (brick.isHidden)
+                        brick.appear();
+                    else
+                        brick.vanish();
                 }
                 // If it is an arrow, flip it. This works for any type of arrow; an
                 // automatic arrow will reset its random flip time in this case.
@@ -2513,7 +2481,7 @@ var nurdz;
                             this._grayBricks.addEntity(brick, true);
                         }
                         // Make sure the brick starts out growing into place.
-                        brick.playAnimation("gray_appear");
+                        brick.appear();
                         // Add it to the maze and count it as placed.
                         this.setCellAt(column, row, brick);
                         brickCount--;
@@ -2561,7 +2529,7 @@ var nurdz;
                             this._bonusBricks.addEntity(brick, true);
                         }
                         // Make sure the brick starts out growing into place.
-                        brick.playAnimation("bonus_appear");
+                        brick.appear();
                         // Add it to the maze and count it as placed.
                         this.setCellAt(column, row, brick);
                         brickCount--;
