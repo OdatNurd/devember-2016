@@ -822,6 +822,33 @@ module nurdz.game
         }
 
         /**
+         * Given a ball entity which exists in the maze, set up to start
+         * dropping it through the maze, setting everything up as needed.
+         *
+         * For this to work, the ball provided must be stored in the maze and
+         * its map position must accurately reflect the position it is stored
+         * in, since that position will be cleared when the ball starts moving.
+         *
+         * @param {Ball} ball the ball to drop
+         */
+        private dropBall (ball : Ball) : void
+        {
+            // Set the entity that is currently dropping to the one provided,
+            // then remove it from the maze. It will be re-added when
+            // it is finished moving
+            this._droppingBall = ball;
+            this.setCellAt (ball.mapPosition.x, ball.mapPosition.y, null);
+
+            // Ensure that the ball knows before we start that it started
+            // out not moving.
+            this._droppingBall.moveType = BallMoveType.BALL_MOVE_NONE;
+
+            // Now indicate that the last time the ball dropped was right now
+            // so that the next step in the drop happens in the future.
+            this._lastDropTick = this._stage.tick;
+        }
+
+        /**
          * DEBUG METHOD
          *
          * This takes a point that is representative of a mouse click inside of
@@ -850,21 +877,8 @@ module nurdz.game
             // ball, try to move it downwards.
             if (entity instanceof Ball && this._droppingBall == null)
             {
-                // The ball entity at this location is the one that is dropping,
-                // so get it and then remove it from the grid for the duration
-                // of it's move.
-                this._droppingBall = <Ball> entity;
-                this.setCellAt (position.x, position.y, null);
-
-                // Ensure that the ball knows before we start that it started
-                // out not moving.
-                this._droppingBall.moveType = BallMoveType.BALL_MOVE_NONE;
-
-                // Now indicate that the last time the ball dropped was right now
-                // so that the next step in the drop happens in the future.
-                this._lastDropTick = this._stage.tick;
-
-                // All done now
+                // Drop it and leave.
+                this.dropBall (entity);
                 return true;
             }
 
@@ -1094,7 +1108,6 @@ module nurdz.game
             // protects us from this method being called again until the ball
             // we select (if any) is finished moving.
             this._droppingFinalBall = true;
-            console.log ("Selecting a final ball to drop");
             for (let row = MAZE_HEIGHT - 2 ; row >= 0 ; row--)
             {
                 for (let col = MAZE_WIDTH - 1 ; col >= 1 ; col--)
@@ -1102,25 +1115,12 @@ module nurdz.game
                     let cell = this.getCellAt (col, row);
                     if (cell instanceof Ball)
                     {
-                        // The ball entity at this location is the one that is dropping,
-                        // so get it and then remove it from the grid for the duration
-                        // of it's move.
-                        this._droppingBall = <Ball> cell;
-                        this.setCellAt (col, row, null);
-
-                        // Ensure that the ball knows before we start that it started
-                        // out not moving.
-                        this._droppingBall.moveType = BallMoveType.BALL_MOVE_NONE;
-
-                        // Now indicate that the last time the ball dropped was right now
-                        // so that the next step in the drop happens in the future.
-                        this._lastDropTick = this._stage.tick;
+                        // Start it dropping, then leave; we're done.
+                        this.dropBall (cell);
                         return;
                     }
                 }
             }
-
-            console.log ("No balls left to drop");
         }
 
         /**

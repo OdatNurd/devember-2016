@@ -1903,6 +1903,29 @@ var nurdz;
                     console.log("Cannot add ball; cell is not empty");
             };
             /**
+             * Given a ball entity which exists in the maze, set up to start
+             * dropping it through the maze, setting everything up as needed.
+             *
+             * For this to work, the ball provided must be stored in the maze and
+             * its map position must accurately reflect the position it is stored
+             * in, since that position will be cleared when the ball starts moving.
+             *
+             * @param {Ball} ball the ball to drop
+             */
+            Maze.prototype.dropBall = function (ball) {
+                // Set the entity that is currently dropping to the one provided,
+                // then remove it from the maze. It will be re-added when
+                // it is finished moving
+                this._droppingBall = ball;
+                this.setCellAt(ball.mapPosition.x, ball.mapPosition.y, null);
+                // Ensure that the ball knows before we start that it started
+                // out not moving.
+                this._droppingBall.moveType = game.BallMoveType.BALL_MOVE_NONE;
+                // Now indicate that the last time the ball dropped was right now
+                // so that the next step in the drop happens in the future.
+                this._lastDropTick = this._stage.tick;
+            };
+            /**
              * DEBUG METHOD
              *
              * This takes a point that is representative of a mouse click inside of
@@ -1928,18 +1951,8 @@ var nurdz;
                 // If the entity is a ball and we're not already trying to drop a
                 // ball, try to move it downwards.
                 if (entity instanceof game.Ball && this._droppingBall == null) {
-                    // The ball entity at this location is the one that is dropping,
-                    // so get it and then remove it from the grid for the duration
-                    // of it's move.
-                    this._droppingBall = entity;
-                    this.setCellAt(position.x, position.y, null);
-                    // Ensure that the ball knows before we start that it started
-                    // out not moving.
-                    this._droppingBall.moveType = game.BallMoveType.BALL_MOVE_NONE;
-                    // Now indicate that the last time the ball dropped was right now
-                    // so that the next step in the drop happens in the future.
-                    this._lastDropTick = this._stage.tick;
-                    // All done now
+                    // Drop it and leave.
+                    this.dropBall(entity);
                     return true;
                 }
                 // If we're not tracking debug action, the rest of these actions
@@ -2131,27 +2144,16 @@ var nurdz;
                 // protects us from this method being called again until the ball
                 // we select (if any) is finished moving.
                 this._droppingFinalBall = true;
-                console.log("Selecting a final ball to drop");
                 for (var row = MAZE_HEIGHT - 2; row >= 0; row--) {
                     for (var col = MAZE_WIDTH - 1; col >= 1; col--) {
                         var cell = this.getCellAt(col, row);
                         if (cell instanceof game.Ball) {
-                            // The ball entity at this location is the one that is dropping,
-                            // so get it and then remove it from the grid for the duration
-                            // of it's move.
-                            this._droppingBall = cell;
-                            this.setCellAt(col, row, null);
-                            // Ensure that the ball knows before we start that it started
-                            // out not moving.
-                            this._droppingBall.moveType = game.BallMoveType.BALL_MOVE_NONE;
-                            // Now indicate that the last time the ball dropped was right now
-                            // so that the next step in the drop happens in the future.
-                            this._lastDropTick = this._stage.tick;
+                            // Start it dropping, then leave; we're done.
+                            this.dropBall(cell);
                             return;
                         }
                     }
                 }
-                console.log("No balls left to drop");
             };
             /**
              * This is called every frame update (tick tells us how many times this
