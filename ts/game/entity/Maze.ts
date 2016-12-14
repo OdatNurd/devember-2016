@@ -155,12 +155,12 @@ module nurdz.game
         /**
          * This flag is set to true when a ball has finished moving and is now
          * finalized. There are two conditions under which this is true; when
-         * the ball stops somewhere in the maze because it is blocked, or the
-         * ball reaches the goal line, is told to vanish, and then has finished
-         * vanishing.
+         * the ball stops somewhere in the maze, is told to vanish, and then has
+         * finished vanishing.
          *
-         * We use this to determine if it's time to remove the gray bricks or
-         * not by triggering the check for all of the balls being played.
+         * This is used to determine if we should remove all gray bricks (if
+         * that has not been done yet) or to select the next ball to drop at the
+         * end of the round, if any are left.
          */
         private _ballMoveFinalized : boolean;
 
@@ -173,6 +173,16 @@ module nurdz.game
          * ignored).
          */
         private _grayBricksRemoved : boolean;
+
+        /**
+         * This flag is set when we are dropping a ball through the maze as a
+         * result of all moves having been made and all gray bricks being
+         * removed.
+         *
+         * When this is true, we are actively dropping a ball, so the update
+         * code will not select a new one to drop.
+         */
+        private _droppingFinalBall : boolean;
 
         /**
          * The entire tick the last time the ball dropped down or otherwise moved.
@@ -289,6 +299,7 @@ module nurdz.game
             // These also get reset on level generation.
             this._ballMoveFinalized = false;
             this._grayBricksRemoved = false;
+            this._droppingFinalBall = false;
 
             // Pre-populate all of our actor pools with the maximum possible
             // number of actors that we could need. For the case of the gray
@@ -1013,8 +1024,6 @@ module nurdz.game
          */
         private checkForAllBallsPlayed () : void
         {
-            console.log ("Checking for all balls played");
-
             // Scan every cell in the top row of the maze contents.
             for (let cellX = 1 ; cellX < MAZE_WIDTH - 1 ; cellX++)
             {
@@ -1027,17 +1036,13 @@ module nurdz.game
                     // all balls are not played; we can leave now.
                     let below = this.getCellAt (cellX, 1);
                     if (below == null || below.blocksBall () == false)
-                    {
-                        console.log ("Ball found still playable at column " + cellX);
                         return;
-                    }
                 }
             }
 
             // If we get here, all of the balls in the top row are either gone
             // or blocked from moving. In either case, hide all of the gray
             // bricks now.
-            console.log ("Hiding all gray bricks");
             for (let i = 0 ; i < this._grayBricks.liveEntities.length ; i++)
                 this._grayBricks.liveEntities[i].vanish ();
         }
@@ -1072,6 +1077,50 @@ module nurdz.game
             }
 
             return retVal;
+        }
+
+        /**
+         * Select the next ball on the screen that should start it's final
+         * descent through the maze.
+         */
+        private dropNextFinalBall () : void
+        {
+            // If we're already dropping a final ball, we don't need to select
+            // one here.
+            if (this._droppingFinalBall == true)
+                return;
+
+            // Set the flag indicating that we are dropping a final ball. This
+            // protects us from this method being called again until the ball
+            // we select (if any) is finished moving.
+            this._droppingFinalBall = true;
+            console.log ("Selecting a final ball to drop");
+            for (let row = MAZE_HEIGHT - 2 ; row >= 0 ; row--)
+            {
+                for (let col = MAZE_WIDTH - 1 ; col >= 1 ; col--)
+                {
+                    let cell = this.getCellAt (col, row);
+                    if (cell instanceof Ball)
+                    {
+                        // The ball entity at this location is the one that is dropping,
+                        // so get it and then remove it from the grid for the duration
+                        // of it's move.
+                        this._droppingBall = <Ball> cell;
+                        this.setCellAt (col, row, null);
+
+                        // Ensure that the ball knows before we start that it started
+                        // out not moving.
+                        this._droppingBall.moveType = BallMoveType.BALL_MOVE_NONE;
+
+                        // Now indicate that the last time the ball dropped was right now
+                        // so that the next step in the drop happens in the future.
+                        this._lastDropTick = this._stage.tick;
+                        return;
+                    }
+                }
+            }
+
+            console.log ("No balls left to drop");
         }
 
         /**
@@ -1113,9 +1162,10 @@ module nurdz.game
             // been vanished out of the level because all of the balls have been
             // played.
             //
-            // If this collects any gray bricks, we can set the flag that
+            // If this collects all gray bricks, we can set the flag that
             // indicates that we're done removing them now.
-            if (this.reapHiddenEntitiesFromPool (this._grayBricks) > 0)
+            if (this.reapHiddenEntitiesFromPool (this._grayBricks) > 0 &&
+                    this._grayBricks.liveEntities.length == 0)
                 this._grayBricksRemoved = true;
 
             // If there is a dropping ball and it's time to drop it, take a step
@@ -1138,17 +1188,17 @@ module nurdz.game
                     // Add the ball back to the maze at it's current position.
                     this.setCellAt (pos.x, pos.y, this._droppingBall);
 
-                    // If the ball position is at the bottom of the maze, get it
-                    // to play it's vanish animation. When this is not the case,
-                    // the ball stopped somewhere in the maze. In this case we
-                    // set the flag that says the ball is done moving right
-                    // away.
+                    // If the ball position is at the bottom of the maze or it
+                    // is one of the final balls, then, get it to play it's
+                    // vanish animation. When this is not the case, the ball
+                    // stopped somewhere in the maze. In this case we set the
+                    // flag that says the ball is done moving right away.
                     //
                     // A ball that is vanishing sets this flag when it gets
                     // reaped, so that the code that triggers when the flag
                     // becomes set to true doesn't happen until the ball is
                     // visibly gone.
-                    if (pos.y == MAZE_HEIGHT - 2)
+                    if (pos.y == MAZE_HEIGHT - 2 || this._droppingFinalBall == true)
                         this._droppingBall.vanish ();
                     else
                         this._ballMoveFinalized = true;
@@ -1165,6 +1215,14 @@ module nurdz.game
                     this._droppingBall.position.translate (this._position);
                 }
             }
+
+            // If all of the gray bricks have been removed from the level, kick
+            // off the process of dropping all remaining balls, one at a time.
+            //
+            // Kick off the process by selecting and dropping a ball now. This
+            // call will do nothing if this is already in progress.
+            if (this._grayBricksRemoved == true)
+                this.dropNextFinalBall ();
 
             // When this flag is set, it means that a ball has been dropped and
             // is now finished moving. This can either have triggered from the
@@ -1184,7 +1242,17 @@ module nurdz.game
                 // the time to see if we should.
                 if (this._grayBricksRemoved == false)
                     this.checkForAllBallsPlayed ();
+
+                // The gray bricks have been removed, so if we are currently
+                // dropping a final ball, then turn the flag off and invoke
+                // the method to select a new one to drop.
+                else if (this._droppingFinalBall == true)
+                {
+                    this._droppingFinalBall = false;
+                    this.dropNextFinalBall ();
+                }
             }
+
         }
 
         /**
@@ -1748,6 +1816,7 @@ module nurdz.game
             // No ball has finished moving and no gray bricks have been removed.
             this._ballMoveFinalized = false;
             this._grayBricksRemoved = false;
+            this._droppingFinalBall = false;
 
             // Now generate the contents of the maze.
             this.genBlackHoles ();
