@@ -11,6 +11,7 @@
         "../engine/engine-0.3.1.d.ts",
         "GameState.ts",
         "ActorPool.ts",
+        "MazeContents.ts",
         "entity/MazeCell.ts",
         "entity/Marker.ts",
         "entity/Ball.ts",

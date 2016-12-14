@@ -1,27 +1,6 @@
 module nurdz.game
 {
     /**
-     * The width of the maze, in bricks.
-     *
-     * This is inclusive of the side walls, so it's actually 2 bricks wider than
-     * the play area.
-     */
-    const MAZE_WIDTH = 31;
-
-    /**
-     * The height of the maze, in bricks.
-     *
-     * This is inclusive of the bottom wall, so it's actually a brick taller
-     * than the play area.
-     *
-     * Note that in use, the top row is where the balls are stored at the start
-     * of the game, and the row below that is always left empty at game start to
-     * allow all balls a potential to move. Also, the last row in the play area
-     * (that is not the bottom wall) is left clear as the goal line.
-     */
-    const MAZE_HEIGHT = 19;
-
-    /**
      * The total number of teleport entities that get generated randomly into
      * the maze.
      */
@@ -84,24 +63,14 @@ module nurdz.game
     export class Maze extends Entity
     {
         /**
+         * The object that we used to store our maze contents.
+         */
+        private _contents : MazeContents;
+
+        /**
          * The size (in pixels) of the cells that make up the maze grid.
-         *
-         * @type {number}
          */
         private _cellSize : number;
-
-        /**
-         * This is an array the same size as the _contents array which contains
-         * a boolean that indicates if this position should be marked with a
-         * debug marker or not.
-         */
-        private _markers : Array <boolean>;
-
-        /**
-         * The contents of the maze, which is a collection of entities that are
-         * expected to always have the same dimensions.
-         */
-        private _contents : Array<MazeCell>;
 
         /**
          * Our singular Brick entity that represents the empty (background)
@@ -207,8 +176,6 @@ module nurdz.game
          * The number of ticks between drop movements in the ball. Ticks are
          * counted in frames per second and the engine runs at 30fps (or tries
          * to), so a value of 30 means 1 second between steps.
-         *
-         * @type {number}
          */
         private _dropSpeed : number;
 
@@ -287,6 +254,9 @@ module nurdz.game
             // our dimensions.
             new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
 
+            // Create our maze contents.
+            this._contents = new MazeContents ();
+
             // Create our entity pools.
             this._arrows = new ActorPool<Arrow> ();
             this._grayBricks = new ActorPool<Brick> ();
@@ -334,14 +304,6 @@ module nurdz.game
             for (let i = 0 ; i < (MAZE_WIDTH - 2) * 2 ; i++)
                 this._balls.addEntity (new Ball (stage), false);
 
-            // Create the array that holds our contents. null entries are
-            // treated as empty background bricks, so we don't need to do
-            // anything further here.
-            this._contents = new Array (MAZE_WIDTH * MAZE_HEIGHT);
-
-            // Create the marker overlay.
-            this._markers = new Array (MAZE_WIDTH * MAZE_HEIGHT);
-
             // No debugging by default, but the debugging point is the upper
             // left grid corner; the marker is created later when we know the
             // grid size.
@@ -386,88 +348,17 @@ module nurdz.game
             this.setStagePositionXY (Math.floor ((this._stage.width / 2) - (this.width  / 2)),
                                      Math.floor (this._stage.height - this.height - (remainder / 2)));
 
+            // Now that we know our position and cell size, set that into the
+            // maze contents so that it can update the position of things.
+            this._contents.cellSize = this._cellSize;
+            this._contents.position = this._position;
+
             // Generate a new maze; we require a reset here since the side walls
             // have not been placed yet.
             //
             // This has to be here because we can't generate the maze without
             // knowing the size of the cells.
             this.generateMaze (true);
-        }
-
-        /**
-         * Set a debug marker on the cell at the given location in the maze.
-         *
-         * If the location is out of bounds of the maze or there is already a
-         * marker at this location, then this will do nothing.
-         *
-         * @param {number} x the X coordinate to put a marker at
-         * @param {number} y the Y coordinate to put a marker at
-         */
-        private setMarkerAt (x : number, y : number) : void
-        {
-            // If the bounds are invalid, do nothing.
-            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                return;
-
-            // Set the marker into the marker list at this location.
-            // Set the brick at the location to the one provided.
-            this._markers[y * MAZE_WIDTH + x] = true;
-        }
-
-        /**
-         * Clear the debug marker on the cell at the given location in the maze.
-         *
-         * If the location is out of bounds or does not contain a marker, then
-         * this will do nothing.
-         *
-         * @param {number} x the X coordinate to clear the marker from
-         * @param {number} y the Y coordinate to clear the marker from
-         */
-        private clearMarkerAt (x : number, y : number) : void
-        {
-            // If the bounds are invalid or there is not a marker a this
-            // location, then do nothing.
-            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                return;
-
-            // Now remove it from the grid
-            this._markers[y * MAZE_WIDTH + x] = false;
-        }
-
-        /**
-         * Check the maze to see if there is a debug marker on the location
-         * given.
-         *
-         * @param   {number}  x the X coordinate to check in the maze
-         * @param   {number}  y the Y coordinate to check in the maze
-         *
-         * @returns {boolean}   true if this position contains a marker, or
-         * false otherwise
-         */
-        private hasMarkerAt (x : number, y : number) : boolean
-        {
-            // The bounds are invalid, so no marker
-            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                return false;
-
-            // There is only a marker if this location is true.
-            return this._markers[y * MAZE_WIDTH + x] == true;
-        }
-
-        /**
-         * Remove all markers that may be set in the maze currently.
-         */
-        private removeAllMarkers () : void
-        {
-            // Scan the entire maze, and for every marker entity that we find,
-            // remove it from that cell.
-            for (let row = 0 ; row < MAZE_HEIGHT ; row++)
-            {
-                for (let col = 0 ; col < MAZE_WIDTH ; col++)
-                {
-                    this.clearMarkerAt (col, row);
-                }
-            }
         }
 
         /**
@@ -509,7 +400,7 @@ module nurdz.game
          */
         getDebugCell () : MazeCell
         {
-            return this.getCellAt (this._debugPoint.x, this._debugPoint.y);
+            return this._contents.getCellAt (this._debugPoint.x, this._debugPoint.y);
         }
 
         /**
@@ -520,7 +411,7 @@ module nurdz.game
          */
         setDebugCell (newCell : MazeCell) : void
         {
-            this.setCellAt (this._debugPoint.x, this._debugPoint.y, newCell);
+            this._contents.setCellAt (this._debugPoint.x, this._debugPoint.y, newCell);
         }
 
         /**
@@ -735,7 +626,7 @@ module nurdz.game
             {
                 for (let col = 0 ; col < MAZE_WIDTH ; col++)
                 {
-                    let cell = this.getCellAt (col, row);
+                    let cell = this._contents.getCellAt (col, row);
                     if (cell != null || cell instanceof Brick)
                     {
                         let brick = <Brick> cell;
@@ -849,7 +740,7 @@ module nurdz.game
             // then remove it from the maze. It will be re-added when
             // it is finished moving
             this._droppingBall = ball;
-            this.setCellAt (ball.mapPosition.x, ball.mapPosition.y, null);
+            this._contents.clearCellAt (ball.mapPosition.x, ball.mapPosition.y);
 
             // Ensure that the ball knows before we start that it started
             // out not moving.
@@ -886,7 +777,7 @@ module nurdz.game
             // cells in the maze, then collect the entity out of the maze at
             // that location (if any).
             position.reduce (this.cellSize);
-            let entity = this.getCellAt (position.x, position.y);
+            let entity = this._contents.getCellAt (position.x, position.y);
 
             // If the entity is a ball and we're not already trying to drop a
             // ball, try to move it downwards.
@@ -906,11 +797,8 @@ module nurdz.game
             // contains the black hole, then toggle the marker at this location.
             if (entity == null || entity == this._blackHole)
             {
-                // If there a marker here, then clear it; otherwise, add it.
-                if (this.hasMarkerAt (position.x, position.y))
-                    this.clearMarkerAt (position.x, position.y);
-                else
-                    this.setMarkerAt (position.x, position.y);
+                // Toggle the marker here.
+                this._contents.toggleMarkerAt (position.x, position.y);
             }
 
             // If this is a brick that is not hidden, vanish it. We can't bring
@@ -919,7 +807,7 @@ module nurdz.game
             {
                 // Clear any marker that might be here; these can only appear if
                 // the ball drops through, so lets be able to remove them.
-                this.clearMarkerAt (position.x, position.y);
+                this._contents.clearMarkerAt (position.x, position.y);
 
                 // Get the brick; if its not hidden, vanish it.
                 let brick = <Brick> entity;
@@ -976,7 +864,7 @@ module nurdz.game
             // any; if there is one, tell it that the ball touched it, and also
             // possibly allow it to move the ball, as long as that's not how we
             // got at the current position.
-            let current = this.getCellAt (position.x, position.y);
+            let current = this._contents.getCellAt (position.x, position.y);
             if (current != null)
             {
                 // Copy the position provided and then hand it to the entity
@@ -1002,7 +890,7 @@ module nurdz.game
             // Get the contents of the cell below us in the grid. If that cell
             // is empty or does not block the ball, then change position to drop
             // the ball there and we're done.
-            let below = this.getCellAt (position.x, position.y + 1);
+            let below = this._contents.getCellAt (position.x, position.y + 1);
             if (below == null || below.blocksBall () == false)
             {
                 ball.moveType = BallMoveType.BALL_MOVE_DROP;
@@ -1023,7 +911,7 @@ module nurdz.game
             // Check the contents of the new location and see if the ball is
             // allowed to enter that cell or not; the ball can enter if the cell
             // is empty or does not block ball movement.
-            let movedCell = this.getCellAt (newPos.x, newPos.y);
+            let movedCell = this._contents.getCellAt (newPos.x, newPos.y);
             if (movedCell == null || movedCell.blocksBall () == false)
             {
                 // Tell the cell that moved the ball that we actually moved it,
@@ -1058,12 +946,12 @@ module nurdz.game
             {
                 // Get the content of this cell. If there is content here, we
                 // need to check below it.
-                if (this.getCellAt (cellX, 0) != null)
+                if (this._contents.getCellAt (cellX, 0) != null)
                 {
                     // Get the cell below; if it is empty or it does not block a
                     // ball from moving, then this ball is still playable, so
                     // all balls are not played; we can leave now.
-                    let below = this.getCellAt (cellX, 1);
+                    let below = this._contents.getCellAt (cellX, 1);
                     if (below == null || below.blocksBall () == false)
                         return;
                 }
@@ -1099,7 +987,7 @@ module nurdz.game
                 let cell = pool.liveEntities[i];
                 if (cell.isHidden && cell.animations.isPlaying == false)
                 {
-                    this.setCellAt (cell.mapPosition.x, cell.mapPosition.y, null);
+                    this._contents.clearCellAt (cell.mapPosition.x, cell.mapPosition.y);
                     pool.killEntity (cell);
                     retVal++;
                 }
@@ -1127,7 +1015,7 @@ module nurdz.game
             {
                 for (let col = MAZE_WIDTH - 1 ; col >= 1 ; col--)
                 {
-                    let cell = this.getCellAt (col, row);
+                    let cell = this._contents.getCellAt (col, row);
                     if (cell instanceof Ball)
                     {
                         // Start it dropping, then leave; we're done.
@@ -1201,7 +1089,7 @@ module nurdz.game
                 if (this.nextBallPosition (this._droppingBall, pos) == false)
                 {
                     // Add the ball back to the maze at it's current position.
-                    this.setCellAt (pos.x, pos.y, this._droppingBall);
+                    this._contents.setCellAt (pos.x, pos.y, this._droppingBall);
 
                     // If the ball position is at the bottom of the maze or it
                     // is one of the final balls, then, get it to play it's
@@ -1271,64 +1159,6 @@ module nurdz.game
         }
 
         /**
-         * Fetch the internal contents of the maze at the provided X and Y
-         * values.
-         *
-         * @param   {number}   x the maze X value to fetch
-         * @param   {number}   y the maze Y value to fetch
-         *
-         * @returns {MazeCell}   the contents of the cell, or null. null will be
-         * returned if the cell is empty or if the position provided is out of
-         * bounds.
-         */
-        getCellAt (x : number, y : number) : MazeCell
-        {
-            // The bounds are invalid, so return null
-            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                return null;
-
-            // Return the contents of the cell, if any
-            return this._contents[y * MAZE_WIDTH + x];
-        }
-
-        /**
-         * Change the cell at the provided X and Y values in the maze to the cell
-         * provided; if cell is null, this essentially sets an empty brick into
-         * this position in the maze.
-         *
-         * If the bounds provided are not valid for the maze, nothing happens.
-         *
-         * @param {number}   x    the maze X value to set
-         * @param {number}   y    the maze Y value to set
-         * @param {MazeCell} cell the new cell to set, or null to set the
-         * empty brick
-         */
-        setCellAt (x : number, y : number, cell : MazeCell) : void
-        {
-            // The bounds are invalid, so do nothing.
-            if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                return;
-
-            // Set the brick at the location to the one provided.
-            this._contents[y * MAZE_WIDTH + x] = cell;
-
-            // If there is a cell here, update its internal position information
-            // based on what we have been given.
-            if (cell)
-            {
-                // The position we provided is a direct map position, so set
-                // that first.
-                cell.mapPosition.setToXY (x, y);
-
-                // Now set the screen position to a scaled version of the map
-                // position, which we offset by the position of our maze.
-                cell.position.setTo (cell.mapPosition);
-                cell.position.scale (this.cellSize);
-                cell.position.translate (this._position);
-            }
-        }
-
-        /**
          * This will render the backing portion of the maze, which will draw in
          * the bounding walls on the outer edges as well as a complete grid of
          * background tiles.
@@ -1379,7 +1209,7 @@ module nurdz.game
                 for (let cellX = 0, blitX = x ; cellX < MAZE_WIDTH ; cellX++, blitX += cSize)
                 {
                     // If this position contains a marker, render one here.
-                    if (this.hasMarkerAt (cellX, cellY))
+                    if (this._contents.hasMarkerAt (cellX, cellY))
                         this._marker.render (blitX, blitY, renderer);
                 }
             }
@@ -1446,22 +1276,20 @@ module nurdz.game
          */
         private emptyMaze () : void
         {
-            // First, every brick needs to be a background brick. To do this we
-            // just need to clear the entry in the array.
-            for (let i = 0 ; i < this._contents.length ; i++)
-                this._contents[i] = null;
+            // Clear all cells.
+            this._contents.clearCells ();
 
             // Now the left and right sides need to be solid bricks.
             for (let y = 0 ; y < MAZE_HEIGHT ; y++)
             {
-                this.setCellAt (0, y, this._solid);
-                this.setCellAt (MAZE_WIDTH - 1, y, this._solid);
+                this._contents.setCellAt (0, y, this._solid);
+                this._contents.setCellAt (MAZE_WIDTH - 1, y, this._solid);
             }
 
             // Lastly, the bottom row needs to be made solid, except for the
             // first and last columns, which have already been filled out.
             for (let x = 1 ; x < MAZE_WIDTH - 1 ; x++)
-                this.setCellAt (x, MAZE_HEIGHT - 1, this._solid);
+                this._contents.setCellAt (x, MAZE_HEIGHT - 1, this._solid);
         }
 
         /**
@@ -1488,7 +1316,7 @@ module nurdz.game
             {
                 for (let y = y1 ; y <= y2 ; y++)
                 {
-                    if (this.getCellAt (x, y) != null)
+                    if (this._contents.getCellAt (x, y) != null)
                         return true;
                 }
             }
@@ -1565,7 +1393,7 @@ module nurdz.game
                 {
                     // Store it, then add this location to the list of possible
                     // destinations in this black hole.
-                    this.setCellAt (x, y, this._blackHole);
+                    this._contents.setCellAt (x, y, this._blackHole);
                     this._blackHole.addDestination (new Point (x, y));
                 }
                 else
@@ -1603,8 +1431,8 @@ module nurdz.game
                     // Generate a column randomly. If this location is already
                     // filled, or the tile above it is a black hole,  try again.
                     let column = this.genRandomMazeColumn ();
-                    if (this.getCellAt (column, row) != null ||
-                        (this.getCellAt (column, row - 1) instanceof Teleport))
+                    if (this._contents.getCellAt (column, row) != null ||
+                        (this._contents.getCellAt (column, row - 1) instanceof Teleport))
                         continue;
 
                     // This cell contains an arrow; resurrect one from the object
@@ -1631,7 +1459,7 @@ module nurdz.game
                         arrow.arrowType = ArrowType.ARROW_AUTOMATIC;
 
                     // Add it to the maze and count it as placed.
-                    this.setCellAt (column, row, arrow);
+                    this._contents.setCellAt (column, row, arrow);
                     arrowCount--;
                 }
             }
@@ -1672,8 +1500,8 @@ module nurdz.game
                     // Generate a column randomly. If this location is already
                     // filled or the square above is an arrow, try again.
                     let column = this.genRandomMazeColumn ();
-                    if (this.getCellAt (column, row) != null ||
-                        (this.getCellAt (column, row - 1) instanceof Arrow))
+                    if (this._contents.getCellAt (column, row) != null ||
+                        (this._contents.getCellAt (column, row - 1) instanceof Arrow))
                         continue;
 
                     // This cell contains brick; resurrect one from the object
@@ -1690,7 +1518,7 @@ module nurdz.game
                     brick.appear ();
 
                     // Add it to the maze and count it as placed.
-                    this.setCellAt (column, row, brick);
+                    this._contents.setCellAt (column, row, brick);
                     brickCount--;
                 }
             }
@@ -1730,8 +1558,8 @@ module nurdz.game
                     // Generate a column randomly. If this location is already
                     // filled or the square above is an arrow, try again.
                     let column = this.genRandomMazeColumn ();
-                    if (this.getCellAt (column, row) != null ||
-                        (this.getCellAt (column, row - 1) instanceof Arrow))
+                    if (this._contents.getCellAt (column, row) != null ||
+                        (this._contents.getCellAt (column, row - 1) instanceof Arrow))
                         continue;
 
                     // This cell contains brick; resurrect one from the object
@@ -1748,7 +1576,7 @@ module nurdz.game
                     brick.appear ();
 
                     // Add it to the maze and count it as placed.
-                    this.setCellAt (column, row, brick);
+                    this._contents.setCellAt (column, row, brick);
                     brickCount--;
                 }
             }
@@ -1781,7 +1609,7 @@ module nurdz.game
                 ball.appear ();
 
                 // Set the ball in now.
-                this.setCellAt (col, 0, ball);
+                this._contents.setCellAt (col, 0, ball);
             }
         }
 
@@ -1799,7 +1627,7 @@ module nurdz.game
             this._grayBricks.killALl ();
             this._bonusBricks.killALl ();
             this._balls.killALl ();
-            this.removeAllMarkers ();
+            this._contents.clearMarkers ();
 
             // Make sure that our black hole entity doesn't know about any
             // destinations from a prior maze (if any).

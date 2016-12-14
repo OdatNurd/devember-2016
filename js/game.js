@@ -185,6 +185,244 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * The width of the maze, in bricks.
+         *
+         * This is inclusive of the side walls, so it's actually 2 bricks wider than
+         * the play area.
+         */
+        game.MAZE_WIDTH = 31;
+        /**
+         * The height of the maze, in bricks.
+         *
+         * This is inclusive of the bottom wall, so it's actually a brick taller
+         * than the play area.
+         *
+         * Note that in use, the top row is where the balls are stored at the start
+         * of the game, and the row below that is always left empty at game start to
+         * allow all balls a potential to move. Also, the last row in the play area
+         * (that is not the bottom wall) is left clear as the goal line.
+         */
+        game.MAZE_HEIGHT = 19;
+        /**
+         * This class is used to represent the content of the maze. This wraps the
+         * data structure that actually contains the maze data as well as access
+         * routines to set/change it.
+         */
+        var MazeContents = (function () {
+            /**
+             * Construct a new maze content object. This will create the underlying
+             * data structure and initialize it to be completely devoid of cells
+             * and markers.
+             */
+            function MazeContents() {
+                // Create the content and marker arrays.
+                this._contents = new Array(game.MAZE_WIDTH * game.MAZE_HEIGHT);
+                this._markers = new Array(game.MAZE_WIDTH * game.MAZE_HEIGHT);
+                // Create a position point and set a default cell size.
+                this._position = new game.Point(0, 0);
+                this._cellSize = 0;
+                // Start everything cleared out. This ensures that the arrays are
+                // properly initialized.
+                this.clearCells();
+                this.clearMarkers();
+            }
+            Object.defineProperty(MazeContents.prototype, "position", {
+                /**
+                 * Get the current position assigned to this maze content instance. This
+                 * value is used to update the position of added cells so that they know
+                 * where to render themselves on the screen.
+                 *
+                 * @returns {Point} the set position of this maze content on the stage
+                 */
+                get: function () { return this._position; },
+                /**
+                 * Get the current position assigned to this maze content instance. This
+                 * value is used to update the position of added cells so that they know
+                 * where to render themselves on the screen.
+                 *
+                 * @param {Point} newPosition the new position for this maze content on
+                 * the stage
+                 */
+                set: function (newPosition) { this._position.setTo(newPosition); },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(MazeContents.prototype, "cellSize", {
+                /**
+                 * Get the cell size of cells in this maze content instance. This value
+                 * is used to calculate the render position of added cells so that they
+                 * know where to render themselves on the screen.
+                 *
+                 * @returns {number} the current cell size
+                 */
+                get: function () { return this._cellSize; },
+                /**
+                 * Set the cell size of cells in this maze content instance. This value
+                 * is used to calculate the render position of added cells so that they
+                 * know where to render themselves on the screen.
+                 *
+                 * @param {number} newSize the new cell size
+                 */
+                set: function (newSize) { this._cellSize = newSize; },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Mark the location provided as containing a marker. Locations that
+             * are out of bounds are silently ignored.
+             *
+             * @param {number} x the X coordinate to put a marker at
+             * @param {number} y the Y coordinate to put a marker at
+             */
+            MazeContents.prototype.setMarkerAt = function (x, y) {
+                // If the bounds are invalid, do nothing.
+                if (x < 0 || x >= game.MAZE_WIDTH || y < 0 || y >= game.MAZE_HEIGHT)
+                    return;
+                // Set the flag for a marker at this location.
+                this._markers[y * game.MAZE_WIDTH + x] = true;
+            };
+            /**
+             * Remove any marker that might be set at the provided location. Locations
+             * that are out of bounds are silently ignored.
+             *
+             * @param {number} x the X coordinate to clear the marker from
+             * @param {number} y the Y coordinate to clear the marker from
+             */
+            MazeContents.prototype.clearMarkerAt = function (x, y) {
+                // If the bounds are invalid, do nothing.
+                if (x < 0 || x >= game.MAZE_WIDTH || y < 0 || y >= game.MAZE_HEIGHT)
+                    return;
+                // Clear the flag for a marker at this location.
+                this._markers[y * game.MAZE_WIDTH + x] = false;
+            };
+            /**
+             * Check to see if there is a marker at the provided location. Locations
+             * that are out of bounds always return no marker.
+             *
+             * @param   {number}  x the X coordinate to check in the maze
+             * @param   {number}  y the Y coordinate to check in the maze
+             *
+             * @returns {boolean}   true if this position contains a marker, or
+             * false otherwise
+             */
+            MazeContents.prototype.hasMarkerAt = function (x, y) {
+                // The bounds are invalid, so no marker
+                if (x < 0 || x >= game.MAZE_WIDTH || y < 0 || y >= game.MAZE_HEIGHT)
+                    return false;
+                // There is only a marker if this location is true.
+                return this._markers[y * game.MAZE_WIDTH + x] == true;
+            };
+            /**
+             * Toggle the marker that is at the provided location, swapping its state. Locations
+             * that are out of bounds are silently ignored.
+             *
+             * @param {number} x the X coordinate to toggle
+             * @param {number} y the Y coordinate to toggle
+             */
+            MazeContents.prototype.toggleMarkerAt = function (x, y) {
+                // Set the state as appropriate. Bounds checking can be done by the
+                // other methods.
+                if (this.hasMarkerAt(x, y))
+                    this.clearMarkerAt(x, y);
+                else
+                    this.setMarkerAt(x, y);
+            };
+            /**
+             * Clear all markers that are set.
+             */
+            MazeContents.prototype.clearMarkers = function () {
+                // Clear markers at all locations.
+                for (var i = 0; i < game.MAZE_WIDTH * game.MAZE_HEIGHT; i++)
+                    this._markers[i] = false;
+            };
+            /**
+             * Collect the cell at the provided location in the maze. This will
+             * return the cell that was originally stored at this location, which
+             * will be null if this cell is empty or if the location provided is out
+             * of bounds for the dimensions of the maze.
+             *
+             * @param   {number}   x the X location to fetch from
+             * @param   {number}   y the Y location to fetch from
+             *
+             * @returns {MazeCell}   the cell at this location, or null if there is
+             * none
+             */
+            MazeContents.prototype.getCellAt = function (x, y) {
+                // The bounds are invalid, so return null
+                if (x < 0 || x >= game.MAZE_WIDTH || y < 0 || y >= game.MAZE_HEIGHT)
+                    return null;
+                // Return the contents of the cell, if any
+                return this._contents[y * game.MAZE_WIDTH + x];
+            };
+            /**
+             * Store the cell given into the cell at the given location in the maze.
+             * When a cell is stored, its position in the grid and on the screen is
+             * updated so that when later queried it can say where it came from or
+             * where it should render to.
+             *
+             * If the cell is null, this clears the cell at the provided location in
+             * the grid.
+             *
+             * If the location provided is out of bounds for the dimensions of the
+             * maze, nothing happens. In particular, if this happens and the cell
+             * provided is non-null, its position will not be updated as mentioned
+             * above.
+             *
+             * @param {number}   x    the X location to store to
+             * @param {number}   y    the Y location to store to
+             * @param {MazeCell} cell the cell to store; null to clear this location
+             */
+            MazeContents.prototype.setCellAt = function (x, y, cell) {
+                // The bounds are invalid, so do nothing.
+                if (x < 0 || x >= game.MAZE_WIDTH || y < 0 || y >= game.MAZE_HEIGHT)
+                    return;
+                // Set the brick at the location to the one provided.
+                this._contents[y * game.MAZE_WIDTH + x] = cell;
+                // If we are storing a cell, set the position values in it as well.
+                if (cell != null) {
+                    // The position provided is the map position, so we can just set
+                    // that.
+                    cell.mapPosition.setToXY(x, y);
+                    // The screen position is an offset from our position based on
+                    // the map position and the size of the cells, so calculate and
+                    // set that now.
+                    cell.position.setToXY(this._position.x + (x * this._cellSize), this._position.y + (y * this._cellSize));
+                }
+            };
+            /**
+             * Clear the cell (if any) stored at the given location in the maze. This
+             * is equivalent to calling setCellAt() with a null cell.
+             *
+             * @param {number} x the X location to clear
+             * @param {number} y the Y location to clear
+             */
+            MazeContents.prototype.clearCellAt = function (x, y) {
+                this.setCellAt(x, y, null);
+            };
+            /**
+             * Clear the contents of all cells.
+             */
+            MazeContents.prototype.clearCells = function () {
+                // Clear cells at all locations.
+                for (var i = 0; i < game.MAZE_WIDTH * game.MAZE_HEIGHT; i++)
+                    this._contents[i] = null;
+            };
+            MazeContents.prototype.isBlockedAt = function (x, y) {
+                var cell = this.getCellAt(x, y);
+                if (cell == null || cell.blocksBall() == false)
+                    return false;
+                return true;
+            };
+            return MazeContents;
+        }());
+        game.MazeContents = MazeContents;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * The entity that represents a cell inside of the Maze entity.
          *
          * These are basically regular Entity objects with a slightly different
@@ -1338,25 +1576,6 @@ var nurdz;
     var game;
     (function (game) {
         /**
-         * The width of the maze, in bricks.
-         *
-         * This is inclusive of the side walls, so it's actually 2 bricks wider than
-         * the play area.
-         */
-        var MAZE_WIDTH = 31;
-        /**
-         * The height of the maze, in bricks.
-         *
-         * This is inclusive of the bottom wall, so it's actually a brick taller
-         * than the play area.
-         *
-         * Note that in use, the top row is where the balls are stored at the start
-         * of the game, and the row below that is always left empty at game start to
-         * allow all balls a potential to move. Also, the last row in the play area
-         * (that is not the bottom wall) is left clear as the goal line.
-         */
-        var MAZE_HEIGHT = 19;
-        /**
          * The total number of teleport entities that get generated randomly into
          * the maze.
          */
@@ -1428,7 +1647,7 @@ var nurdz;
                 this.setDimensions = function (sheet) {
                     // Alter our collision properties so that our bounds represent the
                     // entire maze area.
-                    _this.makeRectangle(sheet.width * MAZE_WIDTH, sheet.height * MAZE_HEIGHT);
+                    _this.makeRectangle(sheet.width * game.MAZE_WIDTH, sheet.height * game.MAZE_HEIGHT);
                     // Set the cell size now.
                     _this._cellSize = sheet.width;
                     // Determine how much width is left on the stage that is not taken
@@ -1450,6 +1669,10 @@ var nurdz;
                     // the remainder of the width, so that the bottom edge is as far
                     // from the bottom of the screen as the side edges are.
                     _this.setStagePositionXY(Math.floor((_this._stage.width / 2) - (_this.width / 2)), Math.floor(_this._stage.height - _this.height - (remainder / 2)));
+                    // Now that we know our position and cell size, set that into the
+                    // maze contents so that it can update the position of things.
+                    _this._contents.cellSize = _this._cellSize;
+                    _this._contents.position = _this._position;
                     // Generate a new maze; we require a reset here since the side walls
                     // have not been placed yet.
                     //
@@ -1462,6 +1685,8 @@ var nurdz;
                 // indicates that the sprite size is known, so that we can set up
                 // our dimensions.
                 new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
+                // Create our maze contents.
+                this._contents = new game.MazeContents();
                 // Create our entity pools.
                 this._arrows = new game.ActorPool();
                 this._grayBricks = new game.ActorPool();
@@ -1492,23 +1717,17 @@ var nurdz;
                 // whereby creating an entity at runtime that loads an image will
                 // trigger an exception because it's trying to add a preload when
                 // it does not need to.
-                for (var i = 0; i < (MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1]; i++)
+                for (var i = 0; i < (game.MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1]; i++)
                     this._arrows.addEntity(new game.Arrow(stage), false);
-                for (var i = 0; i < (MAZE_HEIGHT - 4) * GRAY_BRICKS_PER_ROW[1]; i++)
+                for (var i = 0; i < (game.MAZE_HEIGHT - 4) * GRAY_BRICKS_PER_ROW[1]; i++)
                     this._grayBricks.addEntity(new game.Brick(stage, game.BrickType.BRICK_GRAY), false);
-                for (var i = 0; i < (MAZE_HEIGHT - 4) * BONUS_BRICKS_PER_ROW[1]; i++)
+                for (var i = 0; i < (game.MAZE_HEIGHT - 4) * BONUS_BRICKS_PER_ROW[1]; i++)
                     this._bonusBricks.addEntity(new game.Brick(stage, game.BrickType.BRICK_BONUS), false);
                 // Fill the actor pool for balls with a complete set of balls; this
                 // only ever happens once and is the one case where we always know
                 // exactly how many entities of a type we need.
-                for (var i = 0; i < (MAZE_WIDTH - 2) * 2; i++)
+                for (var i = 0; i < (game.MAZE_WIDTH - 2) * 2; i++)
                     this._balls.addEntity(new game.Ball(stage), false);
-                // Create the array that holds our contents. null entries are
-                // treated as empty background bricks, so we don't need to do
-                // anything further here.
-                this._contents = new Array(MAZE_WIDTH * MAZE_HEIGHT);
-                // Create the marker overlay.
-                this._markers = new Array(MAZE_WIDTH * MAZE_HEIGHT);
                 // No debugging by default, but the debugging point is the upper
                 // left grid corner; the marker is created later when we know the
                 // grid size.
@@ -1550,69 +1769,6 @@ var nurdz;
                 configurable: true
             });
             /**
-             * Set a debug marker on the cell at the given location in the maze.
-             *
-             * If the location is out of bounds of the maze or there is already a
-             * marker at this location, then this will do nothing.
-             *
-             * @param {number} x the X coordinate to put a marker at
-             * @param {number} y the Y coordinate to put a marker at
-             */
-            Maze.prototype.setMarkerAt = function (x, y) {
-                // If the bounds are invalid, do nothing.
-                if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                    return;
-                // Set the marker into the marker list at this location.
-                // Set the brick at the location to the one provided.
-                this._markers[y * MAZE_WIDTH + x] = true;
-            };
-            /**
-             * Clear the debug marker on the cell at the given location in the maze.
-             *
-             * If the location is out of bounds or does not contain a marker, then
-             * this will do nothing.
-             *
-             * @param {number} x the X coordinate to clear the marker from
-             * @param {number} y the Y coordinate to clear the marker from
-             */
-            Maze.prototype.clearMarkerAt = function (x, y) {
-                // If the bounds are invalid or there is not a marker a this
-                // location, then do nothing.
-                if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                    return;
-                // Now remove it from the grid
-                this._markers[y * MAZE_WIDTH + x] = false;
-            };
-            /**
-             * Check the maze to see if there is a debug marker on the location
-             * given.
-             *
-             * @param   {number}  x the X coordinate to check in the maze
-             * @param   {number}  y the Y coordinate to check in the maze
-             *
-             * @returns {boolean}   true if this position contains a marker, or
-             * false otherwise
-             */
-            Maze.prototype.hasMarkerAt = function (x, y) {
-                // The bounds are invalid, so no marker
-                if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                    return false;
-                // There is only a marker if this location is true.
-                return this._markers[y * MAZE_WIDTH + x] == true;
-            };
-            /**
-             * Remove all markers that may be set in the maze currently.
-             */
-            Maze.prototype.removeAllMarkers = function () {
-                // Scan the entire maze, and for every marker entity that we find,
-                // remove it from that cell.
-                for (var row = 0; row < MAZE_HEIGHT; row++) {
-                    for (var col = 0; col < MAZE_WIDTH; col++) {
-                        this.clearMarkerAt(col, row);
-                    }
-                }
-            };
-            /**
              * Take a point in stage coordinates and use it to set the current debug
              * location, if possible.
              *
@@ -1647,7 +1803,7 @@ var nurdz;
              * any
              */
             Maze.prototype.getDebugCell = function () {
-                return this.getCellAt(this._debugPoint.x, this._debugPoint.y);
+                return this._contents.getCellAt(this._debugPoint.x, this._debugPoint.y);
             };
             /**
              * Set the cell at the current debug location in the grid to the cell
@@ -1656,7 +1812,7 @@ var nurdz;
              * @param {MazeCell} newCell the new cell to insert into the grid
              */
             Maze.prototype.setDebugCell = function (newCell) {
-                this.setCellAt(this._debugPoint.x, this._debugPoint.y, newCell);
+                this._contents.setCellAt(this._debugPoint.x, this._debugPoint.y, newCell);
             };
             /**
              * DEBUG METHOD
@@ -1826,9 +1982,9 @@ var nurdz;
              * vanish bonus bricks.
              */
             Maze.prototype.debugVanishBricks = function (grayBricks) {
-                for (var row = 0; row < MAZE_HEIGHT; row++) {
-                    for (var col = 0; col < MAZE_WIDTH; col++) {
-                        var cell = this.getCellAt(col, row);
+                for (var row = 0; row < game.MAZE_HEIGHT; row++) {
+                    for (var col = 0; col < game.MAZE_WIDTH; col++) {
+                        var cell = this._contents.getCellAt(col, row);
                         if (cell != null || cell instanceof game.Brick) {
                             var brick = cell;
                             if (brick.isHidden == false &&
@@ -1928,7 +2084,7 @@ var nurdz;
                 // then remove it from the maze. It will be re-added when
                 // it is finished moving
                 this._droppingBall = ball;
-                this.setCellAt(ball.mapPosition.x, ball.mapPosition.y, null);
+                this._contents.clearCellAt(ball.mapPosition.x, ball.mapPosition.y);
                 // Ensure that the ball knows before we start that it started
                 // out not moving.
                 this._droppingBall.moveType = game.BallMoveType.BALL_MOVE_NONE;
@@ -1960,7 +2116,7 @@ var nurdz;
                 // cells in the maze, then collect the entity out of the maze at
                 // that location (if any).
                 position.reduce(this.cellSize);
-                var entity = this.getCellAt(position.x, position.y);
+                var entity = this._contents.getCellAt(position.x, position.y);
                 // If the entity is a ball and we're not already trying to drop a
                 // ball, try to move it downwards.
                 if (entity instanceof game.Ball && this._droppingBall == null) {
@@ -1975,18 +2131,15 @@ var nurdz;
                 // If this cell in the maze does not contain anything, or it
                 // contains the black hole, then toggle the marker at this location.
                 if (entity == null || entity == this._blackHole) {
-                    // If there a marker here, then clear it; otherwise, add it.
-                    if (this.hasMarkerAt(position.x, position.y))
-                        this.clearMarkerAt(position.x, position.y);
-                    else
-                        this.setMarkerAt(position.x, position.y);
+                    // Toggle the marker here.
+                    this._contents.toggleMarkerAt(position.x, position.y);
                 }
                 // If this is a brick that is not hidden, vanish it. We can't bring
                 // it back because once it's hidden the update loop will reap it.
                 if (entity instanceof game.Brick) {
                     // Clear any marker that might be here; these can only appear if
                     // the ball drops through, so lets be able to remove them.
-                    this.clearMarkerAt(position.x, position.y);
+                    this._contents.clearMarkerAt(position.x, position.y);
                     // Get the brick; if its not hidden, vanish it.
                     var brick = entity;
                     if (brick.isHidden == false)
@@ -2027,7 +2180,7 @@ var nurdz;
             Maze.prototype.nextBallPosition = function (ball, position) {
                 // If this position is in the second to last row of the maze, it has
                 // reached the goal line, so movement stops.
-                if (position.y == MAZE_HEIGHT - 2) {
+                if (position.y == game.MAZE_HEIGHT - 2) {
                     ball.moveType = game.BallMoveType.BALL_MOVE_NONE;
                     return false;
                 }
@@ -2035,7 +2188,7 @@ var nurdz;
                 // any; if there is one, tell it that the ball touched it, and also
                 // possibly allow it to move the ball, as long as that's not how we
                 // got at the current position.
-                var current = this.getCellAt(position.x, position.y);
+                var current = this._contents.getCellAt(position.x, position.y);
                 if (current != null) {
                     // Copy the position provided and then hand it to the entity
                     // that we're currently on top of.
@@ -2056,7 +2209,7 @@ var nurdz;
                 // Get the contents of the cell below us in the grid. If that cell
                 // is empty or does not block the ball, then change position to drop
                 // the ball there and we're done.
-                var below = this.getCellAt(position.x, position.y + 1);
+                var below = this._contents.getCellAt(position.x, position.y + 1);
                 if (below == null || below.blocksBall() == false) {
                     ball.moveType = game.BallMoveType.BALL_MOVE_DROP;
                     position.y++;
@@ -2073,7 +2226,7 @@ var nurdz;
                 // Check the contents of the new location and see if the ball is
                 // allowed to enter that cell or not; the ball can enter if the cell
                 // is empty or does not block ball movement.
-                var movedCell = this.getCellAt(newPos.x, newPos.y);
+                var movedCell = this._contents.getCellAt(newPos.x, newPos.y);
                 if (movedCell == null || movedCell.blocksBall() == false) {
                     // Tell the cell that moved the ball that we actually moved it,
                     // and then return back the position that it gave.
@@ -2100,14 +2253,14 @@ var nurdz;
              */
             Maze.prototype.checkForAllBallsPlayed = function () {
                 // Scan every cell in the top row of the maze contents.
-                for (var cellX = 1; cellX < MAZE_WIDTH - 1; cellX++) {
+                for (var cellX = 1; cellX < game.MAZE_WIDTH - 1; cellX++) {
                     // Get the content of this cell. If there is content here, we
                     // need to check below it.
-                    if (this.getCellAt(cellX, 0) != null) {
+                    if (this._contents.getCellAt(cellX, 0) != null) {
                         // Get the cell below; if it is empty or it does not block a
                         // ball from moving, then this ball is still playable, so
                         // all balls are not played; we can leave now.
-                        var below = this.getCellAt(cellX, 1);
+                        var below = this._contents.getCellAt(cellX, 1);
                         if (below == null || below.blocksBall() == false)
                             return;
                     }
@@ -2137,7 +2290,7 @@ var nurdz;
                     // longer playing, we can remove it from the grid now.
                     var cell = pool.liveEntities[i];
                     if (cell.isHidden && cell.animations.isPlaying == false) {
-                        this.setCellAt(cell.mapPosition.x, cell.mapPosition.y, null);
+                        this._contents.clearCellAt(cell.mapPosition.x, cell.mapPosition.y);
                         pool.killEntity(cell);
                         retVal++;
                     }
@@ -2157,9 +2310,9 @@ var nurdz;
                 // protects us from this method being called again until the ball
                 // we select (if any) is finished moving.
                 this._droppingFinalBall = true;
-                for (var row = MAZE_HEIGHT - 2; row >= 0; row--) {
-                    for (var col = MAZE_WIDTH - 1; col >= 1; col--) {
-                        var cell = this.getCellAt(col, row);
+                for (var row = game.MAZE_HEIGHT - 2; row >= 0; row--) {
+                    for (var col = game.MAZE_WIDTH - 1; col >= 1; col--) {
+                        var cell = this._contents.getCellAt(col, row);
                         if (cell instanceof game.Ball) {
                             // Start it dropping, then leave; we're done.
                             this.dropBall(cell, FINAL_DROP_SPEED);
@@ -2221,7 +2374,7 @@ var nurdz;
                     // moving it now.
                     if (this.nextBallPosition(this._droppingBall, pos) == false) {
                         // Add the ball back to the maze at it's current position.
-                        this.setCellAt(pos.x, pos.y, this._droppingBall);
+                        this._contents.setCellAt(pos.x, pos.y, this._droppingBall);
                         // If the ball position is at the bottom of the maze or it
                         // is one of the final balls, then, get it to play it's
                         // vanish animation. When this is not the case, the ball
@@ -2232,7 +2385,7 @@ var nurdz;
                         // reaped, so that the code that triggers when the flag
                         // becomes set to true doesn't happen until the ball is
                         // visibly gone.
-                        if (pos.y == MAZE_HEIGHT - 2 || this._droppingFinalBall == true)
+                        if (pos.y == game.MAZE_HEIGHT - 2 || this._droppingFinalBall == true)
                             this._droppingBall.vanish();
                         else
                             this._ballMoveFinalized = true;
@@ -2277,55 +2430,6 @@ var nurdz;
                 }
             };
             /**
-             * Fetch the internal contents of the maze at the provided X and Y
-             * values.
-             *
-             * @param   {number}   x the maze X value to fetch
-             * @param   {number}   y the maze Y value to fetch
-             *
-             * @returns {MazeCell}   the contents of the cell, or null. null will be
-             * returned if the cell is empty or if the position provided is out of
-             * bounds.
-             */
-            Maze.prototype.getCellAt = function (x, y) {
-                // The bounds are invalid, so return null
-                if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                    return null;
-                // Return the contents of the cell, if any
-                return this._contents[y * MAZE_WIDTH + x];
-            };
-            /**
-             * Change the cell at the provided X and Y values in the maze to the cell
-             * provided; if cell is null, this essentially sets an empty brick into
-             * this position in the maze.
-             *
-             * If the bounds provided are not valid for the maze, nothing happens.
-             *
-             * @param {number}   x    the maze X value to set
-             * @param {number}   y    the maze Y value to set
-             * @param {MazeCell} cell the new cell to set, or null to set the
-             * empty brick
-             */
-            Maze.prototype.setCellAt = function (x, y, cell) {
-                // The bounds are invalid, so do nothing.
-                if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT)
-                    return;
-                // Set the brick at the location to the one provided.
-                this._contents[y * MAZE_WIDTH + x] = cell;
-                // If there is a cell here, update its internal position information
-                // based on what we have been given.
-                if (cell) {
-                    // The position we provided is a direct map position, so set
-                    // that first.
-                    cell.mapPosition.setToXY(x, y);
-                    // Now set the screen position to a scaled version of the map
-                    // position, which we offset by the position of our maze.
-                    cell.position.setTo(cell.mapPosition);
-                    cell.position.scale(this.cellSize);
-                    cell.position.translate(this._position);
-                }
-            };
-            /**
              * This will render the backing portion of the maze, which will draw in
              * the bounding walls on the outer edges as well as a complete grid of
              * background tiles.
@@ -2340,13 +2444,13 @@ var nurdz;
             Maze.prototype.renderMazeBacking = function (x, y, cSize, renderer) {
                 // Iterate over all of the cells that make up the maze, rendering
                 // as appropriate.
-                for (var cellY = 0, blitY = y; cellY < MAZE_HEIGHT; cellY++, blitY += cSize) {
-                    for (var cellX = 0, blitX = x; cellX < MAZE_WIDTH; cellX++, blitX += cSize) {
+                for (var cellY = 0, blitY = y; cellY < game.MAZE_HEIGHT; cellY++, blitY += cSize) {
+                    for (var cellX = 0, blitX = x; cellX < game.MAZE_WIDTH; cellX++, blitX += cSize) {
                         // The cell to render is empty, unless this is the side of
                         // the maze or the bottom of it, in which case the wall is
                         // solid.
                         var cell = this._empty;
-                        if (cellX == 0 || cellX == MAZE_WIDTH - 1 || cellY == MAZE_HEIGHT - 1)
+                        if (cellX == 0 || cellX == game.MAZE_WIDTH - 1 || cellY == game.MAZE_HEIGHT - 1)
                             cell = this._solid;
                         // Render this cell.
                         cell.render(blitX, blitY, renderer);
@@ -2365,10 +2469,10 @@ var nurdz;
             Maze.prototype.renderMazeMarkers = function (x, y, cSize, renderer) {
                 // Iterate over all columns and rows and render any markers that
                 // might exist.
-                for (var cellY = 0, blitY = y; cellY < MAZE_HEIGHT; cellY++, blitY += cSize) {
-                    for (var cellX = 0, blitX = x; cellX < MAZE_WIDTH; cellX++, blitX += cSize) {
+                for (var cellY = 0, blitY = y; cellY < game.MAZE_HEIGHT; cellY++, blitY += cSize) {
+                    for (var cellX = 0, blitX = x; cellX < game.MAZE_WIDTH; cellX++, blitX += cSize) {
                         // If this position contains a marker, render one here.
-                        if (this.hasMarkerAt(cellX, cellY))
+                        if (this._contents.hasMarkerAt(cellX, cellY))
                             this._marker.render(blitX, blitY, renderer);
                     }
                 }
@@ -2420,19 +2524,17 @@ var nurdz;
              * stop the ball from falling out of the maze.
              */
             Maze.prototype.emptyMaze = function () {
-                // First, every brick needs to be a background brick. To do this we
-                // just need to clear the entry in the array.
-                for (var i = 0; i < this._contents.length; i++)
-                    this._contents[i] = null;
+                // Clear all cells.
+                this._contents.clearCells();
                 // Now the left and right sides need to be solid bricks.
-                for (var y = 0; y < MAZE_HEIGHT; y++) {
-                    this.setCellAt(0, y, this._solid);
-                    this.setCellAt(MAZE_WIDTH - 1, y, this._solid);
+                for (var y = 0; y < game.MAZE_HEIGHT; y++) {
+                    this._contents.setCellAt(0, y, this._solid);
+                    this._contents.setCellAt(game.MAZE_WIDTH - 1, y, this._solid);
                 }
                 // Lastly, the bottom row needs to be made solid, except for the
                 // first and last columns, which have already been filled out.
-                for (var x = 1; x < MAZE_WIDTH - 1; x++)
-                    this.setCellAt(x, MAZE_HEIGHT - 1, this._solid);
+                for (var x = 1; x < game.MAZE_WIDTH - 1; x++)
+                    this._contents.setCellAt(x, game.MAZE_HEIGHT - 1, this._solid);
             };
             /**
              * Scan the maze over the range of values given and check to see if any
@@ -2455,7 +2557,7 @@ var nurdz;
                 // this handles locations that end up off of the edge OK.
                 for (var x = x1; x <= x2; x++) {
                     for (var y = y1; y <= y2; y++) {
-                        if (this.getCellAt(x, y) != null)
+                        if (this._contents.getCellAt(x, y) != null)
                             return true;
                     }
                 }
@@ -2473,7 +2575,7 @@ var nurdz;
              */
             Maze.prototype.genRandomMazeColumn = function () {
                 // Generate, ensuring that we never pick an edge.
-                return game.Utils.randomIntInRange(1, MAZE_WIDTH - 1);
+                return game.Utils.randomIntInRange(1, game.MAZE_WIDTH - 1);
             };
             /**
              * Randomly select a row in the maze for the purposes of generating maze
@@ -2491,7 +2593,7 @@ var nurdz;
                 // Generate, ensuring that we skip two rows for the initial ball
                 // placements and at least a single row of movement, and two rows on
                 // the bottom to make room for the lower boundary and the goal line.
-                return game.Utils.randomIntInRange(2, MAZE_HEIGHT - 2);
+                return game.Utils.randomIntInRange(2, game.MAZE_HEIGHT - 2);
             };
             /**
              * Generate black holes into the maze. We generate a specific number of
@@ -2519,7 +2621,7 @@ var nurdz;
                     if (this.entityInRange(x - TELEPORT_MIN_DISTANCE, y - TELEPORT_MIN_DISTANCE, x + TELEPORT_MIN_DISTANCE, y + TELEPORT_MIN_DISTANCE) == false) {
                         // Store it, then add this location to the list of possible
                         // destinations in this black hole.
-                        this.setCellAt(x, y, this._blackHole);
+                        this._contents.setCellAt(x, y, this._blackHole);
                         this._blackHole.addDestination(new game.Point(x, y));
                     }
                     else
@@ -2542,7 +2644,7 @@ var nurdz;
                 // start two rows down to make room for the initial ball locations
                 // and the empty balls, and we stop 2 rows short to account for the
                 // border of the maze and the goal row.
-                for (var row = 2; row < MAZE_HEIGHT - 2; row++) {
+                for (var row = 2; row < game.MAZE_HEIGHT - 2; row++) {
                     // First, we need to determine how many arrows we will generate
                     // for this row.
                     var arrowCount = game.Utils.randomIntInRange(ARROWS_PER_ROW[0], ARROWS_PER_ROW[1]);
@@ -2552,8 +2654,8 @@ var nurdz;
                         // Generate a column randomly. If this location is already
                         // filled, or the tile above it is a black hole,  try again.
                         var column = this.genRandomMazeColumn();
-                        if (this.getCellAt(column, row) != null ||
-                            (this.getCellAt(column, row - 1) instanceof game.Teleport))
+                        if (this._contents.getCellAt(column, row) != null ||
+                            (this._contents.getCellAt(column, row - 1) instanceof game.Teleport))
                             continue;
                         // This cell contains an arrow; resurrect one from the object
                         // pool. If there isn't one to resurrect, create one and add
@@ -2575,7 +2677,7 @@ var nurdz;
                         else
                             arrow.arrowType = game.ArrowType.ARROW_AUTOMATIC;
                         // Add it to the maze and count it as placed.
-                        this.setCellAt(column, row, arrow);
+                        this._contents.setCellAt(column, row, arrow);
                         arrowCount--;
                     }
                 }
@@ -2596,7 +2698,7 @@ var nurdz;
                 // start two rows down to make room for the initial ball locations
                 // and the empty balls, and we stop 2 rows short to account for the
                 // border of the maze and the goal row.
-                for (var row = 2; row < MAZE_HEIGHT - 2; row++) {
+                for (var row = 2; row < game.MAZE_HEIGHT - 2; row++) {
                     // See if we should bother generating any bricks in this row
                     // at all.
                     if (game.Utils.randomIntInRange(0, 100) > GRAY_BRICK_CHANCE)
@@ -2610,8 +2712,8 @@ var nurdz;
                         // Generate a column randomly. If this location is already
                         // filled or the square above is an arrow, try again.
                         var column = this.genRandomMazeColumn();
-                        if (this.getCellAt(column, row) != null ||
-                            (this.getCellAt(column, row - 1) instanceof game.Arrow))
+                        if (this._contents.getCellAt(column, row) != null ||
+                            (this._contents.getCellAt(column, row - 1) instanceof game.Arrow))
                             continue;
                         // This cell contains brick; resurrect one from the object
                         // pool. If there isn't one to resurrect, create one and add
@@ -2624,7 +2726,7 @@ var nurdz;
                         // Make sure the brick starts out growing into place.
                         brick.appear();
                         // Add it to the maze and count it as placed.
-                        this.setCellAt(column, row, brick);
+                        this._contents.setCellAt(column, row, brick);
                         brickCount--;
                     }
                 }
@@ -2644,7 +2746,7 @@ var nurdz;
                 // start two rows down to make room for the initial ball locations
                 // and the empty balls, and we stop 2 rows short to account for the
                 // border of the maze and the goal row.
-                for (var row = 2; row < MAZE_HEIGHT - 2; row++) {
+                for (var row = 2; row < game.MAZE_HEIGHT - 2; row++) {
                     // See if we should bother generating any bricks in this row
                     // at all.
                     if (game.Utils.randomIntInRange(0, 100) > BONUS_BRICK_CHANCE)
@@ -2658,8 +2760,8 @@ var nurdz;
                         // Generate a column randomly. If this location is already
                         // filled or the square above is an arrow, try again.
                         var column = this.genRandomMazeColumn();
-                        if (this.getCellAt(column, row) != null ||
-                            (this.getCellAt(column, row - 1) instanceof game.Arrow))
+                        if (this._contents.getCellAt(column, row) != null ||
+                            (this._contents.getCellAt(column, row - 1) instanceof game.Arrow))
                             continue;
                         // This cell contains brick; resurrect one from the object
                         // pool. If there isn't one to resurrect, create one and add
@@ -2672,7 +2774,7 @@ var nurdz;
                         // Make sure the brick starts out growing into place.
                         brick.appear();
                         // Add it to the maze and count it as placed.
-                        this.setCellAt(column, row, brick);
+                        this._contents.setCellAt(column, row, brick);
                         brickCount--;
                     }
                 }
@@ -2688,7 +2790,7 @@ var nurdz;
                 // There should be two sets of balls that we cycle between, but for
                 // now we just put a set of player balls into the top row of the
                 // maze.
-                for (var col = 1; col < MAZE_WIDTH - 1; col++) {
+                for (var col = 1; col < game.MAZE_WIDTH - 1; col++) {
                     // Get a ball; this pool always has enough entities for us
                     // because the number is fixed.
                     var ball = this._balls.resurrectEntity();
@@ -2699,7 +2801,7 @@ var nurdz;
                     // there)
                     ball.appear();
                     // Set the ball in now.
-                    this.setCellAt(col, 0, ball);
+                    this._contents.setCellAt(col, 0, ball);
                 }
             };
             /**
@@ -2715,7 +2817,7 @@ var nurdz;
                 this._grayBricks.killALl();
                 this._bonusBricks.killALl();
                 this._balls.killALl();
-                this.removeAllMarkers();
+                this._contents.clearMarkers();
                 // Make sure that our black hole entity doesn't know about any
                 // destinations from a prior maze (if any).
                 this._blackHole.clearDestinations();
