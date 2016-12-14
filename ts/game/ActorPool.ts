@@ -1,6 +1,24 @@
 module nurdz.game
 {
     /**
+     * Items stored in the actor pool may optionally provide a property that
+     * allows it to store the pool that it is currently contained in. If this
+     * property is set, the ActorPool class will adjust it every time the actor
+     * is added to a pool.
+     */
+    export interface ActorPoolClient extends Actor
+    {
+        /**
+         * Optional; if present, it represents the pool that an Actor is
+         * currently stored in (which may be null if not in a pool).
+         *
+         * This property must default to null or some other value (i.e. it
+         * cannot be undefined) or the ActorPool will ignore it.
+         */
+        pool? : ActorPool<Actor>;
+    }
+
+    /**
      * This class represents an actor pool.
      *
      * The idea is that during the game we will want to construct multiple
@@ -15,7 +33,7 @@ module nurdz.game
      * are considered "alive", and then redact them from the list of live
      * objects and insert them into the list of dead objects instead.
      */
-    export class ActorPool<T extends Actor>
+    export class ActorPool<T extends ActorPoolClient>
     {
         /**
          * This contains the list of entities that have been added to the pool
@@ -82,7 +100,15 @@ module nurdz.game
             // about it.
             if (this._deadPool.indexOf (newEntity) == -1 &&
                 this._liveContents.indexOf (newEntity) == -1)
+            {
+                // Store in the appropriate section
                 (isAlive ? this._liveContents : this._deadPool).push (newEntity);
+
+                // If possible, tell this entity that it is stored in us. This
+                // requires that the (optional) parameter
+                if (typeof newEntity.pool != "undefined")
+                    newEntity.pool = this;
+            }
         }
 
         /**
@@ -187,8 +213,8 @@ module nurdz.game
          * provided.
          *
          * As such this method is not for use in instances where there is a
-         * scrolling viewport unless you are modifying the position of everything
-         * in the pool as needed.
+         * scrolling view port unless you are modifying the position of
+         * everything in the pool as needed.
          *
          * @param {Renderer} renderer the renderer used to do the rendering
          */

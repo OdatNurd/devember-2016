@@ -71,8 +71,14 @@ var nurdz;
                 // Only add the entity to the live contents if we don't already know
                 // about it.
                 if (this._deadPool.indexOf(newEntity) == -1 &&
-                    this._liveContents.indexOf(newEntity) == -1)
+                    this._liveContents.indexOf(newEntity) == -1) {
+                    // Store in the appropriate section
                     (isAlive ? this._liveContents : this._deadPool).push(newEntity);
+                    // If possible, tell this entity that it is stored in us. This
+                    // requires that the (optional) parameter
+                    if (typeof newEntity.pool != "undefined")
+                        newEntity.pool = this;
+                }
             };
             /**
              * Mark the entity provided as being dead. This shifts it from the list
@@ -164,8 +170,8 @@ var nurdz;
              * provided.
              *
              * As such this method is not for use in instances where there is a
-             * scrolling viewport unless you are modifying the position of everything
-             * in the pool as needed.
+             * scrolling view port unless you are modifying the position of
+             * everything in the pool as needed.
              *
              * @param {Renderer} renderer the renderer used to do the rendering
              */
@@ -407,12 +413,6 @@ var nurdz;
                 for (var i = 0; i < game.MAZE_WIDTH * game.MAZE_HEIGHT; i++)
                     this._contents[i] = null;
             };
-            MazeContents.prototype.isBlockedAt = function (x, y) {
-                var cell = this.getCellAt(x, y);
-                if (cell == null || cell.blocksBall() == false)
-                    return false;
-                return true;
-            };
             return MazeContents;
         }());
         game.MazeContents = MazeContents;
@@ -449,6 +449,12 @@ var nurdz;
                 // our sprites, so we don't set anything here.
                 _super.call(this, name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
                 /**
+                 * The ActorPool that this MazeCell is defined in. This is null before
+                 * it is put into a pool, and afterwards always tracks the last actor
+                 * pool it was added to.
+                 */
+                this._pool = null;
+                /**
                  * This callback is invoked when the preload of our sprite sheet is
                  * finished and the image is fully loaded.
                  *
@@ -467,6 +473,24 @@ var nurdz;
                 // callback handle that.
                 this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.preloadComplete);
             }
+            Object.defineProperty(MazeCell.prototype, "pool", {
+                /**
+                 * Obtain the actor pool that this MazeCell is stored in, if any
+                 *
+                 * @returns {ActorPool<ActorPoolClient>} the actor pool this cell is stored
+                 * in, or null if it is not in a pool
+                 */
+                get: function () { return this._pool; },
+                /**
+                 * Set the actor pool that this MazeCell is stored in
+                 *
+                 * @param {ActorPool<ActorPoolClient>} newPool the actor pool that this
+                 * cell is stored in.
+                 */
+                set: function (newPool) { this._pool = newPool; },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * This is invoked when our sprite sheet has finished loading, allowing
              * us to perform any tasks that require information from the sprite

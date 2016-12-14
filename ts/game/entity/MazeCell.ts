@@ -34,6 +34,31 @@ module nurdz.game
     export class MazeCell extends Entity
     {
         /**
+         * The ActorPool that this MazeCell is defined in. This is null before
+         * it is put into a pool, and afterwards always tracks the last actor
+         * pool it was added to.
+         */
+        protected _pool : ActorPool<ActorPoolClient> = null;
+
+        /**
+         * Obtain the actor pool that this MazeCell is stored in, if any
+         *
+         * @returns {ActorPool<ActorPoolClient>} the actor pool this cell is stored
+         * in, or null if it is not in a pool
+         */
+        get pool () : ActorPool<ActorPoolClient>
+        { return this._pool; }
+
+        /**
+         * Set the actor pool that this MazeCell is stored in
+         *
+         * @param {ActorPool<ActorPoolClient>} newPool the actor pool that this
+         * cell is stored in.
+         */
+        set pool (newPool : ActorPool<ActorPoolClient>)
+        { this._pool = newPool; }
+
+        /**
          * Construct a new maze cell that will render on the stage provided and
          * which has the entity name provided.
          *
