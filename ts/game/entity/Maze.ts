@@ -67,6 +67,17 @@ module nurdz.game
     const BONUS_BRICKS_PER_ROW = [1, 2];
 
     /**
+     * The number of ticks between steps in a normal (interactive) ball drop,
+     */
+    const NORMAL_DROP_SPEED = 3;
+
+    /**
+     * The number of ticks between steps in a final (end of round) ball drop.
+     *
+     * @type {Number}
+     */
+    const FINAL_DROP_SPEED = 1;
+    /**
      * The entity that represents the maze in the game. This is the entire play
      * area of the game.
      */
@@ -292,7 +303,7 @@ module nurdz.game
             // for the drop time and speed (drop time is not consulted unless
             // a ball is dropping).
             this._droppingBall = null;
-            this._dropSpeed = 3;
+            this._dropSpeed = NORMAL_DROP_SPEED;
             this._lastDropTick = 0;
 
             // No ball has finished moving and no gray bricks have been removed.
@@ -829,9 +840,10 @@ module nurdz.game
          * its map position must accurately reflect the position it is stored
          * in, since that position will be cleared when the ball starts moving.
          *
-         * @param {Ball} ball the ball to drop
+         * @param {Ball}   ball  the ball to drop
+         * @param {number} speed the number of ticks between ball step stages
          */
-        private dropBall (ball : Ball) : void
+        private dropBall (ball : Ball, speed : number) : void
         {
             // Set the entity that is currently dropping to the one provided,
             // then remove it from the maze. It will be re-added when
@@ -846,6 +858,9 @@ module nurdz.game
             // Now indicate that the last time the ball dropped was right now
             // so that the next step in the drop happens in the future.
             this._lastDropTick = this._stage.tick;
+
+            // Set up the drop speed.
+            this._dropSpeed = speed;
         }
 
         /**
@@ -878,7 +893,7 @@ module nurdz.game
             if (entity instanceof Ball && this._droppingBall == null)
             {
                 // Drop it and leave.
-                this.dropBall (entity);
+                this.dropBall (entity, NORMAL_DROP_SPEED);
                 return true;
             }
 
@@ -1116,7 +1131,7 @@ module nurdz.game
                     if (cell instanceof Ball)
                     {
                         // Start it dropping, then leave; we're done.
-                        this.dropBall (cell);
+                        this.dropBall (cell, FINAL_DROP_SPEED);
                         return;
                     }
                 }
