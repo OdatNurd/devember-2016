@@ -12,6 +12,11 @@ module nurdz.game
         private _maze : Maze;
 
         /**
+         * The debugger for our maze. We store a reference to make access easier.
+         */
+        private _debugger : MazeDebugger;
+
+        /**
          * The last known position of the mouse on the stage.
          */
         private _mouse : Point;
@@ -40,6 +45,9 @@ module nurdz.game
 
             // Start out with a default mouse location.
             this._mouse = new Point (0, 0);
+
+            // Stash the debugger.
+            this._debugger = this._maze.debugger;
         }
 
         /**
@@ -75,8 +83,8 @@ module nurdz.game
                 // Toggle mouse tracking of the debug location, then update the
                 // tracking with the last known mouse location.
                 case KeyCodes.KEY_SPACEBAR:
-                    this._maze.debugger.debugTracking = !this._maze.debugger.debugTracking;
-                    if (this._maze.debugger.debugTracking)
+                    this._debugger.debugTracking = !this._debugger.debugTracking;
+                    if (this._debugger.debugTracking)
                         this._maze.setDebugPoint (this._mouse);
                     return true;
 
@@ -88,88 +96,48 @@ module nurdz.game
                 // delete key on the numeric keypad may or may not work.
                 case 8:
                 case 46:
-                    if (this._maze.debugger.debugTracking)
-                    {
-                        this._maze.debugger.debugClearCell ();
-                        return true;
-                    }
-                    break;
+                    return this._debugger.debugClearCell ();
 
                 // Toggle the type of the entity under the debug cursor through
                 // its various states.
                 case KeyCodes.KEY_T:
-                    if (this._maze.debugger.debugTracking)
-                    {
-                        this._maze.debugger.debugToggleCell ();
-                        return true;
-                    }
-                    break;
+                    return this._debugger.debugToggleCell ();
 
                 // Add a brick to the maze at the current debug cursor; this
                 // only works if the cell is currently empty. This will try
                 // to add a gray brick, and failing that a bonus brick.
                 case KeyCodes.KEY_B:
-                    if (this._maze.debugger.debugTracking)
-                    {
-                        this._maze.debugger.debugAddBrick ();
-                        return true;
-                    }
-                    break;
+                    return this._debugger.debugAddBrick ();
 
                 // Add an arrow to the maze at the current debug cursor; this
                 // only works if the cell is currentlye empty. This will add a
                 // normal arrow by default, but this can be toggled with the
                 // 'T" key'.
                 case KeyCodes.KEY_A:
-                    if (this._maze.debugger.debugTracking)
-                    {
-                        this._maze.debugger.debugAddArrow ();
-                        return true;
-                    }
-                    break;
+                    return this._debugger.debugAddArrow ();
 
                 // Add a teleport to the maze at the current debug cursor; this
                 // only works if the cell is currentlye empty. This just adds an
                 // extra exit point to the black hole system.
                 case KeyCodes.KEY_H:
-                    if (this._maze.debugger.debugTracking)
-                    {
-                        this._maze.debugger.debugAddTeleport ();
-                        return true;
-                    }
-                    break;
+                    return this._debugger.debugAddTeleport ();
 
                 // Add a ball to the maze at the current debug cursor; this only
                 // works if the cell is currently empty. This will add a player
                 // ball by default, but this can be toggled with the 'T' key.
                 case KeyCodes.KEY_L:
-                    if (this._maze.debugger.debugTracking)
-                    {
-                        this._maze.debugger.debugAddBall ();
-                        return true;
-                    }
-                    break;
+                    return this._debugger.debugAddBall ();
 
                 // Vanish away all of the gray or bonus bricks that are still
                 // visible.
                 case KeyCodes.KEY_V:
                 case KeyCodes.KEY_C:
-                    if (this._maze.debugger.debugTracking)
-                    {
-                        this._maze.debugger.debugVanishBricks (eventObj.keyCode == KeyCodes.KEY_V);
-                        return true;
-                    }
-                    break;
+                    return this._debugger.debugVanishBricks (eventObj.keyCode == KeyCodes.KEY_V);
 
                 // Wipe the entire maze contents; this is like a reset except
                 // no new maze is generated first.
                 case KeyCodes.KEY_W:
-                    if (this._maze.debugger.debugTracking)
-                    {
-                        this._maze.debugger.debugWipeMaze ();
-                        return true;
-                    }
-                    break;
+                    return this._debugger.debugWipeMaze ();
             }
 
             // We did not handle it

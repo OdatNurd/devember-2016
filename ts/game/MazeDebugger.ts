@@ -159,20 +159,25 @@ module nurdz.game
         }
 
         /**
-         * DEBUG METHOD
-         *
          * Remove the contents of an existing cell from the maze, returning the
          * object back into its pool.
          *
          * This currently does not work on Teleport entities, since they need
          * special action to work.
+         *
+         * @returns {boolean} true if debugging was turned on and we tried to
+         * handle the command, false if debugging is turned off.
          */
-        debugClearCell () : void
+        debugClearCell () : boolean
         {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
             // Get the debug cell and leave if there isn't one.
             let cell = this.getDebugCell ();
             if (cell == null)
-                return;
+                return true;
 
             // There is a single Teleport entity, so all we have to do is remove
             // the current location as a destination.
@@ -190,41 +195,55 @@ module nurdz.game
             else
             {
                 console.log ("Cannot delete boundary bricks");
-                return;
+                return true;
             }
 
             // Clear the contents of the cell now.
             this.setDebugCell (null);
+            return true;
         }
 
         /**
          * Wipe the entire contents of the maze, killing all entities. This will
          * leave only the bounding bricks that stop the ball from going out of
          * bounds.
+         *
+         * @returns {boolean} true if debugging was turned on and we tried to
+         * handle the command, false if debugging is turned off.
          */
-        debugWipeMaze ()
+        debugWipeMaze () : boolean
         {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
             // Reset all entities, then generate walls into the maze to clear it
             // back to a known state.
             this._maze.resetMazeEntities ();
             this._maze.generator.emptyMaze ();
+            return true;
         }
 
         /**
-         * DEBUG METHOD
-         *
          * Toggle an existing cell through its subtypes (for cells that support
          * this).
          *
          * If the debug point is empty or not of a toggle-able type, this does
          * nothing.
+         *
+         * @returns {boolean} true if debugging was turned on and we tried to
+         * handle the command, false if debugging is turned off.
          */
-        debugToggleCell () : void
+        debugToggleCell () : boolean
         {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
             // Get the debug cell and leave if there isn't one.
             let cell = this.getDebugCell ();
             if (cell == null)
-                return;
+                return true;
 
             // If the cell is an arrow, toggle the type. Doing this will also
             // implicitly set an auto-flip timer on the arrow when it becomes
@@ -236,7 +255,7 @@ module nurdz.game
                     arrow.arrowType = ArrowType.ARROW_NORMAL;
                 else
                     arrow.arrowType = ArrowType.ARROW_AUTOMATIC;
-                return;
+                return true;
             }
 
             // If the cell is a ball, toggle the type.
@@ -248,7 +267,7 @@ module nurdz.game
                 else
                     ball.ballType = BallType.BALL_PLAYER;
                 ball.appear ();
-                return;
+                return true;
             }
 
             // If the cell is a brick, toggle the type. This will change the visual
@@ -283,15 +302,14 @@ module nurdz.game
                 else
                     console.log ("Cannot toggle brick; not enough entities in currentBrickPool");
 
-                return;
+                return true;
             }
 
             console.log ("Cannot toggle entity; it does not support toggling");
+            return true;
         }
 
         /**
-         * DEBUG METHOD
-         *
          * Add a brick to the maze at the current debug location (assuming one
          * is available).
          *
@@ -299,9 +317,16 @@ module nurdz.game
          * in which case it will try to add a bonus brick instead.
          *
          * If the current location is not empty, this does nothing.
+         *
+         * @returns {boolean} true if debugging was turned on and we tried to
+         * handle the command, false if debugging is turned off.
          */
-        debugAddBrick () : void
+        debugAddBrick () : boolean
         {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
             // We can only add a brick if the current cell is empty.
             if (this.getDebugCell () == null)
             {
@@ -322,6 +347,8 @@ module nurdz.game
             }
             else
                 console.log ("Cannot add brick; cell is not empty");
+
+            return true;
         }
 
         /**
@@ -330,9 +357,16 @@ module nurdz.game
          *
          * @param {boolean} grayBricks true to vanish gray bricks, false to
          * vanish bonus bricks.
+         *
+         * @returns {boolean} true if debugging was turned on and we tried to
+         * handle the command, false if debugging is turned off.
          */
-        debugVanishBricks (grayBricks : boolean) : void
+        debugVanishBricks (grayBricks : boolean) : boolean
         {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
             for (let row = 0 ; row < MAZE_HEIGHT ; row++)
             {
                 for (let col = 0 ; col < MAZE_WIDTH ; col++)
@@ -347,11 +381,11 @@ module nurdz.game
                     }
                 }
             }
+
+            return true;
         }
 
         /**
-         * DEBUG METHOD
-         *
          * Add a teleport destination to the maze at the current debug location
          * (assuming one is available).
          *
@@ -359,9 +393,16 @@ module nurdz.game
          * just adds another potential destination to the list.
          *
          * If the current location is not empty, this does nothing.
+         *
+         * @returns {boolean} true if debugging was turned on and we tried to
+         * handle the command, false if debugging is turned off.
          */
-        debugAddTeleport () : void
+        debugAddTeleport () : boolean
         {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
             // We can only add an exit point if the current cell is empty.
             if (this.getDebugCell () == null)
             {
@@ -371,11 +412,11 @@ module nurdz.game
             }
             else
                 console.log ("Cannot add teleport; cell is not empty");
+
+            return true;
         }
 
         /**
-         * DEBUG METHOD
-         *
          * Add an arrow to the maze at the current debug location (assuming one
          * is available).
          *
@@ -383,9 +424,16 @@ module nurdz.game
          * be toggled with the toggle command.
          *
          * If the current location is not empty, this does nothing.
+         *
+         * @returns {boolean} true if debugging was turned on and we tried to
+         * handle the command, false if debugging is turned off.
          */
-        debugAddArrow () : void
+        debugAddArrow () : boolean
         {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
             // We can only add an arrow if the current cell is empty.
             if (this.getDebugCell () == null)
             {
@@ -403,18 +451,25 @@ module nurdz.game
             }
             else
                 console.log ("Cannot add arrow; cell is not empty");
+
+            return true;
         }
 
         /**
-         * DEBUG METHOD
-         *
          * Add a player ball to the maze at the current debug location (assuming
          * one is available).
          *
          * If the current location is not empty, this does nothing.
+         *
+         * @returns {boolean} true if debugging was turned on and we tried to
+         * handle the command, false if debugging is turned off.
          */
-        debugAddBall () : void
+        debugAddBall () : boolean
         {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
             // We can only add a ball if the current cell is empty.
             if (this.getDebugCell () == null)
             {
@@ -432,7 +487,8 @@ module nurdz.game
             }
             else
                 console.log ("Cannot add ball; cell is not empty");
-        }
 
+            return true;
+        }
     }
 }
