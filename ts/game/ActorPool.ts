@@ -16,6 +16,15 @@ module nurdz.game
          * cannot be undefined) or the ActorPool will ignore it.
          */
         pool? : ActorPool<Actor>;
+
+        /**
+         * Optional; if present, invoke "this.pool.killEntity (this)" to kill
+         * this entity if possible, or log a warning if the pool us unset.
+         *
+         * This is here as a reminder that like the attribute above, this should
+         * be added to the base Actor class directly.
+         */
+        kill? () : void;
     }
 
     /**

@@ -114,6 +114,20 @@ module nurdz.game
         }
 
         /**
+         * Using the ActorPool currently associated with this entity, kill it.
+         *
+         * If there is no pool associated yet, this sends a warning to the
+         * console to tell us that we have done something stupid.
+         */
+        kill () : void
+        {
+            if (this._pool != null)
+                this._pool.killEntity (this);
+            else
+                console.log ("Kill on " + this._name + " when it has no pool");
+        }
+
+        /**
          * Render this cell using the renderer provided. The positionprovided
          * represents the actual position of this cell as realized on the
          * screen, which means that assumes that is relative to the screen and

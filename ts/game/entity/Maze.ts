@@ -438,7 +438,7 @@ module nurdz.game
             // Not a teleport; if this entity has an actor pool, remove it from
             // the pool.
             else if (cell.pool != null)
-                cell.pool.killEntity (cell);
+                cell.kill ();
 
             // The entity doesn't have an actor pool. The only time this happens
             // is for a Teleport (already handled) or a boundary wall, which we
@@ -532,7 +532,7 @@ module nurdz.game
                 {
                     newBrick.appear ();
                     this.setDebugCell (newBrick);
-                    currentBrick.pool.killEntity (currentBrick);
+                    currentBrick.kill ();
                 }
                 else
                     console.log ("Cannot toggle brick; not enough entities in currentBrickPool");

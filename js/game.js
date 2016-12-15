@@ -504,6 +504,18 @@ var nurdz;
                 this.makeRectangle(sheet.width, sheet.height);
             };
             /**
+             * Using the ActorPool currently associated with this entity, kill it.
+             *
+             * If there is no pool associated yet, this sends a warning to the
+             * console to tell us that we have done something stupid.
+             */
+            MazeCell.prototype.kill = function () {
+                if (this._pool != null)
+                    this._pool.killEntity(this);
+                else
+                    console.log("Kill on " + this._name + " when it has no pool");
+            };
+            /**
              * Render this cell using the renderer provided. The positionprovided
              * represents the actual position of this cell as realized on the
              * screen, which means that assumes that is relative to the screen and
@@ -1857,7 +1869,7 @@ var nurdz;
                 if (cell instanceof game.Teleport)
                     this._blackHole.clearDestination(this._debugPoint);
                 else if (cell.pool != null)
-                    cell.pool.killEntity(cell);
+                    cell.kill();
                 else {
                     console.log("Cannot delete boundary bricks");
                     return;
@@ -1932,7 +1944,7 @@ var nurdz;
                     if (newBrick != null) {
                         newBrick.appear();
                         this.setDebugCell(newBrick);
-                        currentBrick.pool.killEntity(currentBrick);
+                        currentBrick.kill();
                     }
                     else
                         console.log("Cannot toggle brick; not enough entities in currentBrickPool");
