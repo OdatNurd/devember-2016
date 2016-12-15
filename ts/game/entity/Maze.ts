@@ -362,6 +362,30 @@ module nurdz.game
         }
 
         /**
+         * Get an arrow from the arrow pool; may return null if none are
+         * available.
+         */
+        getArrow () : Arrow { return this._arrows.resurrectEntity (); }
+
+        /**
+         * Get a gray brick from the arrow pool; may return null if none are
+         * available.
+         */
+        getGrayBrick () : Brick { return this._grayBricks.resurrectEntity (); }
+
+        /**
+         * Get a bonus brick from the arrow pool; may return null if none are
+         * available.
+         */
+        getBonusBrick () : Brick { return this._bonusBricks.resurrectEntity (); }
+
+        /**
+         * Get a ball from the arrow pool; may return null if none are
+         * available.
+         */
+        getBall () : Ball { return this._balls.resurrectEntity (); }
+
+        /**
          * Take a point in stage coordinates and use it to set the current debug
          * location, if possible.
          *
@@ -521,9 +545,9 @@ module nurdz.game
                 // In order to swap, we need to get an existing brick from the
                 // opposite pool, then put it into place and kill the other one.
                 if (currentBrick.brickType == BrickType.BRICK_BONUS)
-                    newBrick = this._grayBricks.resurrectEntity ();
+                    newBrick = this.getGrayBrick ();
                 else if (currentBrick.brickType == BrickType.BRICK_GRAY)
-                    newBrick = this._bonusBricks.resurrectEntity ();
+                    newBrick = this.getBonusBrick ();
 
                 // If we got a brick, play the animation to cause it to appear,
                 // then put it into the maze and kill the current brick in the
@@ -559,24 +583,18 @@ module nurdz.game
             // We can only add a brick if the current cell is empty.
             if (this.getDebugCell () == null)
             {
-                // Try to get a gray brick first, since that's the most common
-                // type so the pool is larger. If this works, play the animation
-                // to appear it.
-                let newBrick = this._grayBricks.resurrectEntity ();
-                if (newBrick != null)
-                    newBrick.appear ();
-                else
-                {
-                    // No gray bricks were available, so try a bonus brick
-                    // instead.
-                    newBrick = this._bonusBricks.resurrectEntity ();
-                    if (newBrick != null)
-                        newBrick.appear ();
-                }
+                // Get a brick from one of the pools. We try the gray brick
+                // first since that pool is larger.
+                let newBrick = this.getGrayBrick ();
+                if (newBrick == null)
+                    newBrick = this.getBonusBrick ();
 
-                // If we got a brick, add it to the maze.
+                // If we got a brick, appear it and add it to the maze.
                 if (newBrick)
+                {
+                    newBrick.appear ();
                     this.setDebugCell (newBrick);
+                }
                 else
                     console.log ("Unable to add brick; no entities left in either pool");
             }
@@ -651,7 +669,7 @@ module nurdz.game
             {
                 // Try to get the arrow out of the pool; if it works, we can
                 // set it's type and add it.
-                let arrow = this._arrows.resurrectEntity ();
+                let arrow = this.getArrow ();
                 if (arrow != null)
                 {
                     arrow.arrowType = ArrowType.ARROW_NORMAL;
@@ -680,11 +698,11 @@ module nurdz.game
             {
                 // Try to get the ball out of the pool; if it works, we can
                 // set it's type and add it.
-                let ball = this._balls.resurrectEntity ();
+                let ball = this.getBall ();
                 if (ball != null)
                 {
                     ball.ballType = BallType.BALL_PLAYER;
-                    ball.playAnimation ("p_appear");
+                    ball.appear ();
                     this.setDebugCell (ball);
                 }
                 else
@@ -1410,13 +1428,12 @@ module nurdz.game
                         continue;
 
                     // This cell contains an arrow; resurrect one from the object
-                    // pool. If there isn't one to resurrect, create one and add
-                    // add it to the pool.
-                    let arrow : Arrow = this._arrows.resurrectEntity ();
+                    // pool.
+                    let arrow = this.getArrow ();
                     if (arrow == null)
                     {
-                        arrow = new Arrow (this._stage);
-                        this._arrows.addEntity (arrow, true);
+                        console.log ("Ran out of arrows generating maze");
+                        return;
                     }
 
                     // Now randomly set the direction to be left or right as
@@ -1479,20 +1496,18 @@ module nurdz.game
                         continue;
 
                     // This cell contains brick; resurrect one from the object
-                    // pool. If there isn't one to resurrect, create one and add
-                    // add it to the pool.
-                    let brick : Brick = this._grayBricks.resurrectEntity ();
+                    // pool.
+                    let brick = this.getGrayBrick ();
                     if (brick == null)
                     {
-                        brick = new Brick (this._stage, BrickType.BRICK_GRAY);
-                        this._grayBricks.addEntity (brick, true);
+                        console.log ("Ran out of gray bricks generating maze");
+                        return;
                     }
 
-                    // Make sure the brick starts out growing into place.
-                    brick.appear ();
-
-                    // Add it to the maze and count it as placed.
+                    // Add it to the maze, mark it to appear, and count it as
+                    // placed.
                     this._contents.setCellAt (column, row, brick);
+                    brick.appear ();
                     brickCount--;
                 }
             }
@@ -1537,20 +1552,18 @@ module nurdz.game
                         continue;
 
                     // This cell contains brick; resurrect one from the object
-                    // pool. If there isn't one to resurrect, create one and add
-                    // add it to the pool.
-                    let brick : Brick = this._bonusBricks.resurrectEntity ();
+                    // pool.
+                    let brick = this.getBonusBrick ();
                     if (brick == null)
                     {
-                        brick = new Brick (this._stage, BrickType.BRICK_BONUS);
-                        this._bonusBricks.addEntity (brick, true);
+                        console.log ("Ran out of bonus bricks generating maze");
+                        return;
                     }
 
-                    // Make sure the brick starts out growing into place.
-                    brick.appear ();
-
-                    // Add it to the maze and count it as placed.
+                    // Add it to the maze, mark it to appear, and count it as
+                    // placed.
                     this._contents.setCellAt (column, row, brick);
+                    brick.appear ();
                     brickCount--;
                 }
             }
@@ -1572,7 +1585,7 @@ module nurdz.game
             {
                 // Get a ball; this pool always has enough entities for us
                 // because the number is fixed.
-                let ball = this._balls.resurrectEntity ();
+                let ball = this.getBall ();
 
                 // Set the score and type.
                 ball.score = 0;

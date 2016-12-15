@@ -1834,6 +1834,26 @@ var nurdz;
                 configurable: true
             });
             /**
+             * Get an arrow from the arrow pool; may return null if none are
+             * available.
+             */
+            Maze.prototype.getArrow = function () { return this._arrows.resurrectEntity(); };
+            /**
+             * Get a gray brick from the arrow pool; may return null if none are
+             * available.
+             */
+            Maze.prototype.getGrayBrick = function () { return this._grayBricks.resurrectEntity(); };
+            /**
+             * Get a bonus brick from the arrow pool; may return null if none are
+             * available.
+             */
+            Maze.prototype.getBonusBrick = function () { return this._bonusBricks.resurrectEntity(); };
+            /**
+             * Get a ball from the arrow pool; may return null if none are
+             * available.
+             */
+            Maze.prototype.getBall = function () { return this._balls.resurrectEntity(); };
+            /**
              * Take a point in stage coordinates and use it to set the current debug
              * location, if possible.
              *
@@ -1964,9 +1984,9 @@ var nurdz;
                     // In order to swap, we need to get an existing brick from the
                     // opposite pool, then put it into place and kill the other one.
                     if (currentBrick.brickType == game.BrickType.BRICK_BONUS)
-                        newBrick = this._grayBricks.resurrectEntity();
+                        newBrick = this.getGrayBrick();
                     else if (currentBrick.brickType == game.BrickType.BRICK_GRAY)
-                        newBrick = this._bonusBricks.resurrectEntity();
+                        newBrick = this.getBonusBrick();
                     // If we got a brick, play the animation to cause it to appear,
                     // then put it into the maze and kill the current brick in the
                     // pool that it came from.
@@ -1995,22 +2015,16 @@ var nurdz;
             Maze.prototype.debugAddBrick = function () {
                 // We can only add a brick if the current cell is empty.
                 if (this.getDebugCell() == null) {
-                    // Try to get a gray brick first, since that's the most common
-                    // type so the pool is larger. If this works, play the animation
-                    // to appear it.
-                    var newBrick = this._grayBricks.resurrectEntity();
-                    if (newBrick != null)
+                    // Get a brick from one of the pools. We try the gray brick
+                    // first since that pool is larger.
+                    var newBrick = this.getGrayBrick();
+                    if (newBrick == null)
+                        newBrick = this.getBonusBrick();
+                    // If we got a brick, appear it and add it to the maze.
+                    if (newBrick) {
                         newBrick.appear();
-                    else {
-                        // No gray bricks were available, so try a bonus brick
-                        // instead.
-                        newBrick = this._bonusBricks.resurrectEntity();
-                        if (newBrick != null)
-                            newBrick.appear();
-                    }
-                    // If we got a brick, add it to the maze.
-                    if (newBrick)
                         this.setDebugCell(newBrick);
+                    }
                     else
                         console.log("Unable to add brick; no entities left in either pool");
                 }
@@ -2074,7 +2088,7 @@ var nurdz;
                 if (this.getDebugCell() == null) {
                     // Try to get the arrow out of the pool; if it works, we can
                     // set it's type and add it.
-                    var arrow = this._arrows.resurrectEntity();
+                    var arrow = this.getArrow();
                     if (arrow != null) {
                         arrow.arrowType = game.ArrowType.ARROW_NORMAL;
                         arrow.arrowDirection = game.ArrowDirection.ARROW_RIGHT;
@@ -2099,10 +2113,10 @@ var nurdz;
                 if (this.getDebugCell() == null) {
                     // Try to get the ball out of the pool; if it works, we can
                     // set it's type and add it.
-                    var ball = this._balls.resurrectEntity();
+                    var ball = this.getBall();
                     if (ball != null) {
                         ball.ballType = game.BallType.BALL_PLAYER;
-                        ball.playAnimation("p_appear");
+                        ball.appear();
                         this.setDebugCell(ball);
                     }
                     else
@@ -2703,12 +2717,11 @@ var nurdz;
                             (this._contents.cellNameAt(column, row - 1) == "blackHole"))
                             continue;
                         // This cell contains an arrow; resurrect one from the object
-                        // pool. If there isn't one to resurrect, create one and add
-                        // add it to the pool.
-                        var arrow = this._arrows.resurrectEntity();
+                        // pool.
+                        var arrow = this.getArrow();
                         if (arrow == null) {
-                            arrow = new game.Arrow(this._stage);
-                            this._arrows.addEntity(arrow, true);
+                            console.log("Ran out of arrows generating maze");
+                            return;
                         }
                         // Now randomly set the direction to be left or right as
                         // appropriate.
@@ -2761,17 +2774,16 @@ var nurdz;
                             (this._contents.cellNameAt(column, row - 1) == "arrow"))
                             continue;
                         // This cell contains brick; resurrect one from the object
-                        // pool. If there isn't one to resurrect, create one and add
-                        // add it to the pool.
-                        var brick = this._grayBricks.resurrectEntity();
+                        // pool.
+                        var brick = this.getGrayBrick();
                         if (brick == null) {
-                            brick = new game.Brick(this._stage, game.BrickType.BRICK_GRAY);
-                            this._grayBricks.addEntity(brick, true);
+                            console.log("Ran out of gray bricks generating maze");
+                            return;
                         }
-                        // Make sure the brick starts out growing into place.
-                        brick.appear();
-                        // Add it to the maze and count it as placed.
+                        // Add it to the maze, mark it to appear, and count it as
+                        // placed.
                         this._contents.setCellAt(column, row, brick);
+                        brick.appear();
                         brickCount--;
                     }
                 }
