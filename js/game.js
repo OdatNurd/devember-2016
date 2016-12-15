@@ -429,6 +429,28 @@ var nurdz;
                 for (var i = 0; i < game.MAZE_WIDTH * game.MAZE_HEIGHT; i++)
                     this._contents[i] = null;
             };
+            /**
+             * Check the maze at the given position to see if it is blocked for ball
+             * movement or not. A cell is blocked when it contains a cell that
+             * blocks the ball from moving and unblocked otherwise (including when
+             * it is empty).
+             *
+             * When the location specified is blocked, it's contents are returned
+             * back to the caller because we almost always want to interact with
+             * such an entity further.
+             *
+             * @param   {number}  x the x location to check
+             * @param   {number}  y the y location to check
+             *
+             * @returns {MazeCell}  null if the given location is not blocked, or
+             * the entity that is blocking the ball if the position is blocked
+             */
+            MazeContents.prototype.getBlockingCellAt = function (x, y) {
+                var cell = this.getCellAt(x, y);
+                if (cell == null || cell.blocksBall() == false)
+                    return null;
+                return cell;
+            };
             return MazeContents;
         }());
         game.MazeContents = MazeContents;
@@ -2264,11 +2286,10 @@ var nurdz;
                         return true;
                     }
                 }
-                // Get the contents of the cell below us in the grid. If that cell
-                // is empty or does not block the ball, then change position to drop
-                // the ball there and we're done.
-                var below = this._contents.getCellAt(position.x, position.y + 1);
-                if (below == null || below.blocksBall() == false) {
+                // If the cell below us is not blocking the ball, we can drop the
+                // ball into it and we're done.
+                var below = this._contents.getBlockingCellAt(position.x, position.y + 1);
+                if (below == null) {
                     ball.moveType = game.BallMoveType.BALL_MOVE_DROP;
                     position.y++;
                     return true;
@@ -2284,8 +2305,7 @@ var nurdz;
                 // Check the contents of the new location and see if the ball is
                 // allowed to enter that cell or not; the ball can enter if the cell
                 // is empty or does not block ball movement.
-                var movedCell = this._contents.getCellAt(newPos.x, newPos.y);
-                if (movedCell == null || movedCell.blocksBall() == false) {
+                if (this._contents.getBlockingCellAt(newPos.x, newPos.y) == null) {
                     // Tell the cell that moved the ball that we actually moved it,
                     // and then return back the position that it gave.
                     //
@@ -2315,11 +2335,9 @@ var nurdz;
                     // Get the content of this cell. If there is content here, we
                     // need to check below it.
                     if (this._contents.getCellAt(cellX, 0) != null) {
-                        // Get the cell below; if it is empty or it does not block a
-                        // ball from moving, then this ball is still playable, so
-                        // all balls are not played; we can leave now.
-                        var below = this._contents.getCellAt(cellX, 1);
-                        if (below == null || below.blocksBall() == false)
+                        // If the cell below this ball isn't blocked, this ball is
+                        // still playable, so we can leave now.
+                        if (this._contents.getBlockingCellAt(cellX, 1) == null)
                             return;
                     }
                 }
@@ -2821,17 +2839,16 @@ var nurdz;
                             (this._contents.cellNameAt(column, row - 1) == "arrow"))
                             continue;
                         // This cell contains brick; resurrect one from the object
-                        // pool. If there isn't one to resurrect, create one and add
-                        // add it to the pool.
-                        var brick = this._bonusBricks.resurrectEntity();
+                        // pool.
+                        var brick = this.getBonusBrick();
                         if (brick == null) {
-                            brick = new game.Brick(this._stage, game.BrickType.BRICK_BONUS);
-                            this._bonusBricks.addEntity(brick, true);
+                            console.log("Ran out of bonus bricks generating maze");
+                            return;
                         }
-                        // Make sure the brick starts out growing into place.
-                        brick.appear();
-                        // Add it to the maze and count it as placed.
+                        // Add it to the maze, mark it to appear, and count it as
+                        // placed.
                         this._contents.setCellAt(column, row, brick);
+                        brick.appear();
                         brickCount--;
                     }
                 }
@@ -2850,7 +2867,7 @@ var nurdz;
                 for (var col = 1; col < game.MAZE_WIDTH - 1; col++) {
                     // Get a ball; this pool always has enough entities for us
                     // because the number is fixed.
-                    var ball = this._balls.resurrectEntity();
+                    var ball = this.getBall();
                     // Set the score and type.
                     ball.score = 0;
                     ball.ballType = game.BallType.BALL_PLAYER;

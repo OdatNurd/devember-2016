@@ -304,5 +304,29 @@ module nurdz.game
             for (let i = 0 ; i < MAZE_WIDTH * MAZE_HEIGHT ; i++)
                 this._contents[i] = null;
         }
+
+        /**
+         * Check the maze at the given position to see if it is blocked for ball
+         * movement or not. A cell is blocked when it contains a cell that
+         * blocks the ball from moving and unblocked otherwise (including when
+         * it is empty).
+         *
+         * When the location specified is blocked, it's contents are returned
+         * back to the caller because we almost always want to interact with
+         * such an entity further.
+         *
+         * @param   {number}  x the x location to check
+         * @param   {number}  y the y location to check
+         *
+         * @returns {MazeCell}  null if the given location is not blocked, or
+         * the entity that is blocking the ball if the position is blocked
+         */
+        getBlockingCellAt (x : number, y : number) : MazeCell
+        {
+            let cell = this.getCellAt (x, y);
+            if (cell == null || cell.blocksBall () == false)
+                return null;
+            return cell;
+        }
     }
 }

@@ -791,7 +791,6 @@ module nurdz.game
             if (this._debugTracking == false)
                 return;
 
-
             // If this is a brick that is not hidden, vanish it. We can't bring
             // it back because once it's hidden the update loop will reap it.
             if (entity.name == "brick")
@@ -878,11 +877,10 @@ module nurdz.game
                 }
             }
 
-            // Get the contents of the cell below us in the grid. If that cell
-            // is empty or does not block the ball, then change position to drop
-            // the ball there and we're done.
-            let below = this._contents.getCellAt (position.x, position.y + 1);
-            if (below == null || below.blocksBall () == false)
+            // If the cell below us is not blocking the ball, we can drop the
+            // ball into it and we're done.
+            let below = this._contents.getBlockingCellAt (position.x, position.y + 1);
+            if (below == null)
             {
                 ball.moveType = BallMoveType.BALL_MOVE_DROP;
                 position.y++;
@@ -902,8 +900,7 @@ module nurdz.game
             // Check the contents of the new location and see if the ball is
             // allowed to enter that cell or not; the ball can enter if the cell
             // is empty or does not block ball movement.
-            let movedCell = this._contents.getCellAt (newPos.x, newPos.y);
-            if (movedCell == null || movedCell.blocksBall () == false)
+            if (this._contents.getBlockingCellAt (newPos.x, newPos.y) == null)
             {
                 // Tell the cell that moved the ball that we actually moved it,
                 // and then return back the position that it gave.
@@ -939,11 +936,9 @@ module nurdz.game
                 // need to check below it.
                 if (this._contents.getCellAt (cellX, 0) != null)
                 {
-                    // Get the cell below; if it is empty or it does not block a
-                    // ball from moving, then this ball is still playable, so
-                    // all balls are not played; we can leave now.
-                    let below = this._contents.getCellAt (cellX, 1);
-                    if (below == null || below.blocksBall () == false)
+                    // If the cell below this ball isn't blocked, this ball is
+                    // still playable, so we can leave now.
+                    if (this._contents.getBlockingCellAt (cellX, 1) == null)
                         return;
                 }
             }
