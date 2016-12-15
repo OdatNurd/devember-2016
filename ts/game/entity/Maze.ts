@@ -1406,7 +1406,7 @@ module nurdz.game
                     let column = this.genRandomMazeColumn ();
                     let cell = this._contents.getCellAt (column, row);
                     if (this._contents.getCellAt (column, row) != null ||
-                        (this._contents.getCellAt (column, row - 1) instanceof Teleport))
+                        (this._contents.cellNameAt (column, row - 1) == "blackHole"))
                         continue;
 
                     // This cell contains an arrow; resurrect one from the object
@@ -1475,7 +1475,7 @@ module nurdz.game
                     // filled or the square above is an arrow, try again.
                     let column = this.genRandomMazeColumn ();
                     if (this._contents.getCellAt (column, row) != null ||
-                        (this._contents.getCellAt (column, row - 1) instanceof Arrow))
+                        (this._contents.cellNameAt (column, row - 1) == "arrow"))
                         continue;
 
                     // This cell contains brick; resurrect one from the object
@@ -1533,7 +1533,7 @@ module nurdz.game
                     // filled or the square above is an arrow, try again.
                     let column = this.genRandomMazeColumn ();
                     if (this._contents.getCellAt (column, row) != null ||
-                        (this._contents.getCellAt (column, row - 1) instanceof Arrow))
+                        (this._contents.cellNameAt (column, row - 1) == "arrow"))
                         continue;
 
                     // This cell contains brick; resurrect one from the object

@@ -202,6 +202,24 @@ module nurdz.game
         }
 
         /**
+         * Get the name of the cell at the given location in the name. This will
+         * return the name field of the MazeCell object that is stored at this
+         * location, or null if the cell is empty or if the location provided is
+         * out of bounds for the dimensions of the maze.
+         *
+         * @param   {number} x the X location to fetch the name of
+         * @param   {number} y the Y location to fetch the name of
+         *
+         * @returns {string}   the name of the specified field, or null if the
+         * cell is empty or out of bounds.
+         */
+        cellNameAt (x : number, y : number) : string
+        {
+            let cell = this.getCellAt (x, y);
+            return (cell == null) ? null : cell.name;
+        }
+
+        /**
          * Collect the cell at the provided location in the maze. This will
          * return the cell that was originally stored at this location, which
          * will be null if this cell is empty or if the location provided is out
