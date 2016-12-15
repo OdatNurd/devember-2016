@@ -41,6 +41,15 @@ module nurdz.game
         protected _pool : ActorPool<ActorPoolClient> = null;
 
         /**
+         * Get the name associated with this entity. This is generally a textual
+         * name that represents what class of entity this is.
+         *
+         * @returns {string} the name of this entity.
+         */
+        get name () : string
+        { return this._name; }
+
+        /**
          * Obtain the actor pool that this MazeCell is stored in, if any
          *
          * @returns {ActorPool<ActorPoolClient>} the actor pool this cell is stored

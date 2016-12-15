@@ -432,7 +432,7 @@ module nurdz.game
 
             // There is a single Teleport entity, so all we have to do is remove
             // the current location as a destination.
-            if (cell instanceof Teleport)
+            if (cell.name == "blackHole")
                 this._blackHole.clearDestination (this._debugPoint);
 
             // Not a teleport; if this entity has an actor pool, remove it from
@@ -483,7 +483,7 @@ module nurdz.game
             // If the cell is an arrow, toggle the type. Doing this will also
             // implicitly set an auto-flip timer on the arrow when it becomes
             // such an arrow.
-            if (cell instanceof Arrow)
+            if (cell.name == "arrow")
             {
                 let arrow = <Arrow> cell;
                 if (arrow.arrowType == ArrowType.ARROW_AUTOMATIC)
@@ -494,7 +494,7 @@ module nurdz.game
             }
 
             // If the cell is a ball, toggle the type.
-            if (cell instanceof Ball)
+            if (cell.name == "ball")
             {
                 let ball = <Ball> cell;
                 if (ball.ballType == BallType.BALL_PLAYER)
@@ -510,7 +510,7 @@ module nurdz.game
             //
             // This is skipped for solid bricks; they're just used on the outer
             // edges and should not be messed with.
-            if (cell instanceof Brick && cell != this._solid)
+            if (cell.name == "brick" && cell != this._solid)
             {
                 // Get the brick at the current location.
                 let currentBrick = <Brick> cell;
@@ -598,7 +598,7 @@ module nurdz.game
                 for (let col = 0 ; col < MAZE_WIDTH ; col++)
                 {
                     let cell = this._contents.getCellAt (col, row);
-                    if (cell != null || cell instanceof Brick)
+                    if (cell != null && cell.name == "brick")
                     {
                         let brick = <Brick> cell;
                         if (brick.isHidden == false &&
@@ -750,12 +750,21 @@ module nurdz.game
             position.reduce (this.cellSize);
             let entity = this._contents.getCellAt (position.x, position.y);
 
+            // If this cell in the maze does not contain anything, or it
+            // contains the black hole, then toggle the marker at this location.
+            if (entity == null || entity == this._blackHole)
+            {
+                // Toggle the marker here.
+                this._contents.toggleMarkerAt (position.x, position.y);
+                return;
+            }
+
             // If the entity is a ball and we're not already trying to drop a
             // ball, try to move it downwards.
-            if (entity instanceof Ball && this._droppingBall == null)
+            if (entity.name == "ball" && this._droppingBall == null)
             {
                 // Drop it and leave.
-                this.dropBall (entity, NORMAL_DROP_SPEED);
+                this.dropBall (<Ball> entity, NORMAL_DROP_SPEED);
                 return true;
             }
 
@@ -764,17 +773,10 @@ module nurdz.game
             if (this._debugTracking == false)
                 return;
 
-            // If this cell in the maze does not contain anything, or it
-            // contains the black hole, then toggle the marker at this location.
-            if (entity == null || entity == this._blackHole)
-            {
-                // Toggle the marker here.
-                this._contents.toggleMarkerAt (position.x, position.y);
-            }
 
             // If this is a brick that is not hidden, vanish it. We can't bring
             // it back because once it's hidden the update loop will reap it.
-            if (entity instanceof Brick)
+            if (entity.name == "brick")
             {
                 // Clear any marker that might be here; these can only appear if
                 // the ball drops through, so lets be able to remove them.
@@ -788,7 +790,7 @@ module nurdz.game
 
             // If it is an arrow, flip it. This works for any type of arrow; an
             // automatic arrow will reset its random flip time in this case.
-            if (entity instanceof Arrow)
+            if (entity.name == "arrow")
             {
                 let arrow = <Arrow> entity;
                 arrow.flip ();
@@ -987,10 +989,10 @@ module nurdz.game
                 for (let col = MAZE_WIDTH - 1 ; col >= 1 ; col--)
                 {
                     let cell = this._contents.getCellAt (col, row);
-                    if (cell instanceof Ball)
+                    if (cell != null && cell.name == "ball")
                     {
                         // Start it dropping, then leave; we're done.
-                        this.dropBall (cell, FINAL_DROP_SPEED);
+                        this.dropBall (<Ball> cell, FINAL_DROP_SPEED);
                         return;
                     }
                 }
@@ -1402,6 +1404,7 @@ module nurdz.game
                     // Generate a column randomly. If this location is already
                     // filled, or the tile above it is a black hole,  try again.
                     let column = this.genRandomMazeColumn ();
+                    let cell = this._contents.getCellAt (column, row);
                     if (this._contents.getCellAt (column, row) != null ||
                         (this._contents.getCellAt (column, row - 1) instanceof Teleport))
                         continue;

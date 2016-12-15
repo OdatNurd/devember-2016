@@ -18,6 +18,19 @@ module nurdz.game
         pool? : ActorPool<Actor>;
 
         /**
+         * Optional; if present, it represents the name associated with this
+         * particular client.
+         *
+         * In ts-game-engine this was originally meant to be a debugging name,
+         * but it seems to have turned into a textual name for the class of
+         * entity that is being represented.
+         *
+         * This is here as a reminder that like attribute above, this should be
+         * added to the base Actor class directly.
+         */
+        name? : string;
+
+        /**
          * Optional; if present, invoke "this.pool.killEntity (this)" to kill
          * this entity if possible, or log a warning if the pool us unset.
          *

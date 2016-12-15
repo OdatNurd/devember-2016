@@ -473,6 +473,17 @@ var nurdz;
                 // callback handle that.
                 this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.preloadComplete);
             }
+            Object.defineProperty(MazeCell.prototype, "name", {
+                /**
+                 * Get the name associated with this entity. This is generally a textual
+                 * name that represents what class of entity this is.
+                 *
+                 * @returns {string} the name of this entity.
+                 */
+                get: function () { return this._name; },
+                enumerable: true,
+                configurable: true
+            });
             Object.defineProperty(MazeCell.prototype, "pool", {
                 /**
                  * Obtain the actor pool that this MazeCell is stored in, if any
@@ -1866,7 +1877,7 @@ var nurdz;
                     return;
                 // There is a single Teleport entity, so all we have to do is remove
                 // the current location as a destination.
-                if (cell instanceof game.Teleport)
+                if (cell.name == "blackHole")
                     this._blackHole.clearDestination(this._debugPoint);
                 else if (cell.pool != null)
                     cell.kill();
@@ -1903,7 +1914,7 @@ var nurdz;
                 // If the cell is an arrow, toggle the type. Doing this will also
                 // implicitly set an auto-flip timer on the arrow when it becomes
                 // such an arrow.
-                if (cell instanceof game.Arrow) {
+                if (cell.name == "arrow") {
                     var arrow = cell;
                     if (arrow.arrowType == game.ArrowType.ARROW_AUTOMATIC)
                         arrow.arrowType = game.ArrowType.ARROW_NORMAL;
@@ -1912,7 +1923,7 @@ var nurdz;
                     return;
                 }
                 // If the cell is a ball, toggle the type.
-                if (cell instanceof game.Ball) {
+                if (cell.name == "ball") {
                     var ball = cell;
                     if (ball.ballType == game.BallType.BALL_PLAYER)
                         ball.ballType = game.BallType.BALL_COMPUTER;
@@ -1926,7 +1937,7 @@ var nurdz;
                 //
                 // This is skipped for solid bricks; they're just used on the outer
                 // edges and should not be messed with.
-                if (cell instanceof game.Brick && cell != this._solid) {
+                if (cell.name == "brick" && cell != this._solid) {
                     // Get the brick at the current location.
                     var currentBrick = cell;
                     var newBrick = null;
@@ -1999,7 +2010,7 @@ var nurdz;
                 for (var row = 0; row < game.MAZE_HEIGHT; row++) {
                     for (var col = 0; col < game.MAZE_WIDTH; col++) {
                         var cell = this._contents.getCellAt(col, row);
-                        if (cell != null || cell instanceof game.Brick) {
+                        if (cell != null && cell.name == "brick") {
                             var brick = cell;
                             if (brick.isHidden == false &&
                                 brick.brickType == (grayBricks ? game.BrickType.BRICK_GRAY : game.BrickType.BRICK_BONUS))
@@ -2131,9 +2142,16 @@ var nurdz;
                 // that location (if any).
                 position.reduce(this.cellSize);
                 var entity = this._contents.getCellAt(position.x, position.y);
+                // If this cell in the maze does not contain anything, or it
+                // contains the black hole, then toggle the marker at this location.
+                if (entity == null || entity == this._blackHole) {
+                    // Toggle the marker here.
+                    this._contents.toggleMarkerAt(position.x, position.y);
+                    return;
+                }
                 // If the entity is a ball and we're not already trying to drop a
                 // ball, try to move it downwards.
-                if (entity instanceof game.Ball && this._droppingBall == null) {
+                if (entity.name == "ball" && this._droppingBall == null) {
                     // Drop it and leave.
                     this.dropBall(entity, NORMAL_DROP_SPEED);
                     return true;
@@ -2142,15 +2160,9 @@ var nurdz;
                 // should not be allowed;
                 if (this._debugTracking == false)
                     return;
-                // If this cell in the maze does not contain anything, or it
-                // contains the black hole, then toggle the marker at this location.
-                if (entity == null || entity == this._blackHole) {
-                    // Toggle the marker here.
-                    this._contents.toggleMarkerAt(position.x, position.y);
-                }
                 // If this is a brick that is not hidden, vanish it. We can't bring
                 // it back because once it's hidden the update loop will reap it.
-                if (entity instanceof game.Brick) {
+                if (entity.name == "brick") {
                     // Clear any marker that might be here; these can only appear if
                     // the ball drops through, so lets be able to remove them.
                     this._contents.clearMarkerAt(position.x, position.y);
@@ -2161,7 +2173,7 @@ var nurdz;
                 }
                 // If it is an arrow, flip it. This works for any type of arrow; an
                 // automatic arrow will reset its random flip time in this case.
-                if (entity instanceof game.Arrow) {
+                if (entity.name == "arrow") {
                     var arrow = entity;
                     arrow.flip();
                     return true;
@@ -2327,7 +2339,7 @@ var nurdz;
                 for (var row = game.MAZE_HEIGHT - 2; row >= 0; row--) {
                     for (var col = game.MAZE_WIDTH - 1; col >= 1; col--) {
                         var cell = this._contents.getCellAt(col, row);
-                        if (cell instanceof game.Ball) {
+                        if (cell != null && cell.name == "ball") {
                             // Start it dropping, then leave; we're done.
                             this.dropBall(cell, FINAL_DROP_SPEED);
                             return;
@@ -2668,6 +2680,7 @@ var nurdz;
                         // Generate a column randomly. If this location is already
                         // filled, or the tile above it is a black hole,  try again.
                         var column = this.genRandomMazeColumn();
+                        var cell = this._contents.getCellAt(column, row);
                         if (this._contents.getCellAt(column, row) != null ||
                             (this._contents.getCellAt(column, row - 1) instanceof game.Teleport))
                             continue;
