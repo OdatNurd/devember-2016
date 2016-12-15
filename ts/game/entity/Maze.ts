@@ -145,14 +145,6 @@ module nurdz.game
         private _debugger : MazeDebugger;
 
         /**
-         * True if we are debugging, false otherwise.
-         *
-         * When this is true, the current debug cell in the grid (controlled via
-         * the mouse) has a marker to show where it is.
-         */
-        private _debugTracking : boolean;
-
-        /**
          * A special marker instance that is used to show the current debug
          * point while debug tracking is turned on.
          *
@@ -160,28 +152,6 @@ module nurdz.game
          * distinguish it.
          */
         private _debugMarker : Marker;
-
-        /**
-         * Get the current state of the debug tracking variable.
-         *
-         * When this is set to true, we display a marker on the stage at the
-         * current debug position.
-         *
-         * @returns {boolean} true if debugging is enabled, false otherwise.
-         */
-        get debugTracking () : boolean
-        { return this._debugTracking; }
-
-        /**
-         * Change the current state of the debug tracking variable.
-         *
-         * True enables debugging, which causes the maze to display a red marker
-         * at the current debug location.
-         *
-         * @param {boolean} newValue new debugging state
-         */
-        set debugTracking (newValue : boolean)
-        { this._debugTracking = newValue; }
 
         /**
          * Get the size (in pixels) of the cells in the maze based on the
@@ -294,11 +264,6 @@ module nurdz.game
             // exactly how many entities of a type we need.
             for (let i = 0 ; i < (MAZE_WIDTH - 2) * 2 ; i++)
                 this._balls.addEntity (new Ball (stage), false);
-
-            // No debugging by default, but the debugging point is the upper
-            // left grid corner; the marker is created later when we know the
-            // grid size.
-            this._debugTracking = false;
         }
 
         /**
@@ -446,7 +411,7 @@ module nurdz.game
 
             // If we're not tracking debug action, the rest of these actions
             // should not be allowed;
-            if (this._debugTracking == false)
+            if (this._debugger.debugTracking == false)
                 return;
 
             // If this is a brick that is not hidden, vanish it. We can't bring
@@ -932,7 +897,7 @@ module nurdz.game
             this.renderMazeMarkers (x, y, cSize, renderer);
 
             // Now the debug marker, if it's turned on.
-            if (this._debugTracking)
+            if (this._debugger.debugTracking)
             {
                 let pos = this._debugger.debugPoint;
                 this._debugMarker.render (x + (pos.x * cSize),

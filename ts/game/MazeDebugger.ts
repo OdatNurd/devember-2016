@@ -29,6 +29,14 @@ module nurdz.game
         private _teleport : Teleport;
 
         /**
+         * True if we are debugging, false otherwise.
+         *
+         * When this is true, the current debug cell in the grid (controlled via
+         * the mouse) has a marker to show where it is.
+         */
+        private _debugTracking : boolean;
+
+        /**
          * A point that represents a grid cell that is the current debug cell.
          *
          * The position of this cell is controlled by the mouse while debugging
@@ -80,6 +88,28 @@ module nurdz.game
         { this._debugPoint.setTo (newPoint); }
 
         /**
+         * Get the current state of the debug tracking variable.
+         *
+         * When this is set to true, we display a marker on the stage at the
+         * current debug position.
+         *
+         * @returns {boolean} true if debugging is enabled, false otherwise.
+         */
+        get debugTracking () : boolean
+        { return this._debugTracking; }
+
+        /**
+         * Change the current state of the debug tracking variable.
+         *
+         * True enables debugging, which causes the maze to display a red marker
+         * at the current debug location.
+         *
+         * @param {boolean} newValue new debugging state
+         */
+        set debugTracking (newValue : boolean)
+        { this._debugTracking = newValue; }
+
+        /**
          * Construct a new debugger object that can debug the provided maze object.
          *
          * @param {Maze} maze the maze object to deb
@@ -96,6 +126,10 @@ module nurdz.game
 
             // Create a default debug point.
             this._debugPoint = new Point (0, 0);
+
+            // No debugging by default, but the debugging point is the upper
+            // left grid corner;.
+            this._debugTracking = false;
         }
 
         /**

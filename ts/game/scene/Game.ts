@@ -75,8 +75,8 @@ module nurdz.game
                 // Toggle mouse tracking of the debug location, then update the
                 // tracking with the last known mouse location.
                 case KeyCodes.KEY_SPACEBAR:
-                    this._maze.debugTracking = !this._maze.debugTracking;
-                    if (this._maze.debugTracking)
+                    this._maze.debugger.debugTracking = !this._maze.debugger.debugTracking;
+                    if (this._maze.debugger.debugTracking)
                         this._maze.setDebugPoint (this._mouse);
                     return true;
 
@@ -88,7 +88,7 @@ module nurdz.game
                 // delete key on the numeric keypad may or may not work.
                 case 8:
                 case 46:
-                    if (this._maze.debugTracking)
+                    if (this._maze.debugger.debugTracking)
                     {
                         this._maze.debugger.debugClearCell ();
                         return true;
@@ -98,7 +98,7 @@ module nurdz.game
                 // Toggle the type of the entity under the debug cursor through
                 // its various states.
                 case KeyCodes.KEY_T:
-                    if (this._maze.debugTracking)
+                    if (this._maze.debugger.debugTracking)
                     {
                         this._maze.debugger.debugToggleCell ();
                         return true;
@@ -109,7 +109,7 @@ module nurdz.game
                 // only works if the cell is currently empty. This will try
                 // to add a gray brick, and failing that a bonus brick.
                 case KeyCodes.KEY_B:
-                    if (this._maze.debugTracking)
+                    if (this._maze.debugger.debugTracking)
                     {
                         this._maze.debugger.debugAddBrick ();
                         return true;
@@ -121,7 +121,7 @@ module nurdz.game
                 // normal arrow by default, but this can be toggled with the
                 // 'T" key'.
                 case KeyCodes.KEY_A:
-                    if (this._maze.debugTracking)
+                    if (this._maze.debugger.debugTracking)
                     {
                         this._maze.debugger.debugAddArrow ();
                         return true;
@@ -132,7 +132,7 @@ module nurdz.game
                 // only works if the cell is currentlye empty. This just adds an
                 // extra exit point to the black hole system.
                 case KeyCodes.KEY_H:
-                    if (this._maze.debugTracking)
+                    if (this._maze.debugger.debugTracking)
                     {
                         this._maze.debugger.debugAddTeleport ();
                         return true;
@@ -143,7 +143,7 @@ module nurdz.game
                 // works if the cell is currently empty. This will add a player
                 // ball by default, but this can be toggled with the 'T' key.
                 case KeyCodes.KEY_L:
-                    if (this._maze.debugTracking)
+                    if (this._maze.debugger.debugTracking)
                     {
                         this._maze.debugger.debugAddBall ();
                         return true;
@@ -154,7 +154,7 @@ module nurdz.game
                 // visible.
                 case KeyCodes.KEY_V:
                 case KeyCodes.KEY_C:
-                    if (this._maze.debugTracking)
+                    if (this._maze.debugger.debugTracking)
                     {
                         this._maze.debugger.debugVanishBricks (eventObj.keyCode == KeyCodes.KEY_V);
                         return true;
@@ -164,7 +164,7 @@ module nurdz.game
                 // Wipe the entire maze contents; this is like a reset except
                 // no new maze is generated first.
                 case KeyCodes.KEY_W:
-                    if (this._maze.debugTracking)
+                    if (this._maze.debugger.debugTracking)
                     {
                         this._maze.debugger.debugWipeMaze ();
                         return true;
@@ -217,7 +217,7 @@ module nurdz.game
 
             // If we're tracking a debug location, tell the maze about this
             // point.
-            if (this._maze.debugTracking)
+            if (this._maze.debugger.debugTracking)
                 this._maze.setDebugPoint (this._mouse);
 
             // We handled it.

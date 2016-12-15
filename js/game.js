@@ -916,6 +916,9 @@ var nurdz;
                 this._teleport = null;
                 // Create a default debug point.
                 this._debugPoint = new game.Point(0, 0);
+                // No debugging by default, but the debugging point is the upper
+                // left grid corner;.
+                this._debugTracking = false;
             }
             Object.defineProperty(MazeDebugger.prototype, "wall", {
                 /**
@@ -961,6 +964,28 @@ var nurdz;
                  * @param {Point} newPoint the new point to use for debugging
                  */
                 set: function (newPoint) { this._debugPoint.setTo(newPoint); },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(MazeDebugger.prototype, "debugTracking", {
+                /**
+                 * Get the current state of the debug tracking variable.
+                 *
+                 * When this is set to true, we display a marker on the stage at the
+                 * current debug position.
+                 *
+                 * @returns {boolean} true if debugging is enabled, false otherwise.
+                 */
+                get: function () { return this._debugTracking; },
+                /**
+                 * Change the current state of the debug tracking variable.
+                 *
+                 * True enables debugging, which causes the maze to display a red marker
+                 * at the current debug location.
+                 *
+                 * @param {boolean} newValue new debugging state
+                 */
+                set: function (newValue) { this._debugTracking = newValue; },
                 enumerable: true,
                 configurable: true
             });
@@ -2544,33 +2569,7 @@ var nurdz;
                 // exactly how many entities of a type we need.
                 for (var i = 0; i < (game.MAZE_WIDTH - 2) * 2; i++)
                     this._balls.addEntity(new game.Ball(stage), false);
-                // No debugging by default, but the debugging point is the upper
-                // left grid corner; the marker is created later when we know the
-                // grid size.
-                this._debugTracking = false;
             }
-            Object.defineProperty(Maze.prototype, "debugTracking", {
-                /**
-                 * Get the current state of the debug tracking variable.
-                 *
-                 * When this is set to true, we display a marker on the stage at the
-                 * current debug position.
-                 *
-                 * @returns {boolean} true if debugging is enabled, false otherwise.
-                 */
-                get: function () { return this._debugTracking; },
-                /**
-                 * Change the current state of the debug tracking variable.
-                 *
-                 * True enables debugging, which causes the maze to display a red marker
-                 * at the current debug location.
-                 *
-                 * @param {boolean} newValue new debugging state
-                 */
-                set: function (newValue) { this._debugTracking = newValue; },
-                enumerable: true,
-                configurable: true
-            });
             Object.defineProperty(Maze.prototype, "cellSize", {
                 /**
                  * Get the size (in pixels) of the cells in the maze based on the
@@ -2701,7 +2700,7 @@ var nurdz;
                 }
                 // If we're not tracking debug action, the rest of these actions
                 // should not be allowed;
-                if (this._debugTracking == false)
+                if (this._debugger.debugTracking == false)
                     return;
                 // If this is a brick that is not hidden, vanish it. We can't bring
                 // it back because once it's hidden the update loop will reap it.
@@ -3101,7 +3100,7 @@ var nurdz;
                 // We can render the markers now.
                 this.renderMazeMarkers(x, y, cSize, renderer);
                 // Now the debug marker, if it's turned on.
-                if (this._debugTracking) {
+                if (this._debugger.debugTracking) {
                     var pos = this._debugger.debugPoint;
                     this._debugMarker.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
                 }
@@ -3208,8 +3207,8 @@ var nurdz;
                     // Toggle mouse tracking of the debug location, then update the
                     // tracking with the last known mouse location.
                     case game.KeyCodes.KEY_SPACEBAR:
-                        this._maze.debugTracking = !this._maze.debugTracking;
-                        if (this._maze.debugTracking)
+                        this._maze.debugger.debugTracking = !this._maze.debugger.debugTracking;
+                        if (this._maze.debugger.debugTracking)
                             this._maze.setDebugPoint(this._mouse);
                         return true;
                     // Delete the contents of the current cell, if anything is
@@ -3220,7 +3219,7 @@ var nurdz;
                     // delete key on the numeric keypad may or may not work.
                     case 8:
                     case 46:
-                        if (this._maze.debugTracking) {
+                        if (this._maze.debugger.debugTracking) {
                             this._maze.debugger.debugClearCell();
                             return true;
                         }
@@ -3228,7 +3227,7 @@ var nurdz;
                     // Toggle the type of the entity under the debug cursor through
                     // its various states.
                     case game.KeyCodes.KEY_T:
-                        if (this._maze.debugTracking) {
+                        if (this._maze.debugger.debugTracking) {
                             this._maze.debugger.debugToggleCell();
                             return true;
                         }
@@ -3237,7 +3236,7 @@ var nurdz;
                     // only works if the cell is currently empty. This will try
                     // to add a gray brick, and failing that a bonus brick.
                     case game.KeyCodes.KEY_B:
-                        if (this._maze.debugTracking) {
+                        if (this._maze.debugger.debugTracking) {
                             this._maze.debugger.debugAddBrick();
                             return true;
                         }
@@ -3247,7 +3246,7 @@ var nurdz;
                     // normal arrow by default, but this can be toggled with the
                     // 'T" key'.
                     case game.KeyCodes.KEY_A:
-                        if (this._maze.debugTracking) {
+                        if (this._maze.debugger.debugTracking) {
                             this._maze.debugger.debugAddArrow();
                             return true;
                         }
@@ -3256,7 +3255,7 @@ var nurdz;
                     // only works if the cell is currentlye empty. This just adds an
                     // extra exit point to the black hole system.
                     case game.KeyCodes.KEY_H:
-                        if (this._maze.debugTracking) {
+                        if (this._maze.debugger.debugTracking) {
                             this._maze.debugger.debugAddTeleport();
                             return true;
                         }
@@ -3265,7 +3264,7 @@ var nurdz;
                     // works if the cell is currently empty. This will add a player
                     // ball by default, but this can be toggled with the 'T' key.
                     case game.KeyCodes.KEY_L:
-                        if (this._maze.debugTracking) {
+                        if (this._maze.debugger.debugTracking) {
                             this._maze.debugger.debugAddBall();
                             return true;
                         }
@@ -3274,7 +3273,7 @@ var nurdz;
                     // visible.
                     case game.KeyCodes.KEY_V:
                     case game.KeyCodes.KEY_C:
-                        if (this._maze.debugTracking) {
+                        if (this._maze.debugger.debugTracking) {
                             this._maze.debugger.debugVanishBricks(eventObj.keyCode == game.KeyCodes.KEY_V);
                             return true;
                         }
@@ -3282,7 +3281,7 @@ var nurdz;
                     // Wipe the entire maze contents; this is like a reset except
                     // no new maze is generated first.
                     case game.KeyCodes.KEY_W:
-                        if (this._maze.debugTracking) {
+                        if (this._maze.debugger.debugTracking) {
                             this._maze.debugger.debugWipeMaze();
                             return true;
                         }
@@ -3326,7 +3325,7 @@ var nurdz;
                 this._mouse = this._stage.calculateMousePos(eventObj, this._mouse);
                 // If we're tracking a debug location, tell the maze about this
                 // point.
-                if (this._maze.debugTracking)
+                if (this._maze.debugger.debugTracking)
                     this._maze.setDebugPoint(this._mouse);
                 // We handled it.
                 return true;
