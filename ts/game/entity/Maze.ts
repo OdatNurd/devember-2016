@@ -683,37 +683,6 @@ module nurdz.game
         }
 
         /**
-         * Given a ball entity which exists in the maze, set up to start
-         * dropping it through the maze, setting everything up as needed.
-         *
-         * For this to work, the ball provided must be stored in the maze and
-         * its map position must accurately reflect the position it is stored
-         * in, since that position will be cleared when the ball starts moving.
-         *
-         * @param {Ball}   ball  the ball to drop
-         * @param {number} speed the number of ticks between ball step stages
-         */
-        private dropBall (ball : Ball, speed : number) : void
-        {
-            // Set the entity that is currently dropping to the one provided,
-            // then remove it from the maze. It will be re-added when
-            // it is finished moving
-            this._droppingBall = ball;
-            this._contents.clearCellAt (ball.mapPosition.x, ball.mapPosition.y);
-
-            // Ensure that the ball knows before we start that it started
-            // out not moving.
-            this._droppingBall.moveType = BallMoveType.BALL_MOVE_NONE;
-
-            // Now indicate that the last time the ball dropped was right now
-            // so that the next step in the drop happens in the future.
-            this._lastDropTick = this._stage.tick;
-
-            // Set up the drop speed.
-            this._dropSpeed = speed;
-        }
-
-        /**
          * DEBUG METHOD
          *
          * This takes a point that is representative of a mouse click inside of
@@ -786,6 +755,37 @@ module nurdz.game
 
             // We care not for this click.
             return false;
+        }
+
+        /**
+         * Given a ball entity which exists in the maze, set up to start
+         * dropping it through the maze, setting everything up as needed.
+         *
+         * For this to work, the ball provided must be stored in the maze and
+         * its map position must accurately reflect the position it is stored
+         * in, since that position will be cleared when the ball starts moving.
+         *
+         * @param {Ball}   ball  the ball to drop
+         * @param {number} speed the number of ticks between ball step stages
+         */
+        private dropBall (ball : Ball, speed : number) : void
+        {
+            // Set the entity that is currently dropping to the one provided,
+            // then remove it from the maze. It will be re-added when
+            // it is finished moving
+            this._droppingBall = ball;
+            this._contents.clearCellAt (ball.mapPosition.x, ball.mapPosition.y);
+
+            // Ensure that the ball knows before we start that it started
+            // out not moving.
+            this._droppingBall.moveType = BallMoveType.BALL_MOVE_NONE;
+
+            // Now indicate that the last time the ball dropped was right now
+            // so that the next step in the drop happens in the future.
+            this._lastDropTick = this._stage.tick;
+
+            // Set up the drop speed.
+            this._dropSpeed = speed;
         }
 
         /**
