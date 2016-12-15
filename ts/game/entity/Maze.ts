@@ -435,39 +435,17 @@ module nurdz.game
             if (cell instanceof Teleport)
                 this._blackHole.clearDestination (this._debugPoint);
 
-            // If it is a ball, remove it from the ball entity pool.
-            else if (cell instanceof Ball)
-                this._balls.killEntity (cell);
+            // Not a teleport; if this entity has an actor pool, remove it from
+            // the pool.
+            else if (cell.pool != null)
+                cell.pool.killEntity (cell);
 
-            // If it is an arrow, remove it from the arrow entity pool.
-            else if (cell instanceof Arrow)
-                this._arrows.killEntity (cell);
-
-            // If it is a brick, we need to be a bit more careful; remove it
-            // from the correct pool AND don't delete the solid boundary cell.
-            else if (cell instanceof Brick)
-            {
-                let brick = <Brick> cell;
-                if (brick == this._solid)
-                {
-                    console.log ("Cannot delete boundary bricks");
-                    return;
-                }
-                else if (brick.brickType == BrickType.BRICK_GRAY)
-                    this._grayBricks.killEntity (brick);
-                else if (brick.brickType == BrickType.BRICK_BONUS)
-                    this._bonusBricks.killEntity (brick);
-                else
-                {
-                    console.log ("This brick is not a brick. Double Yew Tee Eff");
-                    return;
-                }
-            }
-
-            // We don't know what this is.
+            // The entity doesn't have an actor pool. The only time this happens
+            // is for a Teleport (already handled) or a boundary wall, which we
+            // do not allow deleting.
             else
             {
-                console.log ("Unable to delete entity; I don't know what it is");
+                console.log ("Cannot delete boundary bricks");
                 return;
             }
 
@@ -536,7 +514,6 @@ module nurdz.game
             {
                 // Get the brick at the current location.
                 let currentBrick = <Brick> cell;
-                let currentBrickPool : ActorPool<MazeCell> = null;
                 let newBrick : Brick = null;
 
                 // We keep a separate pool of bonus bricks and gray bricks.
@@ -544,15 +521,9 @@ module nurdz.game
                 // In order to swap, we need to get an existing brick from the
                 // opposite pool, then put it into place and kill the other one.
                 if (currentBrick.brickType == BrickType.BRICK_BONUS)
-                {
                     newBrick = this._grayBricks.resurrectEntity ();
-                    currentBrickPool = this._bonusBricks;
-                }
                 else if (currentBrick.brickType == BrickType.BRICK_GRAY)
-                {
                     newBrick = this._bonusBricks.resurrectEntity ();
-                    currentBrickPool = this._grayBricks;
-                }
 
                 // If we got a brick, play the animation to cause it to appear,
                 // then put it into the maze and kill the current brick in the
@@ -561,7 +532,7 @@ module nurdz.game
                 {
                     newBrick.appear ();
                     this.setDebugCell (newBrick);
-                    currentBrickPool.killEntity (currentBrick);
+                    currentBrick.pool.killEntity (currentBrick);
                 }
                 else
                     console.log ("Cannot toggle brick; not enough entities in currentBrickPool");

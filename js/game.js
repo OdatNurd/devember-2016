@@ -1856,27 +1856,10 @@ var nurdz;
                 // the current location as a destination.
                 if (cell instanceof game.Teleport)
                     this._blackHole.clearDestination(this._debugPoint);
-                else if (cell instanceof game.Ball)
-                    this._balls.killEntity(cell);
-                else if (cell instanceof game.Arrow)
-                    this._arrows.killEntity(cell);
-                else if (cell instanceof game.Brick) {
-                    var brick = cell;
-                    if (brick == this._solid) {
-                        console.log("Cannot delete boundary bricks");
-                        return;
-                    }
-                    else if (brick.brickType == game.BrickType.BRICK_GRAY)
-                        this._grayBricks.killEntity(brick);
-                    else if (brick.brickType == game.BrickType.BRICK_BONUS)
-                        this._bonusBricks.killEntity(brick);
-                    else {
-                        console.log("This brick is not a brick. Double Yew Tee Eff");
-                        return;
-                    }
-                }
+                else if (cell.pool != null)
+                    cell.pool.killEntity(cell);
                 else {
-                    console.log("Unable to delete entity; I don't know what it is");
+                    console.log("Cannot delete boundary bricks");
                     return;
                 }
                 // Clear the contents of the cell now.
@@ -1934,27 +1917,22 @@ var nurdz;
                 if (cell instanceof game.Brick && cell != this._solid) {
                     // Get the brick at the current location.
                     var currentBrick = cell;
-                    var currentBrickPool = null;
                     var newBrick = null;
                     // We keep a separate pool of bonus bricks and gray bricks.
                     //
                     // In order to swap, we need to get an existing brick from the
                     // opposite pool, then put it into place and kill the other one.
-                    if (currentBrick.brickType == game.BrickType.BRICK_BONUS) {
+                    if (currentBrick.brickType == game.BrickType.BRICK_BONUS)
                         newBrick = this._grayBricks.resurrectEntity();
-                        currentBrickPool = this._bonusBricks;
-                    }
-                    else if (currentBrick.brickType == game.BrickType.BRICK_GRAY) {
+                    else if (currentBrick.brickType == game.BrickType.BRICK_GRAY)
                         newBrick = this._bonusBricks.resurrectEntity();
-                        currentBrickPool = this._grayBricks;
-                    }
                     // If we got a brick, play the animation to cause it to appear,
                     // then put it into the maze and kill the current brick in the
                     // pool that it came from.
                     if (newBrick != null) {
                         newBrick.appear();
                         this.setDebugCell(newBrick);
-                        currentBrickPool.killEntity(currentBrick);
+                        currentBrick.pool.killEntity(currentBrick);
                     }
                     else
                         console.log("Cannot toggle brick; not enough entities in currentBrickPool");
