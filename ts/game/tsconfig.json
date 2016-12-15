@@ -13,6 +13,7 @@
         "ActorPool.ts",
         "MazeContents.ts",
         "MazeGenerator.ts",
+        "MazeDebugger.ts",
         "entity/MazeCell.ts",
         "entity/Marker.ts",
         "entity/Ball.ts",

@@ -897,6 +897,333 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * This class contains the code used to generate the content of a new maze.
+         * It requires access to the Maze entity so that it can get at the content
+         * and perform its task.
+         */
+        var MazeDebugger = (function () {
+            /**
+             * Construct a new debugger object that can debug the provided maze object.
+             *
+             * @param {Maze} maze the maze object to deb
+             */
+            function MazeDebugger(maze) {
+                // Store the maze and get it's contents.
+                this._maze = maze;
+                this._contents = maze.contents;
+                // By default there is no wall or teleporter.
+                this._wall = null;
+                this._teleport = null;
+                // Create a default debug point.
+                this._debugPoint = new game.Point(0, 0);
+            }
+            Object.defineProperty(MazeDebugger.prototype, "wall", {
+                /**
+                 * Set the wall object that was used to generate walls in the maze.
+                 *
+                 * If this is not set, debugging logic may not correctly stop debugging
+                 * options like deleting objects from operating on the walls.
+                 *
+                 * @param {MazeCell} newWall the entity to use for the wall.
+                 */
+                set: function (newWall) { this._wall = newWall; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(MazeDebugger.prototype, "teleporter", {
+                /**
+                 * Set the entity that was used to generate the teleport objects in the
+                 * maze.
+                 *
+                 * If this is not set, debugging logic may not correctly process debugging
+                 * options such as adding or deleting teleport instances.
+                 *
+                 * @param {Teleport} newTeleporter the entity to use for the teleporter
+                 */
+                set: function (newTeleporter) { this._teleport = newTeleporter; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(MazeDebugger.prototype, "debugPoint", {
+                /**
+                 * Get the currently set debug point in this object. This represents the
+                 * last position in the maze that the mouse passed over while debugging
+                 * was turned on.
+                 *
+                 * @returns {Point} the last known debug point
+                 */
+                get: function () { return this._debugPoint; },
+                /**
+                 * Set a new debug point for this object. This will be used as the locus
+                 * for all future debug operations that require a specific location to
+                 * operate.
+                 *
+                 * @param {Point} newPoint the new point to use for debugging
+                 */
+                set: function (newPoint) { this._debugPoint.setTo(newPoint); },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Get the cell at the current debug location in the maze grid.
+             *
+             * This calls getCellAt() with the last known debug location, which
+             * means that the return value may return null to indicate that there is
+             * no maze contents at this location.
+             *
+             * @returns {MazeCell|null} the cell at this location in the maze, if
+             * any
+             */
+            MazeDebugger.prototype.getDebugCell = function () {
+                return this._contents.getCellAt(this._debugPoint.x, this._debugPoint.y);
+            };
+            /**
+             * Set the cell at the current debug location in the grid to the cell
+             * provided.
+             *
+             * @param {MazeCell} newCell the new cell to insert into the grid
+             */
+            MazeDebugger.prototype.setDebugCell = function (newCell) {
+                this._contents.setCellAt(this._debugPoint.x, this._debugPoint.y, newCell);
+            };
+            /**
+             * DEBUG METHOD
+             *
+             * Remove the contents of an existing cell from the maze, returning the
+             * object back into its pool.
+             *
+             * This currently does not work on Teleport entities, since they need
+             * special action to work.
+             */
+            MazeDebugger.prototype.debugClearCell = function () {
+                // Get the debug cell and leave if there isn't one.
+                var cell = this.getDebugCell();
+                if (cell == null)
+                    return;
+                // There is a single Teleport entity, so all we have to do is remove
+                // the current location as a destination.
+                if (cell.name == "blackHole")
+                    this._teleport.clearDestination(this._debugPoint);
+                else if (cell.pool != null)
+                    cell.kill();
+                else {
+                    console.log("Cannot delete boundary bricks");
+                    return;
+                }
+                // Clear the contents of the cell now.
+                this.setDebugCell(null);
+            };
+            /**
+             * Wipe the entire contents of the maze, killing all entities. This will
+             * leave only the bounding bricks that stop the ball from going out of
+             * bounds.
+             */
+            MazeDebugger.prototype.debugWipeMaze = function () {
+                // Reset all entities, then generate walls into the maze to clear it
+                // back to a known state.
+                this._maze.resetMazeEntities();
+                this._maze.generator.emptyMaze();
+            };
+            /**
+             * DEBUG METHOD
+             *
+             * Toggle an existing cell through its subtypes (for cells that support
+             * this).
+             *
+             * If the debug point is empty or not of a toggle-able type, this does
+             * nothing.
+             */
+            MazeDebugger.prototype.debugToggleCell = function () {
+                // Get the debug cell and leave if there isn't one.
+                var cell = this.getDebugCell();
+                if (cell == null)
+                    return;
+                // If the cell is an arrow, toggle the type. Doing this will also
+                // implicitly set an auto-flip timer on the arrow when it becomes
+                // such an arrow.
+                if (cell.name == "arrow") {
+                    var arrow = cell;
+                    if (arrow.arrowType == game.ArrowType.ARROW_AUTOMATIC)
+                        arrow.arrowType = game.ArrowType.ARROW_NORMAL;
+                    else
+                        arrow.arrowType = game.ArrowType.ARROW_AUTOMATIC;
+                    return;
+                }
+                // If the cell is a ball, toggle the type.
+                if (cell.name == "ball") {
+                    var ball = cell;
+                    if (ball.ballType == game.BallType.BALL_PLAYER)
+                        ball.ballType = game.BallType.BALL_COMPUTER;
+                    else
+                        ball.ballType = game.BallType.BALL_PLAYER;
+                    ball.appear();
+                    return;
+                }
+                // If the cell is a brick, toggle the type. This will change the visual
+                // representation back to the idle state for this brick type.
+                //
+                // This is skipped for solid bricks; they're just used on the outer
+                // edges and should not be messed with.
+                if (cell.name == "brick" && cell != this._wall) {
+                    // Get the brick at the current location.
+                    var currentBrick = cell;
+                    var newBrick = null;
+                    // We keep a separate pool of bonus bricks and gray bricks.
+                    //
+                    // In order to swap, we need to get an existing brick from the
+                    // opposite pool, then put it into place and kill the other one.
+                    if (currentBrick.brickType == game.BrickType.BRICK_BONUS)
+                        newBrick = this._maze.getGrayBrick();
+                    else if (currentBrick.brickType == game.BrickType.BRICK_GRAY)
+                        newBrick = this._maze.getBonusBrick();
+                    // If we got a brick, play the animation to cause it to appear,
+                    // then put it into the maze and kill the current brick in the
+                    // pool that it came from.
+                    if (newBrick != null) {
+                        newBrick.appear();
+                        this.setDebugCell(newBrick);
+                        currentBrick.kill();
+                    }
+                    else
+                        console.log("Cannot toggle brick; not enough entities in currentBrickPool");
+                    return;
+                }
+                console.log("Cannot toggle entity; it does not support toggling");
+            };
+            /**
+             * DEBUG METHOD
+             *
+             * Add a brick to the maze at the current debug location (assuming one
+             * is available).
+             *
+             * This will add a gray brick, unless there are none left in the pool,
+             * in which case it will try to add a bonus brick instead.
+             *
+             * If the current location is not empty, this does nothing.
+             */
+            MazeDebugger.prototype.debugAddBrick = function () {
+                // We can only add a brick if the current cell is empty.
+                if (this.getDebugCell() == null) {
+                    // Get a brick from one of the pools. We try the gray brick
+                    // first since that pool is larger.
+                    var newBrick = this._maze.getGrayBrick();
+                    if (newBrick == null)
+                        newBrick = this._maze.getBonusBrick();
+                    // If we got a brick, appear it and add it to the maze.
+                    if (newBrick) {
+                        newBrick.appear();
+                        this.setDebugCell(newBrick);
+                    }
+                    else
+                        console.log("Unable to add brick; no entities left in either pool");
+                }
+                else
+                    console.log("Cannot add brick; cell is not empty");
+            };
+            /**
+             * Vanish all of the bricks of a set type based on the parameter. Any
+             * brick of the given type that is not already gone will vanish away.
+             *
+             * @param {boolean} grayBricks true to vanish gray bricks, false to
+             * vanish bonus bricks.
+             */
+            MazeDebugger.prototype.debugVanishBricks = function (grayBricks) {
+                for (var row = 0; row < game.MAZE_HEIGHT; row++) {
+                    for (var col = 0; col < game.MAZE_WIDTH; col++) {
+                        var cell = this._contents.getCellAt(col, row);
+                        if (cell != null && cell.name == "brick") {
+                            var brick = cell;
+                            if (brick.isHidden == false &&
+                                brick.brickType == (grayBricks ? game.BrickType.BRICK_GRAY : game.BrickType.BRICK_BONUS))
+                                brick.vanish();
+                        }
+                    }
+                }
+            };
+            /**
+             * DEBUG METHOD
+             *
+             * Add a teleport destination to the maze at the current debug location
+             * (assuming one is available).
+             *
+             * There is only a single Teleport instance, so this always works and
+             * just adds another potential destination to the list.
+             *
+             * If the current location is not empty, this does nothing.
+             */
+            MazeDebugger.prototype.debugAddTeleport = function () {
+                // We can only add an exit point if the current cell is empty.
+                if (this.getDebugCell() == null) {
+                    // Add the destination and the entity
+                    this._teleport.addDestination(this._debugPoint);
+                    this.setDebugCell(this._teleport);
+                }
+                else
+                    console.log("Cannot add teleport; cell is not empty");
+            };
+            /**
+             * DEBUG METHOD
+             *
+             * Add an arrow to the maze at the current debug location (assuming one
+             * is available).
+             *
+             * This will add a normal, right facing arrow. The type of the arrow can
+             * be toggled with the toggle command.
+             *
+             * If the current location is not empty, this does nothing.
+             */
+            MazeDebugger.prototype.debugAddArrow = function () {
+                // We can only add an arrow if the current cell is empty.
+                if (this.getDebugCell() == null) {
+                    // Try to get the arrow out of the pool; if it works, we can
+                    // set it's type and add it.
+                    var arrow = this._maze.getArrow();
+                    if (arrow != null) {
+                        arrow.arrowType = game.ArrowType.ARROW_NORMAL;
+                        arrow.arrowDirection = game.ArrowDirection.ARROW_RIGHT;
+                        this.setDebugCell(arrow);
+                    }
+                    else
+                        console.log("Cannot add arrow; no entities left in pool");
+                }
+                else
+                    console.log("Cannot add arrow; cell is not empty");
+            };
+            /**
+             * DEBUG METHOD
+             *
+             * Add a player ball to the maze at the current debug location (assuming
+             * one is available).
+             *
+             * If the current location is not empty, this does nothing.
+             */
+            MazeDebugger.prototype.debugAddBall = function () {
+                // We can only add a ball if the current cell is empty.
+                if (this.getDebugCell() == null) {
+                    // Try to get the ball out of the pool; if it works, we can
+                    // set it's type and add it.
+                    var ball = this._maze.getBall();
+                    if (ball != null) {
+                        ball.ballType = game.BallType.BALL_PLAYER;
+                        ball.appear();
+                        this.setDebugCell(ball);
+                    }
+                    else
+                        console.log("Cannot add ball; no entities left in pool");
+                }
+                else
+                    console.log("Cannot add ball; cell is not empty");
+            };
+            return MazeDebugger;
+        }());
+        game.MazeDebugger = MazeDebugger;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * The entity that represents a cell inside of the Maze entity.
          *
          * These are basically regular Entity objects with a slightly different
@@ -2174,12 +2501,17 @@ var nurdz;
                 this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
                 this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
                 this._blackHole = new game.Teleport(stage);
-                // Create our maze contents and generator; order is important here,
-                // the generator needs to get the contents from us to initialize.
+                // Create our maze contents, generator, and debugger; order is
+                // important here, the generator and debugger need to get the
+                // contents from us to initialize, and the debugger requires the
+                // generator to already be available.
                 this._contents = new game.MazeContents();
                 this._generator = new game.MazeGenerator(this);
+                this._debugger = new game.MazeDebugger(this);
                 this._generator.wall = this._solid;
+                this._debugger.wall = this._solid;
                 this._generator.teleporter = this._blackHole;
+                this._debugger.teleporter = this._blackHole;
                 // Create our entity pools.
                 this._arrows = new game.ActorPool();
                 this._grayBricks = new game.ActorPool();
@@ -2216,7 +2548,6 @@ var nurdz;
                 // left grid corner; the marker is created later when we know the
                 // grid size.
                 this._debugTracking = false;
-                this._debugPoint = new game.Point(0, 0);
             }
             Object.defineProperty(Maze.prototype, "debugTracking", {
                 /**
@@ -2263,6 +2594,30 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Maze.prototype, "generator", {
+                /**
+                 * Get the object that is used to generate the contents of this maze.
+                 * Using this object, external code can regenerate or otherwise tweak
+                 * the maze.
+                 *
+                 * @returns {MazeGenerator} the object that handles our generation.
+                 */
+                get: function () { return this._generator; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Maze.prototype, "debugger", {
+                /**
+                 * Get the object that is used for debugging. This contains methods that
+                 * can be used to turn debugging on and off and interact with the maze
+                 * in a variety of ways.
+                 *
+                 * @returns {MazeDebugger} the object that handles our debugging
+                 */
+                get: function () { return this._debugger; },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * Get an arrow from the arrow pool; may return null if none are
              * available.
@@ -2302,260 +2657,10 @@ var nurdz;
                     // Set our debug position the one provided, translate it to make
                     // it local to our location on the stage, and then reduce it to
                     // a cell coordinate.
-                    this._debugPoint.setTo(position);
-                    this._debugPoint.translateXY(-this._position.x, -this._position.y);
-                    this._debugPoint.reduce(this.cellSize);
+                    this._debugger.debugPoint.setTo(position);
+                    this._debugger.debugPoint.translateXY(-this._position.x, -this._position.y);
+                    this._debugger.debugPoint.reduce(this.cellSize);
                 }
-            };
-            /**
-             * Get the cell at the current debug location in the maze grid.
-             *
-             * This calls getCellAt() with the last known debug location, which
-             * means that the return value may return null to indicate that there is
-             * no maze contents at this location.
-             *
-             * @returns {MazeCell|null} the cell at this location in the maze, if
-             * any
-             */
-            Maze.prototype.getDebugCell = function () {
-                return this._contents.getCellAt(this._debugPoint.x, this._debugPoint.y);
-            };
-            /**
-             * Set the cell at the current debug location in the grid to the cell
-             * provided.
-             *
-             * @param {MazeCell} newCell the new cell to insert into the grid
-             */
-            Maze.prototype.setDebugCell = function (newCell) {
-                this._contents.setCellAt(this._debugPoint.x, this._debugPoint.y, newCell);
-            };
-            /**
-             * DEBUG METHOD
-             *
-             * Remove the contents of an existing cell from the maze, returning the
-             * object back into its pool.
-             *
-             * This currently does not work on Teleport entities, since they need
-             * special action to work.
-             */
-            Maze.prototype.debugClearCell = function () {
-                // Get the debug cell and leave if there isn't one.
-                var cell = this.getDebugCell();
-                if (cell == null)
-                    return;
-                // There is a single Teleport entity, so all we have to do is remove
-                // the current location as a destination.
-                if (cell.name == "blackHole")
-                    this._blackHole.clearDestination(this._debugPoint);
-                else if (cell.pool != null)
-                    cell.kill();
-                else {
-                    console.log("Cannot delete boundary bricks");
-                    return;
-                }
-                // Clear the contents of the cell now.
-                this.setDebugCell(null);
-            };
-            /**
-             * Wipe the entire contents of the maze, killing all entities. This will
-             * leave only the bounding bricks that stop the ball from going out of
-             * bounds.
-             */
-            Maze.prototype.debugWipeMaze = function () {
-                // Reset all entities, then generate walls into the maze to clear it
-                // back to a known state.
-                this.resetMazeEntities();
-                this._generator.emptyMaze();
-            };
-            /**
-             * DEBUG METHOD
-             *
-             * Toggle an existing cell through its subtypes (for cells that support
-             * this).
-             *
-             * If the debug point is empty or not of a toggle-able type, this does
-             * nothing.
-             */
-            Maze.prototype.debugToggleCell = function () {
-                // Get the debug cell and leave if there isn't one.
-                var cell = this.getDebugCell();
-                if (cell == null)
-                    return;
-                // If the cell is an arrow, toggle the type. Doing this will also
-                // implicitly set an auto-flip timer on the arrow when it becomes
-                // such an arrow.
-                if (cell.name == "arrow") {
-                    var arrow = cell;
-                    if (arrow.arrowType == game.ArrowType.ARROW_AUTOMATIC)
-                        arrow.arrowType = game.ArrowType.ARROW_NORMAL;
-                    else
-                        arrow.arrowType = game.ArrowType.ARROW_AUTOMATIC;
-                    return;
-                }
-                // If the cell is a ball, toggle the type.
-                if (cell.name == "ball") {
-                    var ball = cell;
-                    if (ball.ballType == game.BallType.BALL_PLAYER)
-                        ball.ballType = game.BallType.BALL_COMPUTER;
-                    else
-                        ball.ballType = game.BallType.BALL_PLAYER;
-                    ball.appear();
-                    return;
-                }
-                // If the cell is a brick, toggle the type. This will change the visual
-                // representation back to the idle state for this brick type.
-                //
-                // This is skipped for solid bricks; they're just used on the outer
-                // edges and should not be messed with.
-                if (cell.name == "brick" && cell != this._solid) {
-                    // Get the brick at the current location.
-                    var currentBrick = cell;
-                    var newBrick = null;
-                    // We keep a separate pool of bonus bricks and gray bricks.
-                    //
-                    // In order to swap, we need to get an existing brick from the
-                    // opposite pool, then put it into place and kill the other one.
-                    if (currentBrick.brickType == game.BrickType.BRICK_BONUS)
-                        newBrick = this.getGrayBrick();
-                    else if (currentBrick.brickType == game.BrickType.BRICK_GRAY)
-                        newBrick = this.getBonusBrick();
-                    // If we got a brick, play the animation to cause it to appear,
-                    // then put it into the maze and kill the current brick in the
-                    // pool that it came from.
-                    if (newBrick != null) {
-                        newBrick.appear();
-                        this.setDebugCell(newBrick);
-                        currentBrick.kill();
-                    }
-                    else
-                        console.log("Cannot toggle brick; not enough entities in currentBrickPool");
-                    return;
-                }
-                console.log("Cannot toggle entity; it does not support toggling");
-            };
-            /**
-             * DEBUG METHOD
-             *
-             * Add a brick to the maze at the current debug location (assuming one
-             * is available).
-             *
-             * This will add a gray brick, unless there are none left in the pool,
-             * in which case it will try to add a bonus brick instead.
-             *
-             * If the current location is not empty, this does nothing.
-             */
-            Maze.prototype.debugAddBrick = function () {
-                // We can only add a brick if the current cell is empty.
-                if (this.getDebugCell() == null) {
-                    // Get a brick from one of the pools. We try the gray brick
-                    // first since that pool is larger.
-                    var newBrick = this.getGrayBrick();
-                    if (newBrick == null)
-                        newBrick = this.getBonusBrick();
-                    // If we got a brick, appear it and add it to the maze.
-                    if (newBrick) {
-                        newBrick.appear();
-                        this.setDebugCell(newBrick);
-                    }
-                    else
-                        console.log("Unable to add brick; no entities left in either pool");
-                }
-                else
-                    console.log("Cannot add brick; cell is not empty");
-            };
-            /**
-             * Vanish all of the bricks of a set type based on the parameter. Any
-             * brick of the given type that is not already gone will vanish away.
-             *
-             * @param {boolean} grayBricks true to vanish gray bricks, false to
-             * vanish bonus bricks.
-             */
-            Maze.prototype.debugVanishBricks = function (grayBricks) {
-                for (var row = 0; row < game.MAZE_HEIGHT; row++) {
-                    for (var col = 0; col < game.MAZE_WIDTH; col++) {
-                        var cell = this._contents.getCellAt(col, row);
-                        if (cell != null && cell.name == "brick") {
-                            var brick = cell;
-                            if (brick.isHidden == false &&
-                                brick.brickType == (grayBricks ? game.BrickType.BRICK_GRAY : game.BrickType.BRICK_BONUS))
-                                brick.vanish();
-                        }
-                    }
-                }
-            };
-            /**
-             * DEBUG METHOD
-             *
-             * Add a teleport destination to the maze at the current debug location
-             * (assuming one is available).
-             *
-             * There is only a single Teleport instance, so this always works and
-             * just adds another potential destination to the list.
-             *
-             * If the current location is not empty, this does nothing.
-             */
-            Maze.prototype.debugAddTeleport = function () {
-                // We can only add an exit point if the current cell is empty.
-                if (this.getDebugCell() == null) {
-                    // Add the destination and the entity
-                    this._blackHole.addDestination(this._debugPoint);
-                    this.setDebugCell(this._blackHole);
-                }
-                else
-                    console.log("Cannot add teleport; cell is not empty");
-            };
-            /**
-             * DEBUG METHOD
-             *
-             * Add an arrow to the maze at the current debug location (assuming one
-             * is available).
-             *
-             * This will add a normal, right facing arrow. The type of the arrow can
-             * be toggled with the toggle command.
-             *
-             * If the current location is not empty, this does nothing.
-             */
-            Maze.prototype.debugAddArrow = function () {
-                // We can only add an arrow if the current cell is empty.
-                if (this.getDebugCell() == null) {
-                    // Try to get the arrow out of the pool; if it works, we can
-                    // set it's type and add it.
-                    var arrow = this.getArrow();
-                    if (arrow != null) {
-                        arrow.arrowType = game.ArrowType.ARROW_NORMAL;
-                        arrow.arrowDirection = game.ArrowDirection.ARROW_RIGHT;
-                        this.setDebugCell(arrow);
-                    }
-                    else
-                        console.log("Cannot add arrow; no entities left in pool");
-                }
-                else
-                    console.log("Cannot add arrow; cell is not empty");
-            };
-            /**
-             * DEBUG METHOD
-             *
-             * Add a player ball to the maze at the current debug location (assuming
-             * one is available).
-             *
-             * If the current location is not empty, this does nothing.
-             */
-            Maze.prototype.debugAddBall = function () {
-                // We can only add a ball if the current cell is empty.
-                if (this.getDebugCell() == null) {
-                    // Try to get the ball out of the pool; if it works, we can
-                    // set it's type and add it.
-                    var ball = this.getBall();
-                    if (ball != null) {
-                        ball.ballType = game.BallType.BALL_PLAYER;
-                        ball.appear();
-                        this.setDebugCell(ball);
-                    }
-                    else
-                        console.log("Cannot add ball; no entities left in pool");
-                }
-                else
-                    console.log("Cannot add ball; cell is not empty");
             };
             /**
              * DEBUG METHOD
@@ -2997,7 +3102,7 @@ var nurdz;
                 this.renderMazeMarkers(x, y, cSize, renderer);
                 // Now the debug marker, if it's turned on.
                 if (this._debugTracking) {
-                    var pos = this._debugPoint;
+                    var pos = this._debugger.debugPoint;
                     this._debugMarker.render(x + (pos.x * cSize), y + (pos.y * cSize), renderer);
                 }
             };
@@ -3116,7 +3221,7 @@ var nurdz;
                     case 8:
                     case 46:
                         if (this._maze.debugTracking) {
-                            this._maze.debugClearCell();
+                            this._maze.debugger.debugClearCell();
                             return true;
                         }
                         break;
@@ -3124,7 +3229,7 @@ var nurdz;
                     // its various states.
                     case game.KeyCodes.KEY_T:
                         if (this._maze.debugTracking) {
-                            this._maze.debugToggleCell();
+                            this._maze.debugger.debugToggleCell();
                             return true;
                         }
                         break;
@@ -3133,7 +3238,7 @@ var nurdz;
                     // to add a gray brick, and failing that a bonus brick.
                     case game.KeyCodes.KEY_B:
                         if (this._maze.debugTracking) {
-                            this._maze.debugAddBrick();
+                            this._maze.debugger.debugAddBrick();
                             return true;
                         }
                         break;
@@ -3143,7 +3248,7 @@ var nurdz;
                     // 'T" key'.
                     case game.KeyCodes.KEY_A:
                         if (this._maze.debugTracking) {
-                            this._maze.debugAddArrow();
+                            this._maze.debugger.debugAddArrow();
                             return true;
                         }
                         break;
@@ -3152,7 +3257,7 @@ var nurdz;
                     // extra exit point to the black hole system.
                     case game.KeyCodes.KEY_H:
                         if (this._maze.debugTracking) {
-                            this._maze.debugAddTeleport();
+                            this._maze.debugger.debugAddTeleport();
                             return true;
                         }
                         break;
@@ -3161,7 +3266,7 @@ var nurdz;
                     // ball by default, but this can be toggled with the 'T' key.
                     case game.KeyCodes.KEY_L:
                         if (this._maze.debugTracking) {
-                            this._maze.debugAddBall();
+                            this._maze.debugger.debugAddBall();
                             return true;
                         }
                         break;
@@ -3170,7 +3275,7 @@ var nurdz;
                     case game.KeyCodes.KEY_V:
                     case game.KeyCodes.KEY_C:
                         if (this._maze.debugTracking) {
-                            this._maze.debugVanishBricks(eventObj.keyCode == game.KeyCodes.KEY_V);
+                            this._maze.debugger.debugVanishBricks(eventObj.keyCode == game.KeyCodes.KEY_V);
                             return true;
                         }
                         break;
@@ -3178,7 +3283,7 @@ var nurdz;
                     // no new maze is generated first.
                     case game.KeyCodes.KEY_W:
                         if (this._maze.debugTracking) {
-                            this._maze.debugWipeMaze();
+                            this._maze.debugger.debugWipeMaze();
                             return true;
                         }
                         break;

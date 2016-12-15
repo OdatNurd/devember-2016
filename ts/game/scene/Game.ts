@@ -90,7 +90,7 @@ module nurdz.game
                 case 46:
                     if (this._maze.debugTracking)
                     {
-                        this._maze.debugClearCell ();
+                        this._maze.debugger.debugClearCell ();
                         return true;
                     }
                     break;
@@ -100,7 +100,7 @@ module nurdz.game
                 case KeyCodes.KEY_T:
                     if (this._maze.debugTracking)
                     {
-                        this._maze.debugToggleCell ();
+                        this._maze.debugger.debugToggleCell ();
                         return true;
                     }
                     break;
@@ -111,7 +111,7 @@ module nurdz.game
                 case KeyCodes.KEY_B:
                     if (this._maze.debugTracking)
                     {
-                        this._maze.debugAddBrick ();
+                        this._maze.debugger.debugAddBrick ();
                         return true;
                     }
                     break;
@@ -123,7 +123,7 @@ module nurdz.game
                 case KeyCodes.KEY_A:
                     if (this._maze.debugTracking)
                     {
-                        this._maze.debugAddArrow ();
+                        this._maze.debugger.debugAddArrow ();
                         return true;
                     }
                     break;
@@ -134,7 +134,7 @@ module nurdz.game
                 case KeyCodes.KEY_H:
                     if (this._maze.debugTracking)
                     {
-                        this._maze.debugAddTeleport ();
+                        this._maze.debugger.debugAddTeleport ();
                         return true;
                     }
                     break;
@@ -145,7 +145,7 @@ module nurdz.game
                 case KeyCodes.KEY_L:
                     if (this._maze.debugTracking)
                     {
-                        this._maze.debugAddBall ();
+                        this._maze.debugger.debugAddBall ();
                         return true;
                     }
                     break;
@@ -156,7 +156,7 @@ module nurdz.game
                 case KeyCodes.KEY_C:
                     if (this._maze.debugTracking)
                     {
-                        this._maze.debugVanishBricks (eventObj.keyCode == KeyCodes.KEY_V);
+                        this._maze.debugger.debugVanishBricks (eventObj.keyCode == KeyCodes.KEY_V);
                         return true;
                     }
                     break;
@@ -166,7 +166,7 @@ module nurdz.game
                 case KeyCodes.KEY_W:
                     if (this._maze.debugTracking)
                     {
-                        this._maze.debugWipeMaze ();
+                        this._maze.debugger.debugWipeMaze ();
                         return true;
                     }
                     break;
