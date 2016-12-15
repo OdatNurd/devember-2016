@@ -47,7 +47,8 @@ module nurdz.game
          *
          * This is an array which can have any number of elements, including 0.
          *
-         * @returns {Array<Point>} [description]
+         * @returns {Array<Point>} the list of destinations stored in this
+         * instance.
          */
         get destinationList () : Array<Point>
         { return this._destinations; }
@@ -58,7 +59,8 @@ module nurdz.game
          * This can be any number >= 0; when it is larger than 1, a destination
          * is randomly selected
          *
-         * @returns {number} [description]
+         * @returns {number} the number of destinations in the destination list
+         * of this instance.
          */
         get length () : number
         { return this._destinations.length; }
