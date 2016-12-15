@@ -1,51 +1,6 @@
 module nurdz.game
 {
     /**
-     * The total number of teleport entities that get generated randomly into
-     * the maze.
-     */
-    const TOTAL_TELEPORTERS = 5;
-
-    /**
-     * The minimum distance allowed between teleport entities and all other
-     * entities. This makes sure they don't get generated too close together.
-     *
-     * Be careful not to set this too high or the generation may deadlock due to
-     * there being no suitable locations.
-     */
-    const TELEPORT_MIN_DISTANCE = 2;
-
-    /**
-     * The minimum and maximum number of arrows that are generated per row in
-     * the maze.
-     */
-    const ARROWS_PER_ROW = [3, 8];
-
-    /**
-     * The chance (percentage) that a row will contain any gray bricks at all.
-     */
-    const GRAY_BRICK_CHANCE = 50;
-
-    /**
-     * The minimum and maximum number of gray bricks that are generated per row.
-     * This is only used after GRAY_BRICK_CHANCE has been used to determine if
-     * there will be any bricks at all.
-     */
-    const GRAY_BRICKS_PER_ROW = [1, 3];
-
-    /**
-     * The chance (percentage) that a row will contain any bonus bricks.
-     */
-    const BONUS_BRICK_CHANCE = 40;
-
-    /**
-     * The minimum and maximum number of gray bricks that are generated per row.
-     * This is only used after BONUS_BRICK_CHANCE has been used to determine if
-     * there will be any bricks at all.
-     */
-    const BONUS_BRICKS_PER_ROW = [1, 2];
-
-    /**
      * The number of ticks between steps in a normal (interactive) ball drop,
      */
     const NORMAL_DROP_SPEED = 3;
@@ -63,9 +18,14 @@ module nurdz.game
     export class Maze extends Entity
     {
         /**
-         * The object that we used to store our maze contents.
+         * The object that we use to store our maze contents.
          */
         private _contents : MazeContents;
+
+        /**
+         * The object that we use to generate our random mazes.
+         */
+        private _generator : MazeGenerator;
 
         /**
          * The size (in pixels) of the cells that make up the maze grid.
@@ -237,6 +197,15 @@ module nurdz.game
         { return this._cellSize; }
 
         /**
+         * Get the object that stores the actual contents of this maze. Using
+         * this object the state of the maze can be queried or updated.
+         *
+         * @returns {MazeContents} the object that holds our contents.
+         */
+        get contents () : MazeContents
+        { return this._contents; }
+
+        /**
          * Construct a new empty maze entity.
          *
          * @param {Stage} stage the stage that we use to render ourselves
@@ -254,20 +223,24 @@ module nurdz.game
             // our dimensions.
             new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
 
-            // Create our maze contents.
+            // Create our singleton maze entities; these are entities for which
+            // we only ever have a single instance that's used everywhere.
+            this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
+            this._solid = new Brick (stage, BrickType.BRICK_SOLID);
+            this._blackHole = new Teleport (stage);
+
+            // Create our maze contents and generator; order is important here,
+            // the generator needs to get the contents from us to initialize.
             this._contents = new MazeContents ();
+            this._generator = new MazeGenerator (this);
+            this._generator.wall = this._solid;
+            this._generator.teleporter = this._blackHole;
 
             // Create our entity pools.
             this._arrows = new ActorPool<Arrow> ();
             this._grayBricks = new ActorPool<Brick> ();
             this._bonusBricks = new ActorPool<Brick> ();
             this._balls = new ActorPool<Ball> ();
-
-            // Create our maze entities; the marker entity is deferred until
-            // we know the dimensions of the sprites in the sprite sheet.
-            this._empty = new Brick (stage, BrickType.BRICK_BACKGROUND);
-            this._solid = new Brick (stage, BrickType.BRICK_SOLID);
-            this._blackHole = new Teleport (stage);
 
             // There is no ball dropping by default; also set up default values
             // for the drop time and speed (drop time is not consulted unless
@@ -283,19 +256,15 @@ module nurdz.game
             this._droppingFinalBall = false;
 
             // Pre-populate all of our actor pools with the maximum possible
-            // number of actors that we could need. For the case of the gray
-            // bricks and bonus bricks, this creates more than we technically
-            // need (since not all rows get those added).
+            // number of actors that we could need.
             //
-            // This is sort of wasteful, but it gets around an engine problem
-            // whereby creating an entity at runtime that loads an image will
-            // trigger an exception because it's trying to add a preload when
-            // it does not need to.
-            for (let i = 0 ; i < (MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1] ; i++)
+            // This is here to get around a ts-game-engine bug that stops creation
+            // of entities that load images after the preload is finished.
+            for (let i = 0 ; i < this._generator.maxArrows ; i++)
                 this._arrows.addEntity (new Arrow (stage), false);
-            for (let i = 0 ; i < (MAZE_HEIGHT - 4) * GRAY_BRICKS_PER_ROW[1] ; i++)
+            for (let i = 0 ; i < this._generator.maxGrayBricks ; i++)
                 this._grayBricks.addEntity (new Brick (stage, BrickType.BRICK_GRAY), false);
-            for (let i = 0 ; i < (MAZE_HEIGHT - 4) * BONUS_BRICKS_PER_ROW[1] ; i++)
+            for (let i = 0 ; i < this._generator.maxBonusBricks ; i++)
                 this._bonusBricks.addEntity (new Brick (stage, BrickType.BRICK_BONUS), false);
 
             // Fill the actor pool for balls with a complete set of balls; this
@@ -353,12 +322,11 @@ module nurdz.game
             this._contents.cellSize = this._cellSize;
             this._contents.position = this._position;
 
-            // Generate a new maze; we require a reset here since the side walls
-            // have not been placed yet.
+            // Generate a maze now.
             //
             // This has to be here because we can't generate the maze without
             // knowing the size of the cells.
-            this.generateMaze (true);
+            this.generateMaze ();
         }
 
         /**
@@ -484,8 +452,10 @@ module nurdz.game
          */
         debugWipeMaze ()
         {
-            // As simple as a reset.
-            this.reset ();
+            // Reset all entities, then generate walls into the maze to clear it
+            // back to a known state.
+            this.resetMazeEntities ();
+            this._generator.emptyMaze ();
         }
 
         /**
@@ -1253,355 +1223,17 @@ module nurdz.game
         }
 
         /**
-         * Prepare for maze generation by resetting the contents of the maze to
-         * be empty.
+         * Reset all of the maze entities.
          *
-         * The entire contents of the maze is set to be the empty background
-         * brick, followed by wrapping the edges in the bounding bricks that
-         * stop the ball from falling out of the maze.
+         * This will kill all of the living entities, clear all markers, and get
+         * all entities used in the maze back into their clean starting state
+         * for a new maze generation sequence.
+         *
+         * This does not modify the contents of the maze, so things are likely
+         * to break if you don't clear it yourself or generate a maze right
+         * away.
          */
-        private emptyMaze () : void
-        {
-            // Clear all cells.
-            this._contents.clearCells ();
-
-            // Now the left and right sides need to be solid bricks.
-            for (let y = 0 ; y < MAZE_HEIGHT ; y++)
-            {
-                this._contents.setCellAt (0, y, this._solid);
-                this._contents.setCellAt (MAZE_WIDTH - 1, y, this._solid);
-            }
-
-            // Lastly, the bottom row needs to be made solid, except for the
-            // first and last columns, which have already been filled out.
-            for (let x = 1 ; x < MAZE_WIDTH - 1 ; x++)
-                this._contents.setCellAt (x, MAZE_HEIGHT - 1, this._solid);
-        }
-
-        /**
-         * Scan the maze over the range of values given and check to see if any
-         * entities exist in this area or not. This is not specific to any
-         * particular entity.
-         *
-         * @param   {number}  x1 the x location of the first cell to check
-         * @param   {number}  y1 the y location of the first cell to check
-         * @param   {number}  x2 the x location of the second cell to check
-         * @param   {number}  y2 the y location of the second cell to check
-         *
-         * @returns {boolean}    true if any of the cells in the rectangular
-         * range between the two given points contains an entity.
-         */
-        private entityInRange (x1 : number, y1 : number, x2 : number, y2 : number) : boolean
-        {
-            // Scan the entire range; this is really inefficient but it gets
-            // the job done.
-            //
-            // Note that getCellAt () returns null for an invalid location, so
-            // this handles locations that end up off of the edge OK.
-            for (let x = x1 ; x <= x2 ; x++)
-            {
-                for (let y = y1 ; y <= y2 ; y++)
-                {
-                    if (this._contents.getCellAt (x, y) != null)
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        /**
-         * Randomly select a column in the maze for the purposes of generating
-         * maze contents.
-         *
-         * This ensures that the value selected is valid for a position inside
-         * of the maze; this means that it makes sure that the value is never
-         * one of the edge columns which bound the sides of the maze.
-         *
-         * @returns {number} the randomly selected column in the maze
-         */
-        private genRandomMazeColumn () : number
-        {
-            // Generate, ensuring that we never pick an edge.
-            return Utils.randomIntInRange (1, MAZE_WIDTH -1);
-        }
-
-        /**
-         * Randomly select a row in the maze for the purposes of generating maze
-         * contents.
-         *
-         * This ensures that the value selected is valid for a position inside
-         * of the maze. In particular we need a row at the top for the balls to
-         * start in and the balls to end up in, plus a row at the top to allow
-         * for at least a potential drop of one ball and a row at the bottom for
-         * the outer boundary.
-         *
-         * @returns {number} [the randomly selected row in the maze
-         */
-        private genRandomMazeRow () : number
-        {
-            // Generate, ensuring that we skip two rows for the initial ball
-            // placements and at least a single row of movement, and two rows on
-            // the bottom to make room for the lower boundary and the goal line.
-            return Utils.randomIntInRange (2, MAZE_HEIGHT - 2);
-        }
-
-        /**
-         * Generate black holes into the maze. We generate a specific number of
-         * them at random locations in the grid.
-         *
-         * This should be done first because unlike other elements in the maze,
-         * these can be anywhere instead of only a set number of them being
-         * allowed per row.
-         *
-         * MOTE:
-         *    The current generation scheme for this is that locations are
-         *    randomly selected, but if any entity is within two tiles of the
-         *    chosen tile (including the chosen tile itself), that location is
-         *    rejected.
-         *
-         */
-        private genBlackHoles () : void
-        {
-            for (let i = 0 ; i < TOTAL_TELEPORTERS ; i++)
-            {
-                // Get a location.
-                let x = this.genRandomMazeColumn ();
-                let y = this.genRandomMazeRow ();
-
-                // If there are no entities within the proper distance of this
-                // selected square (which includes the square itself), then this
-                // is a good place to put the teleport; otherwise, try again.
-                if (this.entityInRange (x - TELEPORT_MIN_DISTANCE,
-                                        y - TELEPORT_MIN_DISTANCE,
-                                        x + TELEPORT_MIN_DISTANCE,
-                                        y + TELEPORT_MIN_DISTANCE) == false)
-                {
-                    // Store it, then add this location to the list of possible
-                    // destinations in this black hole.
-                    this._contents.setCellAt (x, y, this._blackHole);
-                    this._blackHole.addDestination (new Point (x, y));
-                }
-                else
-                    i--;
-            }
-        }
-
-        /**
-         * Generate arrow entities into the maze. We generate a random number of
-         * arrows per row in the maze, where the number of items is constrained
-         * to a range of possible arrows per row.
-         *
-         * NOTE:
-         *    The current generation scheme for this is that we scan row by
-         *    row inserting a given number of arrows per row, where the number
-         *    is randomly generated. Currently the arrows are 75% normal and
-         *    25% automatic, and their facing is randomly selected.
-         */
-        private genArrows () : void
-        {
-            // Iterate over all of the rows that can possibly contain arrows. We
-            // start two rows down to make room for the initial ball locations
-            // and the empty balls, and we stop 2 rows short to account for the
-            // border of the maze and the goal row.
-            for (let row = 2 ; row < MAZE_HEIGHT - 2 ; row++)
-            {
-                // First, we need to determine how many arrows we will generate
-                // for this row.
-                let arrowCount = Utils.randomIntInRange (ARROWS_PER_ROW[0], ARROWS_PER_ROW[1]);
-
-                // Now keep generating arrows into this row until we have
-                // generated enough.
-                while (arrowCount > 0)
-                {
-                    // Generate a column randomly. If this location is already
-                    // filled, or the tile above it is a black hole,  try again.
-                    let column = this.genRandomMazeColumn ();
-                    let cell = this._contents.getCellAt (column, row);
-                    if (this._contents.getCellAt (column, row) != null ||
-                        (this._contents.cellNameAt (column, row - 1) == "blackHole"))
-                        continue;
-
-                    // This cell contains an arrow; resurrect one from the object
-                    // pool.
-                    let arrow = this.getArrow ();
-                    if (arrow == null)
-                    {
-                        console.log ("Ran out of arrows generating maze");
-                        return;
-                    }
-
-                    // Now randomly set the direction to be left or right as
-                    // appropriate.
-                    if (Utils.randomIntInRange (0, 100) > 50)
-                        arrow.arrowDirection = ArrowDirection.ARROW_LEFT;
-                    else
-                        arrow.arrowDirection = ArrowDirection.ARROW_RIGHT;
-
-                    // Randomly select the arrow type.
-                    if (Utils.randomIntInRange (0, 100) > 25)
-                        arrow.arrowType = ArrowType.ARROW_NORMAL;
-                    else
-                        arrow.arrowType = ArrowType.ARROW_AUTOMATIC;
-
-                    // Add it to the maze and count it as placed.
-                    this._contents.setCellAt (column, row, arrow);
-                    arrowCount--;
-                }
-            }
-        }
-
-        /**
-         * Generate gray brick entities into the maze. We generate a random
-         * number of bricks per row in the maze, where the number of items is
-         * constrained to a range of possible bricks per row. This works the way
-         * the arrow generation does, except that there is a chance that a row
-         * will contain no bricks at all.
-         *
-         * NOTE: The current generation scheme for this is that we scan row by
-         * row inserting a given number of bricks per row, where the number is
-         * randomly generated and might be 0.
-         */
-        private genGrayBricks () : void
-        {
-            // Iterate over all of the rows that can possibly contain bricks. We
-            // start two rows down to make room for the initial ball locations
-            // and the empty balls, and we stop 2 rows short to account for the
-            // border of the maze and the goal row.
-            for (let row = 2 ; row < MAZE_HEIGHT - 2 ; row++)
-            {
-                // See if we should bother generating any bricks in this row
-                // at all.
-                if (Utils.randomIntInRange (0, 100) > GRAY_BRICK_CHANCE)
-                    continue;
-
-                // First, we need to determine how many bricks we will generate
-                // for this row.
-                let brickCount = Utils.randomIntInRange (GRAY_BRICKS_PER_ROW[0], GRAY_BRICKS_PER_ROW[1]);
-
-                // Now keep generating bricks into this row until we have
-                // generated enough.
-                while (brickCount > 0)
-                {
-                    // Generate a column randomly. If this location is already
-                    // filled or the square above is an arrow, try again.
-                    let column = this.genRandomMazeColumn ();
-                    if (this._contents.getCellAt (column, row) != null ||
-                        (this._contents.cellNameAt (column, row - 1) == "arrow"))
-                        continue;
-
-                    // This cell contains brick; resurrect one from the object
-                    // pool.
-                    let brick = this.getGrayBrick ();
-                    if (brick == null)
-                    {
-                        console.log ("Ran out of gray bricks generating maze");
-                        return;
-                    }
-
-                    // Add it to the maze, mark it to appear, and count it as
-                    // placed.
-                    this._contents.setCellAt (column, row, brick);
-                    brick.appear ();
-                    brickCount--;
-                }
-            }
-        }
-
-        /**
-         * Generate bonus brick entities into the maze. We generate a random
-         * number of bricks per row in the maze, where the number of items is
-         * constrained to a range of possible bricks per row. This works the way
-         * the gray brick generation does.
-         *
-         * NOTE: The current generation scheme for this is that we scan row by
-         * row inserting a given number of bricks per row, where the number is
-         * randomly generated and might be 0.
-         */
-        private genBonusBricks () : void
-        {
-            // Iterate over all of the rows that can possibly contain bricks. We
-            // start two rows down to make room for the initial ball locations
-            // and the empty balls, and we stop 2 rows short to account for the
-            // border of the maze and the goal row.
-            for (let row = 2 ; row < MAZE_HEIGHT - 2 ; row++)
-            {
-                // See if we should bother generating any bricks in this row
-                // at all.
-                if (Utils.randomIntInRange (0, 100) > BONUS_BRICK_CHANCE)
-                    continue;
-
-                // First, we need to determine how many bricks we will generate
-                // for this row.
-                let brickCount = Utils.randomIntInRange (BONUS_BRICKS_PER_ROW[0], BONUS_BRICKS_PER_ROW[1]);
-
-                // Now keep generating bricks into this row until we have
-                // generated enough.
-                while (brickCount > 0)
-                {
-                    // Generate a column randomly. If this location is already
-                    // filled or the square above is an arrow, try again.
-                    let column = this.genRandomMazeColumn ();
-                    if (this._contents.getCellAt (column, row) != null ||
-                        (this._contents.cellNameAt (column, row - 1) == "arrow"))
-                        continue;
-
-                    // This cell contains brick; resurrect one from the object
-                    // pool.
-                    let brick = this.getBonusBrick ();
-                    if (brick == null)
-                    {
-                        console.log ("Ran out of bonus bricks generating maze");
-                        return;
-                    }
-
-                    // Add it to the maze, mark it to appear, and count it as
-                    // placed.
-                    this._contents.setCellAt (column, row, brick);
-                    brick.appear ();
-                    brickCount--;
-                }
-            }
-        }
-
-        /**
-         * Place the balls into the maze.
-         *
-         * Currently this fill up the top row with balls for the player only,
-         * but it should also store balls for the computer into another data
-         * structure.
-         */
-        private placeBalls () : void
-        {
-            // There should be two sets of balls that we cycle between, but for
-            // now we just put a set of player balls into the top row of the
-            // maze.
-            for (let col = 1 ; col < MAZE_WIDTH - 1 ; col++)
-            {
-                // Get a ball; this pool always has enough entities for us
-                // because the number is fixed.
-                let ball = this.getBall ();
-
-                // Set the score and type.
-                ball.score = 0;
-                ball.ballType = BallType.BALL_PLAYER;
-
-                // Have the ball appear onto the screen (instead of just being
-                // there)
-                ball.appear ();
-
-                // Set the ball in now.
-                this._contents.setCellAt (col, 0, ball);
-            }
-        }
-
-        /**
-         * Reset the maze.
-         *
-         * This will erase the entire contents of the maze and all of the markers
-         * that might be in it, leaving only the side walls.
-         */
-        reset () : void
+        private resetMazeEntities () : void
         {
             // Make sure that all of the entity pools are emptied out by killing
             // everything in them.
@@ -1614,29 +1246,16 @@ module nurdz.game
             // Make sure that our black hole entity doesn't know about any
             // destinations from a prior maze (if any).
             this._blackHole.clearDestinations ();
-
-            // Prepare the maze; this empties out the current contents (if any)
-            // and gives us a plain empty maze that is surrounded with the
-            // bounding bricks that we need.
-            this.emptyMaze ();
         }
 
         /**
          * Generate a new maze; this sets everything up for a new round of the
          * game.
-         *
-         * If doReset is true, reset () is invoked before the maze is generated.
-         * You can skip this if you want to pre-populate some parts of the maze
-         * before you generate the rest randomly.
-         *
-         * @param {boolean} doReset true to reset the maze contents first, false
-         * to generate as-is.
          */
-        generateMaze (doReset : boolean) : void
+        generateMaze () : void
         {
-            // If asked, reset the maze too
-            if (doReset)
-                this.reset ();
+            // Kill all living entities to get everything into a clean state.
+            this.resetMazeEntities ();
 
             // No ball has finished moving and no gray bricks have been removed.
             this._ballMoveFinalized = false;
@@ -1644,13 +1263,7 @@ module nurdz.game
             this._droppingFinalBall = false;
 
             // Now generate the contents of the maze.
-            this.genBlackHoles ();
-            this.genArrows ();
-            this.genGrayBricks ();
-            this.genBonusBricks ();
-
-            // Now we can place the balls in.
-            this.placeBalls ();
+            this._generator.generate ();
         }
     }
 }
