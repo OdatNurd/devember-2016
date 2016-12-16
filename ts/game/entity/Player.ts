@@ -56,6 +56,13 @@ module nurdz.game
         private _playerDirection : PlayerDirection;
 
         /**
+         * This point is the reference for the location that would put us
+         * visually into the maze at position (0, -1), the position right above
+         * the top left corner.
+         */
+        private _referencePoint : Point;
+
+        /**
          * Get the type of the current player; this controls what the player
          * looks like.
          *
@@ -72,6 +79,31 @@ module nurdz.game
          */
         get playerDirection () : PlayerDirection
         { return this._playerDirection; }
+
+        /**
+         * Get the reference position that sets us as far left as we can be and
+         * still be in bounds of the maze. This is used to calculate our
+         * position when it changes.
+         *
+         * @returns {Point} the current reference position.
+         */
+        get referencePoint () : Point
+        { return this._referencePoint; }
+
+        /**
+         * Change the reference position that sets us as far left as we can be
+         * and still be in bounds of the maze.
+         *
+         * When this is set to a new value, our position is automatically
+         * recalculated based on this point and our current mapPosition.
+         *
+         * @param {Point} newPoint the new reference point
+         */
+        set referencePoint (newPoint : Point)
+        {
+            this._referencePoint.setTo (newPoint);
+            this.updateScreenPosition ();
+        }
 
         /**
          * Construct a new maze cell that will render on the stage provided and
@@ -95,6 +127,9 @@ module nurdz.game
             // the entity is based on the size of the sprites, so we let the
             // callback handle that.
             this._sheet = new SpriteSheet (stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
+
+            // The default reference point is the upper left corner of the screen.
+            this._referencePoint = new Point (0, 0);
 
             // Set up animations. There are multiple idle and rotate animations,
             // and a set for the player and human.
@@ -138,6 +173,20 @@ module nurdz.game
         private setDimensions = (sheet : SpriteSheet) : void =>
         {
             this.makeRectangle (sheet.width, sheet.height);
+        }
+
+        /**
+         * Update our screen position based on our currently set reference point
+         * and our map position.
+         *
+         * Only the X value of the map position is used to calculate, since we
+         * never actually enter the maze.
+         */
+        private updateScreenPosition () : void
+        {
+            this._position.setToXY (this._referencePoint.x +
+                                         (this.mapPosition.x * this._width),
+                                    this._referencePoint.y);
         }
 
         /**

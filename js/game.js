@@ -1366,6 +1366,8 @@ var nurdz;
                 // the entity is based on the size of the sprites, so we let the
                 // callback handle that.
                 this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
+                // The default reference point is the upper left corner of the screen.
+                this._referencePoint = new game.Point(0, 0);
                 // Set up animations. There are multiple idle and rotate animations,
                 // and a set for the player and human.
                 //
@@ -1412,6 +1414,42 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Player.prototype, "referencePoint", {
+                /**
+                 * Get the reference position that sets us as far left as we can be and
+                 * still be in bounds of the maze. This is used to calculate our
+                 * position when it changes.
+                 *
+                 * @returns {Point} the current reference position.
+                 */
+                get: function () { return this._referencePoint; },
+                /**
+                 * Change the reference position that sets us as far left as we can be
+                 * and still be in bounds of the maze.
+                 *
+                 * When this is set to a new value, our position is automatically
+                 * recalculated based on this point and our current mapPosition.
+                 *
+                 * @param {Point} newPoint the new reference point
+                 */
+                set: function (newPoint) {
+                    this._referencePoint.setTo(newPoint);
+                    this.updateScreenPosition();
+                },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Update our screen position based on our currently set reference point
+             * and our map position.
+             *
+             * Only the X value of the map position is used to calculate, since we
+             * never actually enter the maze.
+             */
+            Player.prototype.updateScreenPosition = function () {
+                this._position.setToXY(this._referencePoint.x +
+                    (this.mapPosition.x * this._width), this._referencePoint.y);
+            };
             /**
              * Get an indication as to whether the player is capable of pushing at
              * the moment.
