@@ -1519,6 +1519,22 @@ var nurdz;
                 this.playAnimation(animation);
                 this._playerDirection = newDirection;
             };
+            /**
+             * This will shift the map position of this player to the left one
+             * position and then update the position on the screen.
+             */
+            Player.prototype.moveLeft = function () {
+                this._mapPosition.translateXY(-1, 0);
+                this.updateScreenPosition();
+            };
+            /**
+             * This will shift the map position of this player to the right one position
+             * and then update the position on the screen.
+             */
+            Player.prototype.moveRight = function () {
+                this._mapPosition.translateXY(1, 0);
+                this.updateScreenPosition();
+            };
             return Player;
         }(game.Entity));
         game.Player = Player;
@@ -3513,13 +3529,23 @@ var nurdz;
                         if (this._debugger.debugTracking)
                             this._maze.setDebugPoint(this._mouse);
                         return true;
-                    // Rotate the player to face left.
+                    // Rotate the player to face left or walk left.
                     case game.KeyCodes.KEY_LEFT:
-                        this._player.turnTo(game.PlayerDirection.DIRECTION_LEFT);
+                        // If the player is not facing left, rotate it that way;
+                        // otherwise, walk left.
+                        if (this._player.playerDirection != game.PlayerDirection.DIRECTION_LEFT)
+                            this._player.turnTo(game.PlayerDirection.DIRECTION_LEFT);
+                        else if (this._player.mapPosition.x > 1)
+                            this._player.moveLeft();
                         break;
-                    // Rotate the player to face right.
+                    // Rotate the player to face right or walk right.
                     case game.KeyCodes.KEY_RIGHT:
-                        this._player.turnTo(game.PlayerDirection.DIRECTION_RIGHT);
+                        // If the player is not facing right, rotate it that way;
+                        // otherwise, walk right.
+                        if (this._player.playerDirection != game.PlayerDirection.DIRECTION_RIGHT)
+                            this._player.turnTo(game.PlayerDirection.DIRECTION_RIGHT);
+                        else if (this._player.mapPosition.x < game.MAZE_WIDTH - 2)
+                            this._player.moveRight();
                         break;
                     // Rotate the player to face down.
                     case game.KeyCodes.KEY_DOWN:

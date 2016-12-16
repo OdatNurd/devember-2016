@@ -274,5 +274,25 @@ module nurdz.game
             this.playAnimation (animation);
             this._playerDirection = newDirection;
         }
+
+        /**
+         * This will shift the map position of this player to the left one
+         * position and then update the position on the screen.
+         */
+        moveLeft () : void
+        {
+            this._mapPosition.translateXY (-1, 0);
+            this.updateScreenPosition ();
+        }
+
+        /**
+         * This will shift the map position of this player to the right one position
+         * and then update the position on the screen.
+         */
+        moveRight () : void
+        {
+            this._mapPosition.translateXY (1, 0);
+            this.updateScreenPosition ();
+        }
     }
 }
