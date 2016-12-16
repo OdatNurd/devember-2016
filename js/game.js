@@ -3458,11 +3458,29 @@ var nurdz;
                 this._player = new game.Player(stage);
                 this.addActor(this._maze);
                 this.addActor(this._player);
+                // The player starts at map position 1,0 so that it is above the
+                // first column in the maze.
+                this._player.mapPosition.setToXY(1, 0);
                 // Start out with a default mouse location.
                 this._mouse = new game.Point(0, 0);
                 // Stash the debugger.
                 this._debugger = this._maze.debugger;
             }
+            /**
+             * This is invoked when we are becoming the current scene.
+             *
+             * We use this to know that our preload is finished and do any handling
+             * that needs to be done in that instance.
+             *
+             * @param {Scene} previousScene the scene that was active before us
+             */
+            GameScene.prototype.activating = function (previousScene) {
+                // Let the super work its magic.
+                _super.prototype.activating.call(this, previousScene);
+                // Set the reference position of the player to that of the maze,
+                // shifted up a bit to put the player above the maze.
+                this._player.referencePoint = this._maze.position.copyTranslatedXY(0, -this._maze.cellSize);
+            };
             /**
              * Invoked every time a key is pressed on the game screen
              *

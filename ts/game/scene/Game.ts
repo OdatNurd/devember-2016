@@ -50,11 +50,33 @@ module nurdz.game
             this.addActor (this._maze);
             this.addActor (this._player);
 
+            // The player starts at map position 1,0 so that it is above the
+            // first column in the maze.
+            this._player.mapPosition.setToXY (1, 0);
+
             // Start out with a default mouse location.
             this._mouse = new Point (0, 0);
 
             // Stash the debugger.
             this._debugger = this._maze.debugger;
+        }
+
+        /**
+         * This is invoked when we are becoming the current scene.
+         *
+         * We use this to know that our preload is finished and do any handling
+         * that needs to be done in that instance.
+         *
+         * @param {Scene} previousScene the scene that was active before us
+         */
+        activating (previousScene : Scene) : void
+        {
+            // Let the super work its magic.
+            super.activating (previousScene);
+
+            // Set the reference position of the player to that of the maze,
+            // shifted up a bit to put the player above the maze.
+            this._player.referencePoint = this._maze.position.copyTranslatedXY (0, -this._maze.cellSize);
         }
 
         /**
