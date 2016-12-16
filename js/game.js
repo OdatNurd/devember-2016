@@ -3414,10 +3414,12 @@ var nurdz;
             function GameScene(stage) {
                 // Create the scene via our super class.
                 _super.call(this, "gameScreen", stage);
-                // Create a maze and add it to the scene so we can see how it
-                // renders itself.
+                // Create the maze and player objects and add them to the scene so
+                // they can render themselves.
                 this._maze = new game.Maze(stage);
+                this._player = new game.Player(stage);
                 this.addActor(this._maze);
+                this.addActor(this._player);
                 // Start out with a default mouse location.
                 this._mouse = new game.Point(0, 0);
                 // Stash the debugger.
@@ -3450,11 +3452,27 @@ var nurdz;
                         return true;
                     // Toggle mouse tracking of the debug location, then update the
                     // tracking with the last known mouse location.
-                    case game.KeyCodes.KEY_SPACEBAR:
+                    case game.KeyCodes.KEY_F12:
                         this._debugger.debugTracking = !this._debugger.debugTracking;
                         if (this._debugger.debugTracking)
                             this._maze.setDebugPoint(this._mouse);
                         return true;
+                    // Rotate the player to face left.
+                    case game.KeyCodes.KEY_LEFT:
+                        this._player.turnTo(game.PlayerDirection.DIRECTION_LEFT);
+                        break;
+                    // Rotate the player to face right.
+                    case game.KeyCodes.KEY_RIGHT:
+                        this._player.turnTo(game.PlayerDirection.DIRECTION_RIGHT);
+                        break;
+                    // Rotate the player to face down.
+                    case game.KeyCodes.KEY_DOWN:
+                        this._player.turnTo(game.PlayerDirection.DIRECTION_DOWN);
+                        break;
+                    // Run the push animation in the current facing direction.
+                    case game.KeyCodes.KEY_SPACEBAR:
+                        this._player.push();
+                        break;
                     // Delete the contents of the current cell, if anything is
                     // there.
                     //

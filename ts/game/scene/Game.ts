@@ -12,6 +12,11 @@ module nurdz.game
         private _maze : Maze;
 
         /**
+         * The entity that represents the human player.
+         */
+        private _player : Player;
+
+        /**
          * The debugger for our maze. We store a reference to make access easier.
          */
         private _debugger : MazeDebugger;
@@ -38,10 +43,12 @@ module nurdz.game
             // Create the scene via our super class.
             super ("gameScreen", stage);
 
-            // Create a maze and add it to the scene so we can see how it
-            // renders itself.
+            // Create the maze and player objects and add them to the scene so
+            // they can render themselves.
             this._maze = new Maze (stage);
+            this._player = new Player (stage);
             this.addActor (this._maze);
+            this.addActor (this._player);
 
             // Start out with a default mouse location.
             this._mouse = new Point (0, 0);
@@ -82,11 +89,32 @@ module nurdz.game
 
                 // Toggle mouse tracking of the debug location, then update the
                 // tracking with the last known mouse location.
-                case KeyCodes.KEY_SPACEBAR:
+                case KeyCodes.KEY_F12:
                     this._debugger.debugTracking = !this._debugger.debugTracking;
                     if (this._debugger.debugTracking)
                         this._maze.setDebugPoint (this._mouse);
                     return true;
+
+                // Rotate the player to face left.
+                case KeyCodes.KEY_LEFT:
+                    this._player.turnTo (PlayerDirection.DIRECTION_LEFT);
+                    break;
+
+                // Rotate the player to face right.
+                case KeyCodes.KEY_RIGHT:
+                    this._player.turnTo (PlayerDirection.DIRECTION_RIGHT);
+                    break;
+
+                // Rotate the player to face down.
+                case KeyCodes.KEY_DOWN:
+                    this._player.turnTo (PlayerDirection.DIRECTION_DOWN);
+                    break;
+
+                // Run the push animation in the current facing direction.
+                case KeyCodes.KEY_SPACEBAR:
+                    this._player.push ();
+                    break;
+
 
                 // Delete the contents of the current cell, if anything is
                 // there.
