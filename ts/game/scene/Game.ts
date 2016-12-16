@@ -145,6 +145,11 @@ module nurdz.game
                 // Run the push animation in the current facing direction.
                 case KeyCodes.KEY_SPACEBAR:
                     this._player.push ();
+
+                    // If the player is facing down, then try to actually push
+                    // the ball.
+                    if (this._player.playerDirection == PlayerDirection.DIRECTION_DOWN)
+                        this._maze.pushBall (this._player.mapPosition.x);
                     break;
 
 

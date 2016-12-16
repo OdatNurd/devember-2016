@@ -367,6 +367,35 @@ module nurdz.game
         }
 
         /**
+         * Attempt to push the ball that exists in the top row of the given
+         * column in the maze, if possible.
+         *
+         * The ball can only be pushed if the cell in the maze at that position
+         * is not empty, is a ball, and there is not already a ball dropping.
+         *
+         * The return value tells you if the drop started or not.
+         *
+         * @param   {number}  column the column in the maze to push the ball in
+         *
+         * @returns {boolean}        true if the push worked and ball is
+         * starting to drop, or false otherwise
+         */
+        pushBall (column : number) : boolean
+        {
+            // Try to get the entity in the first row of the given column. If
+            // it exists and it is a ball, push it.
+            let entity = this._contents.getCellAt (column, 0);
+            if (entity != null && entity.name == "ball" && this._droppingBall == null)
+            {
+                // Drop it and leave.
+                this.dropBall (<Ball> entity, NORMAL_DROP_SPEED);
+                return true;
+            }
+
+            return false;
+        }
+
+        /**
          * DEBUG METHOD
          *
          * This takes a point that is representative of a mouse click inside of
