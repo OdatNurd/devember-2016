@@ -534,8 +534,8 @@ module nurdz.game
          * true is returned, the passed in point is modified to show where the
          * new location is.
          */
-        private nextBallPosition (ball : Ball, position : Point,
-                                  isSimulation : boolean) : boolean
+        nextBallPosition (ball : Ball, position : Point,
+                          isSimulation : boolean) : boolean
         {
             // If this position is in the second to last row of the maze, it has
             // reached the goal line, so movement stops.
@@ -989,6 +989,51 @@ module nurdz.game
 
             // Now generate the contents of the maze.
             this._generator.generate ();
+        }
+
+        /**
+         * Inform the maze that one or more simulations are about to commence.
+         * This will make sure to tell all entities for which it matters that
+         * they should save their state.
+         */
+        beginSimulation () : void
+        {
+            // Save state in balls.
+            for (let i = 0 ; i < this._balls.liveEntities.length ; i++)
+                this._balls.liveEntities[i].enteringSimulation ();
+
+            // Save state in bonus bricks
+            for (let i = 0 ; i < this._bonusBricks.liveEntities.length ; i++)
+                this._bonusBricks.liveEntities[i].enteringSimulation ();
+
+            // Save state in arrows
+            for (let i = 0 ; i < this._arrows.liveEntities.length ; i++)
+                this._arrows.liveEntities[i].enteringSimulation ();
+
+            // Nothing else needs to save state because it does not change per-
+            // move.
+        }
+
+        /**
+         * Inform the maze that a simulation cycle has now finished and everything
+         * should be restored to its pre-simulation state.
+         */
+        endSimulation () : void
+        {
+            // Restore state in balls.
+            for (let i = 0 ; i < this._balls.liveEntities.length ; i++)
+                this._balls.liveEntities[i].exitingSimulation ();
+
+            // Restore state in bonus bricks
+            for (let i = 0 ; i < this._bonusBricks.liveEntities.length ; i++)
+                this._bonusBricks.liveEntities[i].exitingSimulation ();
+
+            // Restore state in arrows
+            for (let i = 0 ; i < this._arrows.liveEntities.length ; i++)
+                this._arrows.liveEntities[i].exitingSimulation ();
+
+            // Nothing else needs to restore state because it does not change
+            // per- move.
         }
     }
 }

@@ -3596,6 +3596,41 @@ var nurdz;
                 // Now generate the contents of the maze.
                 this._generator.generate();
             };
+            /**
+             * Inform the maze that one or more simulations are about to commence.
+             * This will make sure to tell all entities for which it matters that
+             * they should save their state.
+             */
+            Maze.prototype.beginSimulation = function () {
+                // Save state in balls.
+                for (var i = 0; i < this._balls.liveEntities.length; i++)
+                    this._balls.liveEntities[i].enteringSimulation();
+                // Save state in bonus bricks
+                for (var i = 0; i < this._bonusBricks.liveEntities.length; i++)
+                    this._bonusBricks.liveEntities[i].enteringSimulation();
+                // Save state in arrows
+                for (var i = 0; i < this._arrows.liveEntities.length; i++)
+                    this._arrows.liveEntities[i].enteringSimulation();
+                // Nothing else needs to save state because it does not change per-
+                // move.
+            };
+            /**
+             * Inform the maze that a simulation cycle has now finished and everything
+             * should be restored to its pre-simulation state.
+             */
+            Maze.prototype.endSimulation = function () {
+                // Restore state in balls.
+                for (var i = 0; i < this._balls.liveEntities.length; i++)
+                    this._balls.liveEntities[i].exitingSimulation();
+                // Restore state in bonus bricks
+                for (var i = 0; i < this._bonusBricks.liveEntities.length; i++)
+                    this._bonusBricks.liveEntities[i].exitingSimulation();
+                // Restore state in arrows
+                for (var i = 0; i < this._arrows.liveEntities.length; i++)
+                    this._arrows.liveEntities[i].exitingSimulation();
+                // Nothing else needs to restore state because it does not change
+                // per- move.
+            };
             return Maze;
         }(game.Entity));
         game.Maze = Maze;
