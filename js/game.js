@@ -1900,6 +1900,9 @@ var nurdz;
                 this.ballType = typeOfBall;
                 // The ball does not start rolling
                 this.moveType = BallMoveType.BALL_MOVE_NONE;
+                // Create the point for our saved position during simulations.
+                this._savedPosition = new game.Point(0, 0);
+                this._savedScore = 0;
             }
             Object.defineProperty(Ball.prototype, "ballType", {
                 /**
@@ -2077,6 +2080,22 @@ var nurdz;
                     default:
                         return null;
                 }
+            };
+            /**
+             * Invoked when we are entering the simulation mode. This saves
+             * important state to be restored later.
+             */
+            Ball.prototype.enteringSimulation = function () {
+                // Save our mapPosition and score.
+                this._savedPosition.setTo(this._mapPosition);
+                this._savedScore = this._score;
+            };
+            /**
+             * Restore saved data that was saved when we entered the simulation.
+             */
+            Ball.prototype.exitingSimulation = function () {
+                this._mapPosition.setTo(this._savedPosition);
+                this._score = this._savedScore;
             };
             return Ball;
         }(game.MazeCell));

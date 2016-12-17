@@ -66,6 +66,19 @@ module nurdz.game
         private _hidden : boolean;
 
         /**
+         * The position of this ball in the maze at the time that we invoked the
+         * method to save the simulation state; this is the position that is
+         * restored when we leave the simulation.
+         */
+        private _savedPosition : Point;
+
+        /**
+         * The score value of this ball at the time that we invoked the method to
+         * save the simulation state.
+         */
+        private _savedScore : number;
+
+        /**
          * Get the type of ball that this is; this is used to set a visual
          * representation of the ball
          *
@@ -186,6 +199,10 @@ module nurdz.game
 
             // The ball does not start rolling
             this.moveType = BallMoveType.BALL_MOVE_NONE;
+
+            // Create the point for our saved position during simulations.
+            this._savedPosition = new Point (0, 0);
+            this._savedScore = 0;
         }
 
         /**
@@ -299,6 +316,26 @@ module nurdz.game
                 default:
                     return null;
             }
+        }
+
+        /**
+         * Invoked when we are entering the simulation mode. This saves
+         * important state to be restored later.
+         */
+        enteringSimulation () : void
+        {
+            // Save our mapPosition and score.
+            this._savedPosition.setTo (this._mapPosition);
+            this._savedScore = this._score;
+        }
+
+        /**
+         * Restore saved data that was saved when we entered the simulation.
+         */
+        exitingSimulation () : void
+        {
+            this._mapPosition.setTo (this._savedPosition);
+            this._score = this._savedScore;
         }
     }
 }
