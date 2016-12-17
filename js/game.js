@@ -2586,6 +2586,7 @@ var nurdz;
                 // Capture the type and direction of the arrow.
                 this._arrowType = arrowType;
                 this._arrowDirection = direction;
+                this._savedArrowDirection = direction;
                 // If this is an automatic arrow, set up the auto flip timer right
                 // away.
                 if (arrowType == ArrowType.ARROW_AUTOMATIC)
@@ -2733,7 +2734,7 @@ var nurdz;
                 if (this._arrowType == ArrowType.ARROW_AUTOMATIC) {
                     this._autoFlipTimer--;
                     if (this._autoFlipTimer == 0)
-                        this.flip();
+                        this.flip(false);
                 }
             };
             /**
@@ -2744,21 +2745,23 @@ var nurdz;
              * thinks that it is pointing, but it will also start the arrow
              * animating towards it's new facing, where it will stop.
              */
-            Arrow.prototype.flip = function () {
+            Arrow.prototype.flip = function (isSimulation) {
                 // Based on the direction that we're currently facing, swap the
                 // direction to the other way, and set our animation to rotate to
                 // the appropriate location.
                 switch (this._arrowDirection) {
                     case ArrowDirection.ARROW_LEFT:
-                        this.playAnimation(this._arrowType == ArrowType.ARROW_NORMAL
-                            ? "n_rotate_l_to_r"
-                            : "a_rotate_l_to_r");
+                        if (isSimulation == false)
+                            this.playAnimation(this._arrowType == ArrowType.ARROW_NORMAL
+                                ? "n_rotate_l_to_r"
+                                : "a_rotate_l_to_r");
                         this._arrowDirection = ArrowDirection.ARROW_RIGHT;
                         break;
                     case ArrowDirection.ARROW_RIGHT:
-                        this.playAnimation(this._arrowType == ArrowType.ARROW_NORMAL
-                            ? "n_rotate_r_to_l"
-                            : "a_rotate_r_to_l");
+                        if (isSimulation == false)
+                            this.playAnimation(this._arrowType == ArrowType.ARROW_NORMAL
+                                ? "n_rotate_r_to_l"
+                                : "a_rotate_r_to_l");
                         this._arrowDirection = ArrowDirection.ARROW_LEFT;
                         break;
                 }
@@ -2791,13 +2794,28 @@ var nurdz;
              *
              * @param {Ball} ball the ball that we moved
              */
-            Arrow.prototype.didMoveBall = function (ball) {
+            Arrow.prototype.didMoveBall = function (ball, isSimulation) {
                 // Mark the direction that we moved the ball.
                 ball.moveType = (this._arrowDirection == ArrowDirection.ARROW_LEFT)
                     ? game.BallMoveType.BALL_MOVE_LEFT
                     : game.BallMoveType.BALL_MOVE_RIGHT;
                 // Flip our orientation now.
-                this.flip();
+                this.flip(isSimulation);
+            };
+            /**
+             * Invoked when we are entering the simulation mode. This saves
+             * important state to be restored later.
+             */
+            Arrow.prototype.enteringSimulation = function () {
+                // Save our current direction.
+                this._savedArrowDirection = this._arrowDirection;
+            };
+            /**
+             * Restore saved data that was saved when we entered the simulation.
+             */
+            Arrow.prototype.exitingSimulation = function () {
+                // Restore oiur saved position.
+                this._arrowDirection = this._savedArrowDirection;
             };
             return Arrow;
         }(game.MazeCell));
@@ -3100,7 +3118,7 @@ var nurdz;
                 // automatic arrow will reset its random flip time in this case.
                 if (entity.name == "arrow") {
                     var arrow = entity;
-                    arrow.flip();
+                    arrow.flip(false);
                     return true;
                 }
                 // We care not for this click.

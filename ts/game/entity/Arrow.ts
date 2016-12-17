@@ -57,6 +57,21 @@ module nurdz.game
         private _arrowDirection : ArrowDirection;
 
         /**
+         * The direction we were pointing when we entered the simulation. This
+         * is used to restore back to the current position when simulation is
+         * over.
+         *
+         * The code makes sure to not visually flip the arrow when a move is
+         * being simulated.
+         *
+         * Additionally, the simulation code currently does not handle the
+         * relative time step for automatic arrow switches (i.e. it hopes that
+         * the arrow will still be pointing in the current direction when the
+         * ball gets there).
+         */
+        private _savedArrowDirection : ArrowDirection;
+
+        /**
          * For automatic bricks, this indicates how long it will be before the
          * arrow randomly flips directions. This gets set to a random value
          * every time the type of the arrow is set to be automatic (even if it
@@ -166,6 +181,7 @@ module nurdz.game
             // Capture the type and direction of the arrow.
             this._arrowType = arrowType;
             this._arrowDirection = direction;
+            this._savedArrowDirection = direction;
 
             // If this is an automatic arrow, set up the auto flip timer right
             // away.
@@ -259,7 +275,7 @@ module nurdz.game
             {
                 this._autoFlipTimer--;
                 if (this._autoFlipTimer == 0)
-                    this.flip ();
+                    this.flip (false);
             }
         }
 
@@ -270,8 +286,13 @@ module nurdz.game
          * This will immediately change the internal direction that the arrow
          * thinks that it is pointing, but it will also start the arrow
          * animating towards it's new facing, where it will stop.
+         *
+         * The animation of the the arrow flipping will not be played if this is
+         * a simulation, which simplifies the restore code.
+         *
+         * @param {boolean} isSimulation true if this is a simulated flip or not
          */
-        flip () : void
+        flip (isSimulation : boolean) : void
         {
             // Based on the direction that we're currently facing, swap the
             // direction to the other way, and set our animation to rotate to
@@ -279,16 +300,18 @@ module nurdz.game
             switch (this._arrowDirection)
             {
                 case ArrowDirection.ARROW_LEFT:
-                    this.playAnimation (this._arrowType == ArrowType.ARROW_NORMAL
-                        ? "n_rotate_l_to_r"
-                        : "a_rotate_l_to_r");
+                    if (isSimulation == false)
+                        this.playAnimation (this._arrowType == ArrowType.ARROW_NORMAL
+                            ? "n_rotate_l_to_r"
+                            : "a_rotate_l_to_r");
                     this._arrowDirection = ArrowDirection.ARROW_RIGHT;
                     break;
 
                 case ArrowDirection.ARROW_RIGHT:
-                    this.playAnimation (this._arrowType == ArrowType.ARROW_NORMAL
-                        ? "n_rotate_r_to_l"
-                        : "a_rotate_r_to_l");
+                    if (isSimulation == false)
+                        this.playAnimation (this._arrowType == ArrowType.ARROW_NORMAL
+                            ? "n_rotate_r_to_l"
+                            : "a_rotate_r_to_l");
                     this._arrowDirection = ArrowDirection.ARROW_LEFT;
                     break;
             }
@@ -304,7 +327,7 @@ module nurdz.game
          * the left or right, depending on what direction we're pointing.
          *
          * @param   {Maze}  maze     the maze containing us and the ball
-         * @param   {Ball}  ball     the ball that is coliding with us
+         * @param   {Ball}  ball     the ball that is colliding with us
          * @param   {Point} location the location in the maze that we are at
          *
          * @returns {Point}          the location provided, update to be to the
@@ -326,7 +349,7 @@ module nurdz.game
          *
          * @param {Ball} ball the ball that we moved
          */
-        didMoveBall (ball : Ball) : void
+        didMoveBall (ball : Ball, isSimulation : boolean) : void
         {
             // Mark the direction that we moved the ball.
             ball.moveType = (this._arrowDirection == ArrowDirection.ARROW_LEFT)
@@ -334,7 +357,26 @@ module nurdz.game
                 : BallMoveType.BALL_MOVE_RIGHT;
 
             // Flip our orientation now.
-            this.flip ();
+            this.flip (isSimulation);
+        }
+
+        /**
+         * Invoked when we are entering the simulation mode. This saves
+         * important state to be restored later.
+         */
+        enteringSimulation () : void
+        {
+            // Save our current direction.
+            this._savedArrowDirection = this._arrowDirection;
+        }
+
+        /**
+         * Restore saved data that was saved when we entered the simulation.
+         */
+        exitingSimulation () : void
+        {
+            // Restore our saved position.
+            this._arrowDirection = this._savedArrowDirection;
         }
     }
 }

@@ -462,7 +462,7 @@ module nurdz.game
             if (entity.name == "arrow")
             {
                 let arrow = <Arrow> entity;
-                arrow.flip ();
+                arrow.flip (false);
                 return true;
             }
 
