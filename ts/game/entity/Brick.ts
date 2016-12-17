@@ -39,6 +39,8 @@ module nurdz.game
          */
         private _hidden : boolean;
 
+        private _simulationCollected : boolean;
+
         /**
          * Set the brick type for the current brick. This visually changes the
          * appearance of the brick as well.
@@ -156,6 +158,9 @@ module nurdz.game
             // is properly visually represented, either by playing the correct
             // animation or by selecting the appropriate sprite.
             this.brickType = typeOfBrick;
+
+            // Start out not collected in the simulation:
+            this._simulationCollected = false;
         }
 
         /**
@@ -246,23 +251,65 @@ module nurdz.game
          * that are still visible. In the case of a bonus brick, this handles
          * the removal of the bonus brick.
          *
-         * @param   {Maze}  maze     the maze containing us and the ball
-         * @param   {Ball}  ball     the ball that is touching us
-         * @param   {Point} location the location in the mazer that we are at
+         * When isSimulation is true for a bonus brick, instead of vanishing the
+         * brick away we update the score of the ball that touched us so that
+         * the simulation can track the score change.
+         *
+         * @param   {Maze}    maze         the maze containing us and the ball
+         * @param   {Ball}    ball         the ball that is touching us
+         * @param   {Point}   location     the location in the mazer that we are
+         * at
+         * @param   {boolean} isSimulation true if this is part of a simulation,
          *
          * @returns {Point}          always null; we never move the ball
          */
-        ballTouch (maze : Maze, ball : Ball, location : Point) : Point
+        ballTouch (maze : Maze, ball : Ball, location : Point, isSimulation : boolean) : Point
         {
-            // If this is a bonus brick and it is visible, then switch the
-            // animation to indicate that it has been touched and is thus now
-            // collected.
-            if (this._brickType == BrickType.BRICK_BONUS &&
-                (this.animations.current == "bonus_idle" ||
-                 this.animations.current == "bonus_appear"))
-                this.playAnimation ("bonus_vanish");
+            // We are not simulating; this is a normal touch.
+            if (isSimulation == false)
+            {
+                // If this is a bonus brick and it is visible, then vanish
+                // ourselves to consider ourselves selected.
+                if (this._brickType == BrickType.BRICK_BONUS && this._hidden == false)
+                    this.vanish ();
+            }
+            else
+            {
+                // We are simulating, so if we have not already set the flag
+                // saying we are collected, update the score in the ball that
+                // touched us.
+                if (this._simulationCollected == false)
+                    ball.score += 10;
+
+                // We are collected now, no matter what.
+                this._simulationCollected = true;
+            }
 
             return null;
+        }
+
+        /**
+         * Invoked when we are entering the simulation mode. This saves
+         * important state to be restored later.
+         */
+        enteringSimulation () : void
+        {
+            // Our entity (when it is a bonus brick) considers itself already
+            // collected when it is hidden or available when it is not. Save
+            // that value here. During the simulation, this value will change
+            // only.
+            this._simulationCollected = this._hidden;
+        }
+
+        /**
+         * Restore saved data that was saved when we entered the simulation.
+         */
+        exitingSimulation () : void
+        {
+            // When we are exiting the simulation, we can set the simulated
+            // value the same as we did when we entered the simulation, so that
+            // we go back to the state we were in then.
+            this.enteringSimulation ();
         }
     }
 }
