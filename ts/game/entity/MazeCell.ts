@@ -137,7 +137,7 @@ module nurdz.game
         }
 
         /**
-         * Render this cell using the renderer provided. The positionprovided
+         * Render this cell using the renderer provided. The position provided
          * represents the actual position of this cell as realized on the
          * screen, which means that assumes that is relative to the screen and
          * not the Maze entity.
@@ -188,7 +188,7 @@ module nurdz.game
          * actually moved.
          *
          * @param   {Maze}  maze     the maze containing us and the ball
-         * @param   {Ball}  ball     the ball that is coliding with us
+         * @param   {Ball}  ball     the ball that is colliding with us
          * @param   {Point} location the location in the maze that we are at
          *
          * @returns {Point}          if non-null, this is the position that the
@@ -218,15 +218,15 @@ module nurdz.game
 
         /**
          * This is invoked when the ball enters the same cell as this maze
-         * entity (which measns that a call to blocksBall() returned false) to
+         * entity (which means that a call to blocksBall() returned false) to
          * tell us that the ball has actually entered our location.
          *
          * The collision is informed of the maze that it is contained in, the
-         * ball that is touching us, and the location in the mazr that the touch
+         * ball that is touching us, and the location in the maze that the touch
          * is happening at (i.e. the location in the maze of this MazeCell).
          *
          * If desired, the position of the ball can be modified by returning a
-         * pooint that represents the new position in the maze; otherwise the
+         * point that represents the new position in the maze; otherwise the
          * ball is left at the current location.
          *
          * This position may or may not be used by the engine. If the position

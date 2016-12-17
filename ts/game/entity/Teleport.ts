@@ -91,11 +91,11 @@ module nurdz.game
         /**
          * Internal helper; given a point, scan the list of destinations to see
          * if this destination appears anywhere in it. If it does, its index in
-         * the desination array is returned; otherwise -1 is returned.
+         * the destination array is returned; otherwise -1 is returned.
          *
-         * @param   {Point}  destination the desintionation to check
+         * @param   {Point}  destination the destination to check
          *
-         * @returns {number}             the index of the desintation in the
+         * @returns {number}             the index of the destination in the
          * list, or -1 if it does not exist.
          */
         private indexOfDestination (destination : Point) : number
