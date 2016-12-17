@@ -1649,7 +1649,7 @@ var nurdz;
                     console.log("Kill on " + this._name + " when it has no pool");
             };
             /**
-             * Render this cell using the renderer provided. The positionprovided
+             * Render this cell using the renderer provided. The position provided
              * represents the actual position of this cell as realized on the
              * screen, which means that assumes that is relative to the screen and
              * not the Maze entity.
@@ -1695,8 +1695,12 @@ var nurdz;
              * didMoveBall() will be invoked to tell us that the ball provided was
              * actually moved.
              *
+             * It is important to note that no side effects of the collision should
+             * be applied to the state of the entity here, since this gets invoked
+             * for a variety of reasons.
+             *
              * @param   {Maze}  maze     the maze containing us and the ball
-             * @param   {Ball}  ball     the ball that is coliding with us
+             * @param   {Ball}  ball     the ball that is colliding with us
              * @param   {Point} location the location in the maze that we are at
              *
              * @returns {Point}          if non-null, this is the position that the
@@ -1715,36 +1719,52 @@ var nurdz;
              * The ball that was moved is provided to the call to indicate which
              * ball was the one that moved.
              *
-             * @param {Ball} ball the ball that we moved
+             * The boolean parameter isSimulation is true if this ball movement is
+             * taking place as the result of a simulation (e.g. for AI purposes).
+             * When this is true, the entity should update internal state but not
+             * change anything visual about itself, since this new state is
+             * temporary.
+             *
+             * @param {Ball}    ball          the ball that we moved
+             * @param {boolean} isSimulation true if this is part of a simulation,
+             * false otherwise
              */
-            MazeCell.prototype.didMoveBall = function (ball) {
+            MazeCell.prototype.didMoveBall = function (ball, isSimulation) {
             };
             /**
              * This is invoked when the ball enters the same cell as this maze
-             * entity (which measns that a call to blocksBall() returned false) to
+             * entity (which means that a call to blocksBall() returned false) to
              * tell us that the ball has actually entered our location.
              *
              * The collision is informed of the maze that it is contained in, the
-             * ball that is touching us, and the location in the mazr that the touch
+             * ball that is touching us, and the location in the maze that the touch
              * is happening at (i.e. the location in the maze of this MazeCell).
              *
              * If desired, the position of the ball can be modified by returning a
-             * pooint that represents the new position in the maze; otherwise the
+             * point that represents the new position in the maze; otherwise the
              * ball is left at the current location.
              *
              * This position may or may not be used by the engine. If the position
              * of the ball is changed, a touch event will not fire if the ball was
              * placed on top of another entity that supports this call.
              *
-             * @param   {Maze}  maze     the maze containing us and the ball
-             * @param   {Ball}  ball     the ball that is touching us
-             * @param   {Point} location the location in the mazer that we are at
+             * The boolean parameter isSimulation is true if this touch event is
+             * taking place as the result of a simulation (e.g. for AI purposes).
+             * When this is true, the entity should update internal state but not
+             * change anything visual about itself, since this new state is
+             * temporary.
              *
-             * @returns {Point}          if non-null, this is the position that the
-             * ball should be moved to in response to touching us; a return value of
-             * null indicates that the ball should stay where it is
+             * @param   {Maze}    maze         the maze containing us and the ball
+             * @param   {Ball}    ball         the ball that is touching us
+             * @param   {Point}   location     the location in the mazer that we are
+             * at
+             * @param   {boolean} isSimulation true if this is part of a simulation,
+             *
+             * @returns {Point}                if non-null, this is the position
+             * that the ball should be moved to in response to touching us; a return
+             * value of null indicates that the ball should stay where it is
              */
-            MazeCell.prototype.ballTouch = function (maze, ball, location) {
+            MazeCell.prototype.ballTouch = function (maze, ball, location, isSimulation) {
                 return null;
             };
             return MazeCell;
@@ -2359,11 +2379,11 @@ var nurdz;
             /**
              * Internal helper; given a point, scan the list of destinations to see
              * if this destination appears anywhere in it. If it does, its index in
-             * the desination array is returned; otherwise -1 is returned.
+             * the destination array is returned; otherwise -1 is returned.
              *
-             * @param   {Point}  destination the desintionation to check
+             * @param   {Point}  destination the destination to check
              *
-             * @returns {number}             the index of the desintation in the
+             * @returns {number}             the index of the destination in the
              * list, or -1 if it does not exist.
              */
             Teleport.prototype.indexOfDestination = function (destination) {
@@ -3079,20 +3099,31 @@ var nurdz;
              *       drop down one.
              *    2) The cell below us is an arrow which shoves us one space to the
              *       left or right, possibly.
-             *    3) The cell below us is a teleport; currently this is unhandled.
+             *    3) The cell below us is a teleport; the ball position potentially
+             *       jumps elsewhere.
              *
              * If the ball would stop at this location, false is returned back to
              * indicate this. Otherwise, the position passed in is modified to show
              * where the move would go next and true is returned.
              *
+             * The isSimulation parameter indicates if this movement operation is
+             * part of a simulation (e.g. for AI purposes) and is passed to the
+             * appropriate event handlers on entities.
+             *
+             * When we're simulating the collisions still logically work but the
+             * state of the objects is not permanently changed, so that we can
+             * revert back to where we started without visual glitches.
+             *
              * @param   {Ball}    ball     the ball that is moving
              * @param   {Point}   position the current position of the ball given
+             * @param   {boolean} isSimulation true if this is part of a
+             * simulation,
              *
-             * @returns {boolean}          true if the ball moved, false otherwise.
-             * When true is returned, the passed in point is modified to show where
-             * the new location is.
+             * @returns {boolean} true if the ball moved, false otherwise. When
+             * true is returned, the passed in point is modified to show where the
+             * new location is.
              */
-            Maze.prototype.nextBallPosition = function (ball, position) {
+            Maze.prototype.nextBallPosition = function (ball, position, isSimulation) {
                 // If this position is in the second to last row of the maze, it has
                 // reached the goal line, so movement stops.
                 if (position.y == game.MAZE_HEIGHT - 2) {
@@ -3107,7 +3138,7 @@ var nurdz;
                 if (current != null) {
                     // Copy the position provided and then hand it to the entity
                     // that we're currently on top of.
-                    var newPos_1 = current.ballTouch(this, ball, position);
+                    var newPos_1 = current.ballTouch(this, ball, position, isSimulation);
                     // If we're allowed to move the ball because of a touch and the
                     // entity below us actually changed the location, then that is
                     // the move for this cycle.
@@ -3146,7 +3177,7 @@ var nurdz;
                     //
                     // In this case, it is up to the entity that moved the ball to
                     // mark how it moved it, as we can't know.
-                    below.didMoveBall(ball);
+                    below.didMoveBall(ball, isSimulation);
                     position.setTo(newPos);
                     return true;
                 }
@@ -3283,7 +3314,7 @@ var nurdz;
                     // Check to see what the next position of the ball is. If this
                     // returns false, the ball is not going to move, so we are done
                     // moving it now.
-                    if (this.nextBallPosition(this._droppingBall, pos) == false) {
+                    if (this.nextBallPosition(this._droppingBall, pos, false) == false) {
                         // Add the ball back to the maze at it's current position.
                         this._contents.setCellAt(pos.x, pos.y, this._droppingBall);
                         // If the ball position is at the bottom of the maze or it

@@ -510,20 +510,32 @@ module nurdz.game
          *       drop down one.
          *    2) The cell below us is an arrow which shoves us one space to the
          *       left or right, possibly.
-         *    3) The cell below us is a teleport; currently this is unhandled.
+         *    3) The cell below us is a teleport; the ball position potentially
+         *       jumps elsewhere.
          *
          * If the ball would stop at this location, false is returned back to
          * indicate this. Otherwise, the position passed in is modified to show
          * where the move would go next and true is returned.
          *
+         * The isSimulation parameter indicates if this movement operation is
+         * part of a simulation (e.g. for AI purposes) and is passed to the
+         * appropriate event handlers on entities.
+         *
+         * When we're simulating the collisions still logically work but the
+         * state of the objects is not permanently changed, so that we can
+         * revert back to where we started without visual glitches.
+         *
          * @param   {Ball}    ball     the ball that is moving
          * @param   {Point}   position the current position of the ball given
+         * @param   {boolean} isSimulation true if this is part of a
+         * simulation,
          *
-         * @returns {boolean}          true if the ball moved, false otherwise.
-         * When true is returned, the passed in point is modified to show where
-         * the new location is.
+         * @returns {boolean} true if the ball moved, false otherwise. When
+         * true is returned, the passed in point is modified to show where the
+         * new location is.
          */
-        private nextBallPosition (ball : Ball, position : Point) : boolean
+        private nextBallPosition (ball : Ball, position : Point,
+                                  isSimulation : boolean) : boolean
         {
             // If this position is in the second to last row of the maze, it has
             // reached the goal line, so movement stops.
@@ -542,7 +554,7 @@ module nurdz.game
             {
                 // Copy the position provided and then hand it to the entity
                 // that we're currently on top of.
-                let newPos = current.ballTouch (this, ball, position);
+                let newPos = current.ballTouch (this, ball, position, isSimulation);
 
                 // If we're allowed to move the ball because of a touch and the
                 // entity below us actually changed the location, then that is
@@ -590,7 +602,7 @@ module nurdz.game
                 //
                 // In this case, it is up to the entity that moved the ball to
                 // mark how it moved it, as we can't know.
-                below.didMoveBall (ball);
+                below.didMoveBall (ball, isSimulation);
                 position.setTo (newPos);
                 return true;
             }
@@ -755,7 +767,7 @@ module nurdz.game
                 // Check to see what the next position of the ball is. If this
                 // returns false, the ball is not going to move, so we are done
                 // moving it now.
-                if (this.nextBallPosition (this._droppingBall, pos) == false)
+                if (this.nextBallPosition (this._droppingBall, pos, false) == false)
                 {
                     // Add the ball back to the maze at it's current position.
                     this._contents.setCellAt (pos.x, pos.y, this._droppingBall);

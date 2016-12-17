@@ -187,6 +187,10 @@ module nurdz.game
          * didMoveBall() will be invoked to tell us that the ball provided was
          * actually moved.
          *
+         * It is important to note that no side effects of the collision should
+         * be applied to the state of the entity here, since this gets invoked
+         * for a variety of reasons.
+         *
          * @param   {Maze}  maze     the maze containing us and the ball
          * @param   {Ball}  ball     the ball that is colliding with us
          * @param   {Point} location the location in the maze that we are at
@@ -209,9 +213,17 @@ module nurdz.game
          * The ball that was moved is provided to the call to indicate which
          * ball was the one that moved.
          *
-         * @param {Ball} ball the ball that we moved
+         * The boolean parameter isSimulation is true if this ball movement is
+         * taking place as the result of a simulation (e.g. for AI purposes).
+         * When this is true, the entity should update internal state but not
+         * change anything visual about itself, since this new state is
+         * temporary.
+         *
+         * @param {Ball}    ball          the ball that we moved
+         * @param {boolean} isSimulation true if this is part of a simulation,
+         * false otherwise
          */
-        didMoveBall (ball : Ball) : void
+        didMoveBall (ball : Ball, isSimulation : boolean) : void
         {
 
         }
@@ -233,15 +245,23 @@ module nurdz.game
          * of the ball is changed, a touch event will not fire if the ball was
          * placed on top of another entity that supports this call.
          *
-         * @param   {Maze}  maze     the maze containing us and the ball
-         * @param   {Ball}  ball     the ball that is touching us
-         * @param   {Point} location the location in the mazer that we are at
+         * The boolean parameter isSimulation is true if this touch event is
+         * taking place as the result of a simulation (e.g. for AI purposes).
+         * When this is true, the entity should update internal state but not
+         * change anything visual about itself, since this new state is
+         * temporary.
          *
-         * @returns {Point}          if non-null, this is the position that the
-         * ball should be moved to in response to touching us; a return value of
-         * null indicates that the ball should stay where it is
+         * @param   {Maze}    maze         the maze containing us and the ball
+         * @param   {Ball}    ball         the ball that is touching us
+         * @param   {Point}   location     the location in the mazer that we are
+         * at
+         * @param   {boolean} isSimulation true if this is part of a simulation,
+         *
+         * @returns {Point}                if non-null, this is the position
+         * that the ball should be moved to in response to touching us; a return
+         * value of null indicates that the ball should stay where it is
          */
-        ballTouch (maze : Maze, ball : Ball, location : Point) : Point
+        ballTouch (maze : Maze, ball : Ball, location : Point, isSimulation : boolean) : Point
         {
             return null;
         }
