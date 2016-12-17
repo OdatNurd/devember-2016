@@ -265,5 +265,34 @@ module nurdz.game
         {
             return null;
         }
+
+        /**
+         * This method is invoked on this entity when the engine is entering
+         * simulation mode for any reason.
+         *
+         * In response to this call, any important non-visual state in this
+         * entity should be saved somewhere persistent (for the duration of the
+         * current game).
+         */
+        enteringSimulation () : void
+        {
+
+        }
+
+        /**
+         * This method is invoked on this entity when the engine is exiting
+         * simulation mode for any reason (even temporarily).
+         *
+         * In response to this call, the state saved from the call to
+         * enteringSimulation() should be restored internally.
+         *
+         * This may be invoked several times in response to a single call to
+         * enteringSimulation(), so this should only restore the state and not
+         * destroy it.
+         */
+        exitingSimulation () : void
+        {
+
+        }
     }
 }
