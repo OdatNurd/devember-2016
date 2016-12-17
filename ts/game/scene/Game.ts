@@ -152,6 +152,16 @@ module nurdz.game
                         this._maze.pushBall (this._player.mapPosition.x);
                     break;
 
+                // The question mark key; this is not in ts-game-engine yet.
+                case 191:
+                    let ball = AI_selectBestMove (this._maze);
+                    if (ball != null)
+                    {
+                        this._player.jumpTo (ball.mapPosition.x);
+                        this._player.push ();
+                        this._maze.pushBall (this._player.mapPosition.x);
+                    }
+                    break;
 
                 // Delete the contents of the current cell, if anything is
                 // there.

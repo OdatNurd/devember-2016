@@ -1660,11 +1660,21 @@ var nurdz;
                 this.updateScreenPosition();
             };
             /**
-             * This will shift the map position of this player to the right one position
-             * and then update the position on the screen.
+             * This will shift the map position of this player to the right one
+             * position and then update the position on the screen.
              */
             Player.prototype.moveRight = function () {
                 this._mapPosition.translateXY(1, 0);
+                this.updateScreenPosition();
+            };
+            /**
+             * This will jump the player to the position provided and then update
+             * the posiotion on the screen.
+             *
+             * @param {number} column the column to jump to
+             */
+            Player.prototype.jumpTo = function (column) {
+                this._mapPosition.x = column;
                 this.updateScreenPosition();
             };
             return Player;
@@ -3883,6 +3893,15 @@ var nurdz;
                         // the ball.
                         if (this._player.playerDirection == game.PlayerDirection.DIRECTION_DOWN)
                             this._maze.pushBall(this._player.mapPosition.x);
+                        break;
+                    // The question mark key; this is not in ts-game-engine yet.
+                    case 191:
+                        var ball = game.AI_selectBestMove(this._maze);
+                        if (ball != null) {
+                            this._player.jumpTo(ball.mapPosition.x);
+                            this._player.push();
+                            this._maze.pushBall(this._player.mapPosition.x);
+                        }
                         break;
                     // Delete the contents of the current cell, if anything is
                     // there.

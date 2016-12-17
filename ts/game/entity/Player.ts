@@ -286,12 +286,24 @@ module nurdz.game
         }
 
         /**
-         * This will shift the map position of this player to the right one position
-         * and then update the position on the screen.
+         * This will shift the map position of this player to the right one
+         * position and then update the position on the screen.
          */
         moveRight () : void
         {
             this._mapPosition.translateXY (1, 0);
+            this.updateScreenPosition ();
+        }
+
+        /**
+         * This will jump the player to the position provided and then update
+         * the posiotion on the screen.
+         *
+         * @param {number} column the column to jump to
+         */
+        jumpTo (column : number) : void
+        {
+            this._mapPosition.x = column;
             this.updateScreenPosition ();
         }
     }
