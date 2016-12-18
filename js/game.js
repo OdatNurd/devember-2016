@@ -1468,14 +1468,17 @@ var nurdz;
              * Construct a new maze cell that will render on the stage provided and
              * which has the entity name provided.
              *
-             * This class will automatically set the sprite sheet to the sheet
-             * used by all MazeCell subclasses and invoke the setDimensions() method
-             * once the preload has completed, at which point dimensions and other
+             * This class will automatically set the sprite sheet to the sheet used
+             * by all MazeCell subclasses and invoke the setDimensions() method once
+             * the preload has completed, at which point dimensions and other
              * handling can be done.
              *
-             * @param {Stage}  stage the stage that we use to render ourselves
+             * @param {Stage}      stage      the stage that we use to render
+             * ourselves
+             * @param {PlayerType} playerType the type of player entity this should
+             * be
              */
-            function Player(stage) {
+            function Player(stage, playerType) {
                 var _this = this;
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
@@ -1505,24 +1508,43 @@ var nurdz;
                 //
                 // These follow a strict format so that we can use string formatting
                 // to select the appropriate animation easily.
-                // Idling facing a given direction.
+                // Player: Idling facing a given direction.
                 this.addAnimation("p_idle_r", 1, false, [40]);
                 this.addAnimation("p_idle_d", 1, false, [42]);
                 this.addAnimation("p_idle_l", 1, false, [44]);
-                // Pushing in each direction.
+                // Computer: Idling facing a given direction.
+                this.addAnimation("c_idle_r", 1, false, [50]);
+                this.addAnimation("c_idle_d", 1, false, [52]);
+                this.addAnimation("c_idle_l", 1, false, [54]);
+                // Player: Pushing in each direction.
                 this.addAnimation("p_push_r", 15, false, [40, 45, 45, 45, 40]);
                 this.addAnimation("p_push_d", 15, false, [42, 47, 47, 47, 42]);
                 this.addAnimation("p_push_l", 15, false, [44, 49, 49, 49, 44]);
-                // Rotating between all facings.
+                // Computer: Pushing in each direction.
+                this.addAnimation("c_push_r", 15, false, [50, 55, 55, 55, 50]);
+                this.addAnimation("c_push_d", 15, false, [52, 57, 57, 57, 52]);
+                this.addAnimation("c_push_l", 15, false, [54, 59, 59, 59, 54]);
+                // Player: Rotating between all facings.
                 this.addAnimation("p_rotate_r_l", 15, false, [40, 41, 42, 43, 44]);
                 this.addAnimation("p_rotate_l_r", 15, false, [44, 43, 42, 41, 40]);
                 this.addAnimation("p_rotate_r_d", 15, false, [40, 41, 42]);
                 this.addAnimation("p_rotate_l_d", 15, false, [44, 43, 42]);
                 this.addAnimation("p_rotate_d_r", 15, false, [42, 41, 40]);
                 this.addAnimation("p_rotate_d_l", 15, false, [42, 43, 44]);
-                // Default the type and facing.
-                this._playerType = PlayerType.PLAYER_HUMAN;
+                // Computer: Rotating between all facings.
+                this.addAnimation("c_rotate_r_l", 15, false, [50, 51, 52, 53, 54]);
+                this.addAnimation("c_rotate_l_r", 15, false, [54, 53, 52, 51, 50]);
+                this.addAnimation("c_rotate_r_d", 15, false, [50, 51, 52]);
+                this.addAnimation("c_rotate_l_d", 15, false, [54, 53, 52]);
+                this.addAnimation("c_rotate_d_r", 15, false, [52, 51, 50]);
+                this.addAnimation("c_rotate_d_l", 15, false, [52, 53, 54]);
+                // Save the type given, then set up the correct facing.
+                this._playerType = playerType;
                 this._playerDirection = PlayerDirection.DIRECTION_RIGHT;
+                // If this is a computer player, change the default animation from
+                // the one that was automatically selected (the first one added).
+                if (playerType == PlayerType.PLAYER_COMPUTER)
+                    this.playAnimation("c_idle_r");
             }
             Object.defineProperty(Player.prototype, "playerType", {
                 /**
@@ -3806,7 +3828,7 @@ var nurdz;
                 // Create the maze and player objects and add them to the scene so
                 // they can render themselves.
                 this._maze = new game.Maze(stage);
-                this._player = new game.Player(stage);
+                this._player = new game.Player(stage, game.PlayerType.PLAYER_HUMAN);
                 this.addActor(this._maze);
                 this.addActor(this._player);
                 // The player starts at map position 1,0 so that it is above the

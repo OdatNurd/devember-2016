@@ -46,7 +46,7 @@ module nurdz.game
             // Create the maze and player objects and add them to the scene so
             // they can render themselves.
             this._maze = new Maze (stage);
-            this._player = new Player (stage);
+            this._player = new Player (stage, PlayerType.PLAYER_HUMAN);
             this.addActor (this._maze);
             this.addActor (this._player);
 
