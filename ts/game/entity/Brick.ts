@@ -218,10 +218,17 @@ module nurdz.game
          * The only bricks that block the ball are solid bricks and gray bricks
          * that are still visible on the screen.
          *
+         * Gray bricks will only block the ball from moving when this is not a
+         * simulation; in a simulation they always act as if they are invisible,
+         * to allow for AI to try and guess where the ball will ultimately land.
+         *
+         * @param {boolean} isSimulation true if this is part of a simulation,
+         * false otherwise
+         *
          * @returns {boolean} true if this brick should block the brick or false
          * if the ball should be allowed to pass through it.
          */
-        blocksBall () : boolean
+        blocksBall (isSimulation : boolean) : boolean
         {
             switch (this._brickType)
             {
@@ -235,7 +242,11 @@ module nurdz.game
                     if (this.animations.current == "gray_idle_gone" ||
                         this.animations.current == "gray_vanish")
                         return false;
-                    return true;
+
+                    // The brick is still visible; it only blocks when this is
+                    // not a simulation; during a simulation it never blocks,
+                    // even when visible.
+                    return isSimulation == false;
 
                 // Everything else blocks movement.
                 default:
@@ -273,9 +284,9 @@ module nurdz.game
             // We are not simulating; this is a normal touch.
             if (isSimulation == false)
             {
-                // If this is a bonus brick and it is visible, then vanish
-                // ourselves to consider ourselves selected.
-                if (this._brickType == BrickType.BRICK_BONUS && this._hidden == false)
+                // If this bonus brick is visible, then vanish it to consider
+                // ourselves collected.
+                if (this._hidden == false)
                     this.vanish ();
             }
             else

@@ -439,15 +439,18 @@ var nurdz;
              * back to the caller because we almost always want to interact with
              * such an entity further.
              *
-             * @param   {number}  x the x location to check
-             * @param   {number}  y the y location to check
+             * @param   {number}  x            the x location to check
+             * @param   {number}  y            the y location to check
+             * @param   {boolean} isSimulation indication if this block is happening
+             * during a simulation or not
              *
-             * @returns {MazeCell}  null if the given location is not blocked, or
-             * the entity that is blocking the ball if the position is blocked
+             * @returns {MazeCell}             null if the given location is not
+             * blocked, or the entity that is blocking the ball if the position is
+             * blocked
              */
-            MazeContents.prototype.getBlockingCellAt = function (x, y) {
+            MazeContents.prototype.getBlockingCellAt = function (x, y, isSimulation) {
                 var cell = this.getCellAt(x, y);
-                if (cell == null || cell.blocksBall() == false)
+                if (cell == null || cell.blocksBall(isSimulation) == false)
                     return null;
                 return cell;
             };
@@ -1310,8 +1313,12 @@ var nurdz;
                 var entity = maze.contents.getCellAt(col, 0);
                 // If it exists, is a ball, and is not blocked, add it to the list
                 // of eligible balls.
+                //
+                // For the purposes of this, assume that this is not a simulation
+                // because we can't push the ball if the ball was actually blocked
+                // at this point.
                 if (entity != null && entity.name == "ball" &&
-                    maze.contents.getBlockingCellAt(col, 1) == null)
+                    maze.contents.getBlockingCellAt(col, 1, false) == null)
                     retVal.push(entity);
             }
             return retVal;
@@ -1385,6 +1392,9 @@ var nurdz;
                 // Get the ball and then simulate with it.
                 var ball = ballList[i];
                 var ballScore = simulateBallInMaze(ball, maze);
+                // If we're debugging, say what score was assigned for this ball.
+                if (maze.debugger.debugTracking)
+                    console.log(String.format("Ball simulation of {0} scores {1}", ball.mapPosition.toString(), ballScore));
                 // If the score of this ball is at least as good or better than the
                 // highest score, this ball is interesting.
                 if (ballScore >= highScore) {
@@ -1400,6 +1410,13 @@ var nurdz;
                 }
                 // This iteration is done, so restore now.
                 maze.endSimulation();
+            }
+            // If we're debugging, indicate the potential AI choices.
+            if (maze.debugger.debugTracking) {
+                var results = [];
+                for (var i = 0; i < possiblePushes.length; i++)
+                    results.push(possiblePushes[i].mapPosition.toString());
+                console.log(String.format("AI: {0} choices for score {1} => {2}", possiblePushes.length, highScore, results));
             }
             // If there are no moves, return null; if there is one move, return it.
             // Otherwise, randomly select one.
@@ -1834,13 +1851,21 @@ var nurdz;
              * Returns a determination on whether this maze cell, in its current
              * state, would block the ball from moving through it or not.
              *
+             * The boolean parameter isSimulation is true if this ball movement is
+             * taking place as the result of a simulation (e.g. for AI purposes).
+             * This allows the entity to potentially change how it operates based on
+             * saved state or the fact that this is a simulation.
+             *
              * When this returns true, the ball is stopped before entering this
              * cell. Otherwise, it is allowed to enter this cell.
+             *
+             * @param {boolean} isSimulation true if this is part of a simulation,
+             * false otherwise
              *
              * @returns {boolean} true if this entity should block this ball moving
              * through it or false if it should allow such movement.
              */
-            MazeCell.prototype.blocksBall = function () {
+            MazeCell.prototype.blocksBall = function (isSimulation) {
                 return true;
             };
             /**
@@ -2196,12 +2221,16 @@ var nurdz;
                 this._hidden = false;
             };
             /**
-             * Balls only block other balls while they are still visible.
+             * Balls only block other balls while they are still visible. This is
+             * true whether this is a simulation or not.
+             *
+             * @param {boolean} isSimulation true if this is part of a simulation,
+             * false otherwise
              *
              * @returns {boolean} true if this ball should block the ball or false
              * if the ball should be allowed to pass through it.
              */
-            Ball.prototype.blocksBall = function () {
+            Ball.prototype.blocksBall = function (isSimulation) {
                 switch (this._ballType) {
                     case BallType.BALL_PLAYER:
                         if (this.animations.current == "p_appear" ||
@@ -2453,10 +2482,17 @@ var nurdz;
              * The only bricks that block the ball are solid bricks and gray bricks
              * that are still visible on the screen.
              *
+             * Gray bricks will only block the ball from moving when this is not a
+             * simulation; in a simulation they always act as if they are invisible,
+             * to allow for AI to try and guess where the ball will ultimately land.
+             *
+             * @param {boolean} isSimulation true if this is part of a simulation,
+             * false otherwise
+             *
              * @returns {boolean} true if this brick should block the brick or false
              * if the ball should be allowed to pass through it.
              */
-            Brick.prototype.blocksBall = function () {
+            Brick.prototype.blocksBall = function (isSimulation) {
                 switch (this._brickType) {
                     // Bonus bricks always allow the ball to pass through.
                     case BrickType.BRICK_BONUS:
@@ -2467,7 +2503,10 @@ var nurdz;
                         if (this.animations.current == "gray_idle_gone" ||
                             this.animations.current == "gray_vanish")
                             return false;
-                        return true;
+                        // The brick is still visible; it only blocks when this is
+                        // not a simulation; during a simulation it never blocks,
+                        // even when visible.
+                        return isSimulation == false;
                     // Everything else blocks movement.
                     default:
                         return true;
@@ -2500,9 +2539,9 @@ var nurdz;
                     return null;
                 // We are not simulating; this is a normal touch.
                 if (isSimulation == false) {
-                    // If this is a bonus brick and it is visible, then vanish
-                    // ourselves to consider ourselves selected.
-                    if (this._brickType == BrickType.BRICK_BONUS && this._hidden == false)
+                    // If this bonus brick is visible, then vanish it to consider
+                    // ourselves collected.
+                    if (this._hidden == false)
                         this.vanish();
                 }
                 else {
@@ -2681,10 +2720,13 @@ var nurdz;
              * We don't block the ball because we change its position when it gets
              * on top of us instead of when it touches us.
              *
+             * @param {boolean} isSimulation true if this is part of a simulation,
+             * false otherwise
+             *
              * @returns {boolean} always false; the ball is allowed to move through
              * us
              */
-            Teleport.prototype.blocksBall = function () {
+            Teleport.prototype.blocksBall = function (isSimulation) {
                 return false;
             };
             /**
@@ -3426,7 +3468,7 @@ var nurdz;
                 }
                 // If the cell below us is not blocking the ball, we can drop the
                 // ball into it and we're done.
-                var below = this._contents.getBlockingCellAt(position.x, position.y + 1);
+                var below = this._contents.getBlockingCellAt(position.x, position.y + 1, isSimulation);
                 if (below == null) {
                     ball.moveType = game.BallMoveType.BALL_MOVE_DROP;
                     position.y++;
@@ -3443,7 +3485,7 @@ var nurdz;
                 // Check the contents of the new location and see if the ball is
                 // allowed to enter that cell or not; the ball can enter if the cell
                 // is empty or does not block ball movement.
-                if (this._contents.getBlockingCellAt(newPos.x, newPos.y) == null) {
+                if (this._contents.getBlockingCellAt(newPos.x, newPos.y, isSimulation) == null) {
                     // Tell the cell that moved the ball that we actually moved it,
                     // and then return back the position that it gave.
                     //
@@ -3475,7 +3517,9 @@ var nurdz;
                     if (this._contents.getCellAt(cellX, 0) != null) {
                         // If the cell below this ball isn't blocked, this ball is
                         // still playable, so we can leave now.
-                        if (this._contents.getBlockingCellAt(cellX, 1) == null)
+                        //
+                        // This always assumes that this is not a simulation.
+                        if (this._contents.getBlockingCellAt(cellX, 1, false) == null)
                             return;
                     }
                 }

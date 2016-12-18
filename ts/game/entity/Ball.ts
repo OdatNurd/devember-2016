@@ -257,12 +257,16 @@ module nurdz.game
         }
 
         /**
-         * Balls only block other balls while they are still visible.
+         * Balls only block other balls while they are still visible. This is
+         * true whether this is a simulation or not.
+         *
+         * @param {boolean} isSimulation true if this is part of a simulation,
+         * false otherwise
          *
          * @returns {boolean} true if this ball should block the ball or false
          * if the ball should be allowed to pass through it.
          */
-        blocksBall () : boolean
+        blocksBall (isSimulation : boolean) : boolean
         {
             switch (this._ballType)
             {

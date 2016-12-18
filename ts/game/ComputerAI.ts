@@ -22,8 +22,12 @@ module nurdz.game
 
             // If it exists, is a ball, and is not blocked, add it to the list
             // of eligible balls.
+            //
+            // For the purposes of this, assume that this is not a simulation
+            // because we can't push the ball if the ball was actually blocked
+            // at this point.
             if (entity != null && entity.name == "ball" &&
-                maze.contents.getBlockingCellAt (col, 1) == null)
+                maze.contents.getBlockingCellAt (col, 1, false) == null)
                 retVal.push (<Ball> entity);
         }
 
@@ -112,6 +116,12 @@ module nurdz.game
             let ball = ballList[i];
             let ballScore = simulateBallInMaze (ball, maze);
 
+            // If we're debugging, say what score was assigned for this ball.
+            if (maze.debugger.debugTracking)
+                console.log (String.format ("Ball simulation of {0} scores {1}",
+                    ball.mapPosition.toString (),
+                    ballScore));
+
             // If the score of this ball is at least as good or better than the
             // highest score, this ball is interesting.
             if (ballScore >= highScore)
@@ -131,6 +141,17 @@ module nurdz.game
 
             // This iteration is done, so restore now.
             maze.endSimulation ();
+        }
+
+        // If we're debugging, indicate the potential AI choices.
+        if (maze.debugger.debugTracking)
+        {
+            let results : Array<string> = [];
+            for (let i = 0 ; i < possiblePushes.length ; i++)
+                results.push (possiblePushes[i].mapPosition.toString ());
+
+            console.log (String.format ("AI: {0} choices for score {1} => {2}",
+                possiblePushes.length, highScore, results));
         }
 
         // If there are no moves, return null; if there is one move, return it.

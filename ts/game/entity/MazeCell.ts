@@ -158,13 +158,21 @@ module nurdz.game
          * Returns a determination on whether this maze cell, in its current
          * state, would block the ball from moving through it or not.
          *
+         * The boolean parameter isSimulation is true if this ball movement is
+         * taking place as the result of a simulation (e.g. for AI purposes).
+         * This allows the entity to potentially change how it operates based on
+         * saved state or the fact that this is a simulation.
+         *
          * When this returns true, the ball is stopped before entering this
          * cell. Otherwise, it is allowed to enter this cell.
+         *
+         * @param {boolean} isSimulation true if this is part of a simulation,
+         * false otherwise
          *
          * @returns {boolean} true if this entity should block this ball moving
          * through it or false if it should allow such movement.
          */
-        blocksBall () : boolean
+        blocksBall (isSimulation : boolean) : boolean
         {
             return true;
         }

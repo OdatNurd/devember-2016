@@ -315,16 +315,19 @@ module nurdz.game
          * back to the caller because we almost always want to interact with
          * such an entity further.
          *
-         * @param   {number}  x the x location to check
-         * @param   {number}  y the y location to check
+         * @param   {number}  x            the x location to check
+         * @param   {number}  y            the y location to check
+         * @param   {boolean} isSimulation indication if this block is happening
+         * during a simulation or not
          *
-         * @returns {MazeCell}  null if the given location is not blocked, or
-         * the entity that is blocking the ball if the position is blocked
+         * @returns {MazeCell}             null if the given location is not
+         * blocked, or the entity that is blocking the ball if the position is
+         * blocked
          */
-        getBlockingCellAt (x : number, y : number) : MazeCell
+        getBlockingCellAt (x : number, y : number, isSimulation : boolean) : MazeCell
         {
             let cell = this.getCellAt (x, y);
-            if (cell == null || cell.blocksBall () == false)
+            if (cell == null || cell.blocksBall (isSimulation) == false)
                 return null;
             return cell;
         }

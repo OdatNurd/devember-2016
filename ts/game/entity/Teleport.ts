@@ -154,10 +154,13 @@ module nurdz.game
          * We don't block the ball because we change its position when it gets
          * on top of us instead of when it touches us.
          *
+         * @param {boolean} isSimulation true if this is part of a simulation,
+         * false otherwise
+         *
          * @returns {boolean} always false; the ball is allowed to move through
          * us
          */
-        blocksBall () : boolean
+        blocksBall (isSimulation : boolean) : boolean
         {
             return false;
         }

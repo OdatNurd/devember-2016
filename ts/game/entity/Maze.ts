@@ -574,7 +574,7 @@ module nurdz.game
 
             // If the cell below us is not blocking the ball, we can drop the
             // ball into it and we're done.
-            let below = this._contents.getBlockingCellAt (position.x, position.y + 1);
+            let below = this._contents.getBlockingCellAt (position.x, position.y + 1, isSimulation);
             if (below == null)
             {
                 ball.moveType = BallMoveType.BALL_MOVE_DROP;
@@ -595,7 +595,7 @@ module nurdz.game
             // Check the contents of the new location and see if the ball is
             // allowed to enter that cell or not; the ball can enter if the cell
             // is empty or does not block ball movement.
-            if (this._contents.getBlockingCellAt (newPos.x, newPos.y) == null)
+            if (this._contents.getBlockingCellAt (newPos.x, newPos.y, isSimulation) == null)
             {
                 // Tell the cell that moved the ball that we actually moved it,
                 // and then return back the position that it gave.
@@ -633,7 +633,9 @@ module nurdz.game
                 {
                     // If the cell below this ball isn't blocked, this ball is
                     // still playable, so we can leave now.
-                    if (this._contents.getBlockingCellAt (cellX, 1) == null)
+                    //
+                    // This always assumes that this is not a simulation.
+                    if (this._contents.getBlockingCellAt (cellX, 1, false) == null)
                         return;
                 }
             }
