@@ -268,24 +268,8 @@ module nurdz.game
          */
         blocksBall (isSimulation : boolean) : boolean
         {
-            switch (this._ballType)
-            {
-                case BallType.BALL_PLAYER:
-                    if (this.animations.current == "p_appear" ||
-                        this.animations.current == "p_idle")
-                        return true;
-                    return false;
-
-                case BallType.BALL_COMPUTER:
-                    if (this.animations.current == "c_appear" ||
-                        this.animations.current == "c_idle")
-                        return true;
-                    return false;
-
-                // Everything else blocks movement.
-                default:
-                    return true;
-            }
+            // If the ball is not hidden, then we block; otherwise we do not.
+            return this._hidden == false;
         }
 
         /**

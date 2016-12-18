@@ -2231,21 +2231,8 @@ var nurdz;
              * if the ball should be allowed to pass through it.
              */
             Ball.prototype.blocksBall = function (isSimulation) {
-                switch (this._ballType) {
-                    case BallType.BALL_PLAYER:
-                        if (this.animations.current == "p_appear" ||
-                            this.animations.current == "p_idle")
-                            return true;
-                        return false;
-                    case BallType.BALL_COMPUTER:
-                        if (this.animations.current == "c_appear" ||
-                            this.animations.current == "c_idle")
-                            return true;
-                        return false;
-                    // Everything else blocks movement.
-                    default:
-                        return true;
-                }
+                // If the ball is not hidden, then we block; otherwise we do not.
+                return this._hidden == false;
             };
             /**
              * When a ball touches us, we will push it to the left or to the right
@@ -2500,8 +2487,7 @@ var nurdz;
                     // Gray bricks allow the ball to pass through if they have
                     // vanished.
                     case BrickType.BRICK_GRAY:
-                        if (this.animations.current == "gray_idle_gone" ||
-                            this.animations.current == "gray_vanish")
+                        if (this._hidden)
                             return false;
                         // The brick is still visible; it only blocks when this is
                         // not a simulation; during a simulation it never blocks,

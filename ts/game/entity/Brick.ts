@@ -239,8 +239,7 @@ module nurdz.game
                 // Gray bricks allow the ball to pass through if they have
                 // vanished.
                 case BrickType.BRICK_GRAY:
-                    if (this.animations.current == "gray_idle_gone" ||
-                        this.animations.current == "gray_vanish")
+                    if (this._hidden)
                         return false;
 
                     // The brick is still visible; it only blocks when this is
