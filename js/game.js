@@ -3891,6 +3891,40 @@ var nurdz;
                 this._player.referencePoint = this._maze.position.copyTranslatedXY(0, -this._maze.cellSize);
             };
             /**
+             * Modify the passed in player to either turn to face the direction that
+             * is provided or, if they are already facing that direction, walk in
+             * that direction (if possible).
+             *
+             * This will work for either a computer or player controlled Player
+             * instance in any facing.
+             *
+             * @param {Player}          player    the player entity to turn or move
+             * @param {PlayerDirection} direction the direction to turn or move in
+             */
+            GameScene.prototype.playerTurnOrMove = function (player, direction) {
+                // If the player is not facing in the direction provided, then
+                // turn them and leave.
+                if (player.playerDirection != direction) {
+                    player.turnTo(direction);
+                    return;
+                }
+                // We're facing in the appropriate direction, so see if we should
+                // move or not.
+                switch (direction) {
+                    case game.PlayerDirection.DIRECTION_RIGHT:
+                        if (this._player.mapPosition.x < game.MAZE_WIDTH - 2)
+                            this._player.moveBy(1);
+                        break;
+                    case game.PlayerDirection.DIRECTION_LEFT:
+                        if (player.mapPosition.x > 1)
+                            player.moveBy(-1);
+                        break;
+                    // Can't move in this direction
+                    case game.PlayerDirection.DIRECTION_DOWN:
+                        break;
+                }
+            };
+            /**
              * Invoked every time a key is pressed on the game screen
              *
              * @param   {KeyboardEvent} eventObj the keyboard event that says what
@@ -3924,25 +3958,15 @@ var nurdz;
                         return true;
                     // Rotate the player to face left or walk left.
                     case game.KeyCodes.KEY_LEFT:
-                        // If the player is not facing left, rotate it that way;
-                        // otherwise, walk left.
-                        if (this._player.playerDirection != game.PlayerDirection.DIRECTION_LEFT)
-                            this._player.turnTo(game.PlayerDirection.DIRECTION_LEFT);
-                        else if (this._player.mapPosition.x > 1)
-                            this._player.moveBy(-1);
+                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_LEFT);
                         break;
                     // Rotate the player to face right or walk right.
                     case game.KeyCodes.KEY_RIGHT:
-                        // If the player is not facing right, rotate it that way;
-                        // otherwise, walk right.
-                        if (this._player.playerDirection != game.PlayerDirection.DIRECTION_RIGHT)
-                            this._player.turnTo(game.PlayerDirection.DIRECTION_RIGHT);
-                        else if (this._player.mapPosition.x < game.MAZE_WIDTH - 2)
-                            this._player.moveBy(1);
+                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_RIGHT);
                         break;
                     // Rotate the player to face down.
                     case game.KeyCodes.KEY_DOWN:
-                        this._player.turnTo(game.PlayerDirection.DIRECTION_DOWN);
+                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_DOWN);
                         break;
                     // Run the push animation in the current facing direction.
                     case game.KeyCodes.KEY_SPACEBAR:
