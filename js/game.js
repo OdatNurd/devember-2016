@@ -1674,29 +1674,31 @@ var nurdz;
                 this._playerDirection = newDirection;
             };
             /**
-             * This will shift the map position of this player to the left one
-             * position and then update the position on the screen.
-             */
-            Player.prototype.moveLeft = function () {
-                this._mapPosition.translateXY(-1, 0);
-                this.updateScreenPosition();
-            };
-            /**
-             * This will shift the map position of this player to the right one
-             * position and then update the position on the screen.
-             */
-            Player.prototype.moveRight = function () {
-                this._mapPosition.translateXY(1, 0);
-                this.updateScreenPosition();
-            };
-            /**
-             * This will jump the player to the position provided and then update
-             * the posiotion on the screen.
+             * Modify the map location of this player entity by translating the X
+             * coordinate by the value provided. Once this is done, the screen
+             * position is updated to match the new map position.
              *
-             * @param {number} column the column to jump to
+             * This method is simple and does not validate that the translation will
+             * keep the entity within the correct span of the maze.
+             *
+             * @param {number} translateX the value to translate by
              */
-            Player.prototype.jumpTo = function (column) {
-                this._mapPosition.x = column;
+            Player.prototype.moveBy = function (translateX) {
+                this._mapPosition.translateXY(translateX, 0);
+                this.updateScreenPosition();
+            };
+            /**
+             * Jump the position of the player entity on the screen directly to the
+             * given absolute column in the maze. Once this is done, the screen position
+             * is updated to match the new map position.
+             *
+             * This method is simple and does not validate that the translation will
+             * keep the entity within the correct span of the maze.
+             *
+             * @param {number} newX the column to jump the player entity to
+             */
+            Player.prototype.jumpTo = function (newX) {
+                this._mapPosition.x = newX;
                 this.updateScreenPosition();
             };
             return Player;
@@ -3893,7 +3895,7 @@ var nurdz;
                         if (this._player.playerDirection != game.PlayerDirection.DIRECTION_LEFT)
                             this._player.turnTo(game.PlayerDirection.DIRECTION_LEFT);
                         else if (this._player.mapPosition.x > 1)
-                            this._player.moveLeft();
+                            this._player.moveBy(-1);
                         break;
                     // Rotate the player to face right or walk right.
                     case game.KeyCodes.KEY_RIGHT:
@@ -3902,7 +3904,7 @@ var nurdz;
                         if (this._player.playerDirection != game.PlayerDirection.DIRECTION_RIGHT)
                             this._player.turnTo(game.PlayerDirection.DIRECTION_RIGHT);
                         else if (this._player.mapPosition.x < game.MAZE_WIDTH - 2)
-                            this._player.moveRight();
+                            this._player.moveBy(1);
                         break;
                     // Rotate the player to face down.
                     case game.KeyCodes.KEY_DOWN:

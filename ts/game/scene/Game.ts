@@ -124,7 +124,7 @@ module nurdz.game
                     if (this._player.playerDirection != PlayerDirection.DIRECTION_LEFT)
                         this._player.turnTo (PlayerDirection.DIRECTION_LEFT);
                     else if (this._player.mapPosition.x > 1)
-                        this._player.moveLeft ();
+                        this._player.moveBy (-1);
                     break;
 
                 // Rotate the player to face right or walk right.
@@ -134,7 +134,7 @@ module nurdz.game
                     if (this._player.playerDirection != PlayerDirection.DIRECTION_RIGHT)
                         this._player.turnTo (PlayerDirection.DIRECTION_RIGHT);
                     else if (this._player.mapPosition.x < MAZE_WIDTH - 2)
-                        this._player.moveRight ();
+                        this._player.moveBy (1);
                     break;
 
                 // Rotate the player to face down.

@@ -302,34 +302,34 @@ module nurdz.game
         }
 
         /**
-         * This will shift the map position of this player to the left one
-         * position and then update the position on the screen.
-         */
-        moveLeft () : void
-        {
-            this._mapPosition.translateXY (-1, 0);
-            this.updateScreenPosition ();
-        }
-
-        /**
-         * This will shift the map position of this player to the right one
-         * position and then update the position on the screen.
-         */
-        moveRight () : void
-        {
-            this._mapPosition.translateXY (1, 0);
-            this.updateScreenPosition ();
-        }
-
-        /**
-         * This will jump the player to the position provided and then update
-         * the posiotion on the screen.
+         * Modify the map location of this player entity by translating the X
+         * coordinate by the value provided. Once this is done, the screen
+         * position is updated to match the new map position.
          *
-         * @param {number} column the column to jump to
+         * This method is simple and does not validate that the translation will
+         * keep the entity within the correct span of the maze.
+         *
+         * @param {number} translateX the value to translate by
          */
-        jumpTo (column : number) : void
+        moveBy (translateX : number) : void
         {
-            this._mapPosition.x = column;
+            this._mapPosition.translateXY (translateX, 0);
+            this.updateScreenPosition ();
+        }
+
+        /**
+         * Jump the position of the player entity on the screen directly to the
+         * given absolute column in the maze. Once this is done, the screen position
+         * is updated to match the new map position.
+         *
+         * This method is simple and does not validate that the translation will
+         * keep the entity within the correct span of the maze.
+         *
+         * @param {number} newX the column to jump the player entity to
+         */
+        jumpTo (newX : number) : void
+        {
+            this._mapPosition.x = newX;
             this.updateScreenPosition ();
         }
     }
