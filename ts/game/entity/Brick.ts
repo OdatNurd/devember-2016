@@ -265,6 +265,11 @@ module nurdz.game
          */
         ballTouch (maze : Maze, ball : Ball, location : Point, isSimulation : boolean) : Point
         {
+            // No matter what, we never want to do anything unless this is a bonus
+            // brick; when we pass through gray bricks, we just pass through them.
+            if (this._brickType != BrickType.BRICK_BONUS)
+                return null;
+
             // We are not simulating; this is a normal touch.
             if (isSimulation == false)
             {

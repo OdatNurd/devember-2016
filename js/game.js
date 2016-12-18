@@ -2494,6 +2494,10 @@ var nurdz;
              * @returns {Point}          always null; we never move the ball
              */
             Brick.prototype.ballTouch = function (maze, ball, location, isSimulation) {
+                // No matter what, we never want to do anything unless this is a bonus
+                // brick; when we pass through gray bricks, we just pass through them.
+                if (this._brickType != BrickType.BRICK_BONUS)
+                    return null;
                 // We are not simulating; this is a normal touch.
                 if (isSimulation == false) {
                     // If this is a bonus brick and it is visible, then vanish
