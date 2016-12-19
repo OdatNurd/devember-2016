@@ -4149,6 +4149,52 @@ var nurdz;
                 }
             };
             /**
+             * This is invoked by inputKeyDown to handle input directly related to
+             * the player and their ability to move their avatar or make a move.
+             *
+             * The commands here may be ignored based on the current state of the
+             * game, so that input is not applied inappropriately. The return value
+             * is true when the event was handled and false when it was not.
+             *
+             * @param   {KeyboardEvent} eventObj the keyboard event that says what
+             * key was pressed
+             *
+             * @returns {boolean}                true if we handled the key, false
+             * otherwise.
+             */
+            GameScene.prototype.handlePlayerKey = function (eventObj) {
+                // If our current state does not indicate that it is the player's
+                // turn, then do nothing.
+                if (this.state != game.GameState.PLAYER_TURN)
+                    return false;
+                // See if it's something else we care about.
+                switch (eventObj.keyCode) {
+                    // Rotate the player to face left or walk left.
+                    case game.KeyCodes.KEY_LEFT:
+                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_LEFT);
+                        return true;
+                    // Rotate the player to face right or walk right.
+                    case game.KeyCodes.KEY_RIGHT:
+                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_RIGHT);
+                        return true;
+                    // Rotate the player to face down.
+                    case game.KeyCodes.KEY_DOWN:
+                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_DOWN);
+                        return true;
+                    // Run the push animation in the current facing direction.
+                    case game.KeyCodes.KEY_SPACEBAR:
+                        this._player.push();
+                        // If the player is facing down, then try to actually push
+                        // the ball.
+                        if (this._player.playerDirection == game.PlayerDirection.DIRECTION_DOWN)
+                            this._maze.pushBall(this._player.mapPosition.x);
+                        return true;
+                    // We don't handle any other keys.
+                    default:
+                        return false;
+                }
+            };
+            /**
              * Invoked every time a key is pressed on the game screen
              *
              * @param   {KeyboardEvent} eventObj the keyboard event that says what
@@ -4159,8 +4205,12 @@ var nurdz;
              */
             GameScene.prototype.inputKeyDown = function (eventObj) {
                 // If this is a key the super class knows how to handle, then let it
-                // handle it and we'll jus leave.
+                // handle it and we'll just leave.
                 if (_super.prototype.inputKeyDown.call(this, eventObj))
+                    return true;
+                // If this is a player key and it was handled, then we can leave
+                // now.
+                if (this.handlePlayerKey(eventObj))
                     return true;
                 // See if it's something else we care about.
                 switch (eventObj.keyCode) {
@@ -4180,26 +4230,6 @@ var nurdz;
                         if (this._debugger.debugTracking)
                             this._maze.setDebugPoint(this._mouse);
                         return true;
-                    // Rotate the player to face left or walk left.
-                    case game.KeyCodes.KEY_LEFT:
-                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_LEFT);
-                        break;
-                    // Rotate the player to face right or walk right.
-                    case game.KeyCodes.KEY_RIGHT:
-                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_RIGHT);
-                        break;
-                    // Rotate the player to face down.
-                    case game.KeyCodes.KEY_DOWN:
-                        this.playerTurnOrMove(this._player, game.PlayerDirection.DIRECTION_DOWN);
-                        break;
-                    // Run the push animation in the current facing direction.
-                    case game.KeyCodes.KEY_SPACEBAR:
-                        this._player.push();
-                        // If the player is facing down, then try to actually push
-                        // the ball.
-                        if (this._player.playerDirection == game.PlayerDirection.DIRECTION_DOWN)
-                            this._maze.pushBall(this._player.mapPosition.x);
-                        break;
                     // The question mark key; this is not in ts-game-engine yet.
                     case 191:
                         var ball = game.AI_selectBestMove(this._maze);
