@@ -4056,6 +4056,8 @@ var nurdz;
                 this._player = new game.Player(stage, game.PlayerType.PLAYER_HUMAN);
                 this.addActor(this._maze);
                 this.addActor(this._player);
+                // Tell the maze that we want to know when game events trigger.
+                this._maze.listener = this;
                 // The player starts at map position 1,0 so that it is above the
                 // first column in the maze.
                 this._player.mapPosition.setToXY(1, 0);
@@ -4336,6 +4338,15 @@ var nurdz;
                 _super.prototype.render.call(this);
             };
             /**
+             * This gets invoked by our maze entity when it has finished generating
+             * a maze. We use this to switch the state so that the game can start.
+             */
+            GameScene.prototype.mazeGenerationComplete = function () {
+                // For now, after maze generation it is always the human player's
+                // turn.
+                this.state = game.GameState.PLAYER_TURN;
+            };
+            /**
              * This gets triggered every time our state machine gets put into a new
              * state.
              *
@@ -4347,7 +4358,8 @@ var nurdz;
              * @param {GameState}    newState the newly set state
              */
             GameScene.prototype.stateChanged = function (machine, newState) {
-                console.log("State changed to: " + game.GameState[newState]);
+                // Record the stat change.
+                console.log("DEBUG: State changed to: " + game.GameState[newState]);
                 switch (newState) {
                     // We are supposed to be generating a maze, so do that now.
                     case game.GameState.MAZE_GENERATION:

@@ -5,7 +5,8 @@ module nurdz.game
      * played.
      */
     export class GameScene extends Scene
-                           implements StateMachineChangeListener
+                           implements StateMachineChangeListener,
+                                      MazeEventListener
     {
         /**
          * Our state machine; this controls what we're doing at any given time.
@@ -90,6 +91,9 @@ module nurdz.game
             this._player = new Player (stage, PlayerType.PLAYER_HUMAN);
             this.addActor (this._maze);
             this.addActor (this._player);
+
+            // Tell the maze that we want to know when game events trigger.
+            this._maze.listener = this;
 
             // The player starts at map position 1,0 so that it is above the
             // first column in the maze.
@@ -392,6 +396,17 @@ module nurdz.game
         }
 
         /**
+         * This gets invoked by our maze entity when it has finished generating
+         * a maze. We use this to switch the state so that the game can start.
+         */
+        mazeGenerationComplete () : void
+        {
+            // For now, after maze generation it is always the human player's
+            // turn.
+            this.state = GameState.PLAYER_TURN;
+        }
+
+        /**
          * This gets triggered every time our state machine gets put into a new
          * state.
          *
@@ -404,7 +419,9 @@ module nurdz.game
          */
         stateChanged (machine : StateMachine, newState : GameState) : void
         {
-            console.log ("State changed to: " + GameState[newState]);
+            // Record the stat change.
+            console.log ("DEBUG: State changed to: " + GameState[newState]);
+
             switch (newState)
             {
                 // We are supposed to be generating a maze, so do that now.
