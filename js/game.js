@@ -4076,6 +4076,10 @@ var nurdz;
                 var _this = 
                 // Create the scene via our super class.
                 _super.call(this, "gameScreen", stage) || this;
+                // Create the state machine that drives us and register our interest
+                // in knowing when the state inside it changes.
+                _this._state = new game.StateMachine();
+                _this._state.addListener(_this);
                 // Create the maze and player objects and add them to the scene so
                 // they can render themselves.
                 _this._maze = new game.Maze(stage);
@@ -4091,6 +4095,38 @@ var nurdz;
                 _this._debugger = _this._maze.debugger;
                 return _this;
             }
+            Object.defineProperty(GameScene.prototype, "state", {
+                /**
+                 * Get the current state of the game.
+                 *
+                 * This directly returns the state of our state machine object.
+                 *
+                 * @returns {GameState} the current state of our state machine
+                 */
+                get: function () { return this._state.state; },
+                /**
+                 * Change the current state of the game to a new state.
+                 *
+                 * This directly sets the state of our state machine object.
+                 *
+                 * @param {GameState} newState the new state to switch to
+                 */
+                set: function (newState) { this._state.state = newState; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(GameScene.prototype, "priorState", {
+                /**
+                 * Get the state that we were in prior to the current state.
+                 *
+                 * This directly returns the prior state of our state machine object.
+                 *
+                 * @returns {GameState} the previous state of our state machine
+                 */
+                get: function () { return this._state.priorState; },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * This is invoked when we are becoming the current scene.
              *
@@ -4105,6 +4141,9 @@ var nurdz;
                 // Set the reference position of the player to that of the maze,
                 // shifted up a bit to put the player above the maze.
                 this._player.referencePoint = this._maze.position.copyTranslatedXY(0, -this._maze.cellSize);
+                // If there is no current state, it's time to generate a new level.
+                if (this.state == game.GameState.NO_STATE)
+                    this.state = game.GameState.MAZE_GENERATION;
             };
             /**
              * Modify the passed in player to either turn to face the direction that
@@ -4296,6 +4335,26 @@ var nurdz;
                 // entities get painted.
                 this._renderer.fillRect(0, 0, this._stage.width, this._stage.height, '#000');
                 _super.prototype.render.call(this);
+            };
+            /**
+             * This gets triggered every time our state machine gets put into a new
+             * state.
+             *
+             * WARNING: All hell (probably) breaks loose if this method immediately
+             * changes the state of the machine that was passed in, so maybe don't
+             * do that?
+             *
+             * @param {StateMachine} machine  the machine whose state changed
+             * @param {GameState}    newState the newly set state
+             */
+            GameScene.prototype.stateChanged = function (machine, newState) {
+                console.log("State changed to: " + game.GameState[newState]);
+                switch (newState) {
+                    // We are supposed to be generating a maze, so do that now.
+                    case game.GameState.MAZE_GENERATION:
+                        this._maze.generateMaze();
+                        break;
+                }
             };
             return GameScene;
         }(game.Scene));

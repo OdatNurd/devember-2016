@@ -5,7 +5,13 @@ module nurdz.game
      * played.
      */
     export class GameScene extends Scene
+                           implements StateMachineChangeListener
     {
+        /**
+         * Our state machine; this controls what we're doing at any given time.
+         */
+        private _state : StateMachine;
+
         /**
          * The maze, which holds most of the game entities.
          */
@@ -27,6 +33,36 @@ module nurdz.game
         private _mouse : Point;
 
         /**
+         * Get the current state of the game.
+         *
+         * This directly returns the state of our state machine object.
+         *
+         * @returns {GameState} the current state of our state machine
+         */
+        get state () : GameState
+        { return this._state.state; }
+
+        /**
+         * Change the current state of the game to a new state.
+         *
+         * This directly sets the state of our state machine object.
+         *
+         * @param {GameState} newState the new state to switch to
+         */
+        set state (newState : GameState)
+        { this._state.state = newState; }
+
+        /**
+         * Get the state that we were in prior to the current state.
+         *
+         * This directly returns the prior state of our state machine object.
+         *
+         * @returns {GameState} the previous state of our state machine
+         */
+        get priorState () : GameState
+        { return this._state.priorState; }
+
+        /**
          * Construct a new game screen scene that will display on the provided
          * stage.
          *
@@ -42,6 +78,11 @@ module nurdz.game
         {
             // Create the scene via our super class.
             super ("gameScreen", stage);
+
+            // Create the state machine that drives us and register our interest
+            // in knowing when the state inside it changes.
+            this._state = new StateMachine ();
+            this._state.addListener (this);
 
             // Create the maze and player objects and add them to the scene so
             // they can render themselves.
@@ -77,6 +118,10 @@ module nurdz.game
             // Set the reference position of the player to that of the maze,
             // shifted up a bit to put the player above the maze.
             this._player.referencePoint = this._maze.position.copyTranslatedXY (0, -this._maze.cellSize);
+
+            // If there is no current state, it's time to generate a new level.
+            if (this.state == GameState.NO_STATE)
+                this.state = GameState.MAZE_GENERATION;
         }
 
         /**
@@ -309,6 +354,29 @@ module nurdz.game
             // entities get painted.
             this._renderer.fillRect (0, 0, this._stage.width, this._stage.height, '#000');
             super.render ();
+        }
+
+        /**
+         * This gets triggered every time our state machine gets put into a new
+         * state.
+         *
+         * WARNING: All hell (probably) breaks loose if this method immediately
+         * changes the state of the machine that was passed in, so maybe don't
+         * do that?
+         *
+         * @param {StateMachine} machine  the machine whose state changed
+         * @param {GameState}    newState the newly set state
+         */
+        stateChanged (machine : StateMachine, newState : GameState) : void
+        {
+            console.log ("State changed to: " + GameState[newState]);
+            switch (newState)
+            {
+                // We are supposed to be generating a maze, so do that now.
+                case GameState.MAZE_GENERATION:
+                    this._maze.generateMaze ();
+                    break;
+            }
         }
     }
 }
