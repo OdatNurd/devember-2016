@@ -1442,14 +1442,190 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * This enumeration represents all of the potential states that the state
+         * machine may be in at any given time.
+         */
+        var GameState;
+        /**
+         * This enumeration represents all of the potential states that the state
+         * machine may be in at any given time.
+         */
+        (function (GameState) {
+            /**
+             * There is no state. The purposes of this value is to be different from
+             * all possible known states so that it can act as a sentinel.
+             */
+            GameState[GameState["NO_STATE"] = 0] = "NO_STATE";
+            /**
+             * There is a maze currently being generated; no players are visible
+             * and no interactions with the maze are allowed.
+             */
+            GameState[GameState["MAZE_GENERATION"] = 1] = "MAZE_GENERATION";
+            /**
+             * It is going to be the human players turn, but first we have to check
+             * and see if it's even possible for them to make a play at the moment.
+             */
+            GameState[GameState["CHECK_VALID_PLAY_PLAYER"] = 2] = "CHECK_VALID_PLAY_PLAYER";
+            /**
+             * The human player can take a turn now. Their controls work and they
+             * can attempt to push a ball.
+             */
+            GameState[GameState["PLAYER_TURN"] = 3] = "PLAYER_TURN";
+            /**
+             * It is going to be the computer players turn, but first we have to
+             * check and see if it's even possible for them to make a play at the
+             * moment.
+             */
+            GameState[GameState["CHECK_VALID_PLAY_COMPUTER"] = 4] = "CHECK_VALID_PLAY_COMPUTER";
+            /**
+             * The computer is now selecting its move by analyzing the maze to see
+             * what it should do.
+             */
+            GameState[GameState["COMPUTER_SELECT_MOVE"] = 5] = "COMPUTER_SELECT_MOVE";
+            /**
+             * The computer has selected its move and is now in the process of
+             * taking it. This covers moving to the ball, turning, and pushing.
+             */
+            GameState[GameState["COMPUTER_TURN"] = 6] = "COMPUTER_TURN";
+            /**
+             * A ball is currently dropping through the maze. This can be either due
+             * to the player pushing the ball, the AI pushing a ball, or the end of
+             * round.
+             */
+            GameState[GameState["BALL_DROPPING"] = 7] = "BALL_DROPPING";
+            /**
+             * All of the balls have been pushed (or are blocked) so it is time to
+             * remove all of the gray bricks from the maze.
+             */
+            GameState[GameState["REMOVE_GRAY_BRICKS"] = 8] = "REMOVE_GRAY_BRICKS";
+            /**
+             * All of the gray bricks have been removed, so we are now in the
+             * process of finding all balls that can still drop and dropping them.
+             */
+            GameState[GameState["FINAL_BALL_DROP"] = 9] = "FINAL_BALL_DROP";
+            /**
+             * All gray bricks have been removed and all of the final ball drops
+             * have finished, so everything is done now.
+             */
+            GameState[GameState["GAME_OVER"] = 10] = "GAME_OVER";
+        })(GameState = game.GameState || (game.GameState = {}));
+        /**
+         * This class represents the state of the game in the current game. This is
+         * uses in the Game scene to control what is happening and what can and
+         * cannot happen at any given time.
+         */
+        var StateMachine = (function () {
+            /**
+             * Construct a new state machine.
+             */
+            function StateMachine() {
+                // Set the current and previous states.
+                this._currentState = GameState.NO_STATE;
+                this._previousState = GameState.NO_STATE;
+                // Create the listener array.
+                this._listeners = new Array();
+            }
+            Object.defineProperty(StateMachine.prototype, "state", {
+                /**
+                 * Get the current state of this state machine.
+                 *
+                 * @returns {GameState} the state that this machine is currently in
+                 */
+                get: function () { return this._currentState; },
+                /**
+                 * Set the current state of this state machine to the state provided.
+                 * Attempts to switch to the current state have no effect and are
+                 * ignored.
+                 *
+                 * @param {GameState} newState the state to switch to.
+                 */
+                set: function (newState) {
+                    // Only do something when the state is actually changing
+                    if (this._currentState != newState) {
+                        // Save the current state, then switch it.
+                        this._previousState = this._currentState;
+                        this._currentState = newState;
+                        // Trigger listeners.
+                        for (var i = 0; i < this._listeners.length; i++)
+                            this._listeners[i].stateChanged(this, this._currentState);
+                    }
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(StateMachine.prototype, "priorState", {
+                /**
+                 * Get the state that this state machine was in prior to being in the
+                 * current state.
+                 *
+                 * Initially there is no previous state. Additionally, this only tracks
+                 * actual state changes, so attempts to switch to the state that is
+                 * currently already set does not update this state.
+                 *
+                 * @returns {GameState} the state that this machine was in prior to the
+                 * current state
+                 */
+                get: function () { return this._previousState; },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Add the given object to the list of objects that get informed
+             * whenever the state of this machine changes.
+             *
+             * If the object provided is already a listener, this does nothing.
+             *
+             * @param {StateMachineChangeListener} listener the new listener to add
+             */
+            StateMachine.prototype.addListener = function (listener) {
+                // Add this listener if it's not already in the list.
+                if (this._listeners.indexOf(listener) == -1)
+                    this._listeners.push(listener);
+            };
+            /**
+             * Remove the given object from the list of objects that get informed
+             * whenever the state of this machine changes.
+             *
+             * If the object provided is not a listener, this does nothing.
+             *
+             * @param {StateMachineChangeListener} listener the listener to remove
+             */
+            StateMachine.prototype.removeListener = function (listener) {
+                // Get the location of this listener; if it is in the list, remove
+                // it.
+                var location = this._listeners.indexOf(listener);
+                if (location != -1)
+                    this._listeners.splice(location, 1);
+            };
+            return StateMachine;
+        }());
+        game.StateMachine = StateMachine;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
+         * This is used to indicate what type of player this is. This is just for
+         * visual identification on the board.
+         */
+        var PlayerType;
+        /**
          * This is used to indicate what type of player this is. This is just for
          * visual identification on the board.
          */
         (function (PlayerType) {
             PlayerType[PlayerType["PLAYER_HUMAN"] = 0] = "PLAYER_HUMAN";
             PlayerType[PlayerType["PLAYER_COMPUTER"] = 1] = "PLAYER_COMPUTER";
-        })(game.PlayerType || (game.PlayerType = {}));
-        var PlayerType = game.PlayerType;
+        })(PlayerType = game.PlayerType || (game.PlayerType = {}));
+        /**
+         * This is used to indicate what direction this player is facing currently.
+         * If the player has been told to switch to a particular facing, it will
+         * start reporting that facing right away, even if it's still rotating
+         * to face that direction.
+         */
+        var PlayerDirection;
         /**
          * This is used to indicate what direction this player is facing currently.
          * If the player has been told to switch to a particular facing, it will
@@ -1460,8 +1636,7 @@ var nurdz;
             PlayerDirection[PlayerDirection["DIRECTION_RIGHT"] = 0] = "DIRECTION_RIGHT";
             PlayerDirection[PlayerDirection["DIRECTION_LEFT"] = 1] = "DIRECTION_LEFT";
             PlayerDirection[PlayerDirection["DIRECTION_DOWN"] = 2] = "DIRECTION_DOWN";
-        })(game.PlayerDirection || (game.PlayerDirection = {}));
-        var PlayerDirection = game.PlayerDirection;
+        })(PlayerDirection = game.PlayerDirection || (game.PlayerDirection = {}));
         /**
          * This provides a mapping between the values in the PlayerDirection enum
          * and the character that represents that direction in our animations.
@@ -1496,11 +1671,11 @@ var nurdz;
              * be
              */
             function Player(stage, playerType) {
-                var _this = this;
+                var _this = 
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
-                _super.call(this, "player", stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+                _super.call(this, "player", stage, 0, 0, 0, 0, 1, {}, {}, 'blue') || this;
                 /**
                  * This callback is invoked when the preload of our sprite sheet is
                  * finished and the image is fully loaded.
@@ -1511,57 +1686,58 @@ var nurdz;
                  *
                  * @param {SpriteSheet} sheet the sprite sheet that was loaded
                  */
-                this.setDimensions = function (sheet) {
+                _this.setDimensions = function (sheet) {
                     _this.makeRectangle(sheet.width, sheet.height);
                 };
                 // Load the sprite sheet that will contain our sprites. The size of
                 // the entity is based on the size of the sprites, so we let the
                 // callback handle that.
-                this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
+                _this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, _this.setDimensions);
                 // The default reference point is the upper left corner of the screen.
-                this._referencePoint = new game.Point(0, 0);
+                _this._referencePoint = new game.Point(0, 0);
                 // Set up animations. There are multiple idle and rotate animations,
                 // and a set for the player and human.
                 //
                 // These follow a strict format so that we can use string formatting
                 // to select the appropriate animation easily.
                 // Player: Idling facing a given direction.
-                this.addAnimation("p_idle_r", 1, false, [40]);
-                this.addAnimation("p_idle_d", 1, false, [42]);
-                this.addAnimation("p_idle_l", 1, false, [44]);
+                _this.addAnimation("p_idle_r", 1, false, [40]);
+                _this.addAnimation("p_idle_d", 1, false, [42]);
+                _this.addAnimation("p_idle_l", 1, false, [44]);
                 // Computer: Idling facing a given direction.
-                this.addAnimation("c_idle_r", 1, false, [50]);
-                this.addAnimation("c_idle_d", 1, false, [52]);
-                this.addAnimation("c_idle_l", 1, false, [54]);
+                _this.addAnimation("c_idle_r", 1, false, [50]);
+                _this.addAnimation("c_idle_d", 1, false, [52]);
+                _this.addAnimation("c_idle_l", 1, false, [54]);
                 // Player: Pushing in each direction.
-                this.addAnimation("p_push_r", 15, false, [40, 45, 45, 45, 40]);
-                this.addAnimation("p_push_d", 15, false, [42, 47, 47, 47, 42]);
-                this.addAnimation("p_push_l", 15, false, [44, 49, 49, 49, 44]);
+                _this.addAnimation("p_push_r", 15, false, [40, 45, 45, 45, 40]);
+                _this.addAnimation("p_push_d", 15, false, [42, 47, 47, 47, 42]);
+                _this.addAnimation("p_push_l", 15, false, [44, 49, 49, 49, 44]);
                 // Computer: Pushing in each direction.
-                this.addAnimation("c_push_r", 15, false, [50, 55, 55, 55, 50]);
-                this.addAnimation("c_push_d", 15, false, [52, 57, 57, 57, 52]);
-                this.addAnimation("c_push_l", 15, false, [54, 59, 59, 59, 54]);
+                _this.addAnimation("c_push_r", 15, false, [50, 55, 55, 55, 50]);
+                _this.addAnimation("c_push_d", 15, false, [52, 57, 57, 57, 52]);
+                _this.addAnimation("c_push_l", 15, false, [54, 59, 59, 59, 54]);
                 // Player: Rotating between all facings.
-                this.addAnimation("p_rotate_r_l", 15, false, [40, 41, 42, 43, 44]);
-                this.addAnimation("p_rotate_l_r", 15, false, [44, 43, 42, 41, 40]);
-                this.addAnimation("p_rotate_r_d", 15, false, [40, 41, 42]);
-                this.addAnimation("p_rotate_l_d", 15, false, [44, 43, 42]);
-                this.addAnimation("p_rotate_d_r", 15, false, [42, 41, 40]);
-                this.addAnimation("p_rotate_d_l", 15, false, [42, 43, 44]);
+                _this.addAnimation("p_rotate_r_l", 15, false, [40, 41, 42, 43, 44]);
+                _this.addAnimation("p_rotate_l_r", 15, false, [44, 43, 42, 41, 40]);
+                _this.addAnimation("p_rotate_r_d", 15, false, [40, 41, 42]);
+                _this.addAnimation("p_rotate_l_d", 15, false, [44, 43, 42]);
+                _this.addAnimation("p_rotate_d_r", 15, false, [42, 41, 40]);
+                _this.addAnimation("p_rotate_d_l", 15, false, [42, 43, 44]);
                 // Computer: Rotating between all facings.
-                this.addAnimation("c_rotate_r_l", 15, false, [50, 51, 52, 53, 54]);
-                this.addAnimation("c_rotate_l_r", 15, false, [54, 53, 52, 51, 50]);
-                this.addAnimation("c_rotate_r_d", 15, false, [50, 51, 52]);
-                this.addAnimation("c_rotate_l_d", 15, false, [54, 53, 52]);
-                this.addAnimation("c_rotate_d_r", 15, false, [52, 51, 50]);
-                this.addAnimation("c_rotate_d_l", 15, false, [52, 53, 54]);
+                _this.addAnimation("c_rotate_r_l", 15, false, [50, 51, 52, 53, 54]);
+                _this.addAnimation("c_rotate_l_r", 15, false, [54, 53, 52, 51, 50]);
+                _this.addAnimation("c_rotate_r_d", 15, false, [50, 51, 52]);
+                _this.addAnimation("c_rotate_l_d", 15, false, [54, 53, 52]);
+                _this.addAnimation("c_rotate_d_r", 15, false, [52, 51, 50]);
+                _this.addAnimation("c_rotate_d_l", 15, false, [52, 53, 54]);
                 // Save the type given, then set up the correct facing.
-                this._playerType = playerType;
-                this._playerDirection = PlayerDirection.DIRECTION_RIGHT;
+                _this._playerType = playerType;
+                _this._playerDirection = PlayerDirection.DIRECTION_RIGHT;
                 // If this is a computer player, change the default animation from
                 // the one that was automatically selected (the first one added).
                 if (playerType == PlayerType.PLAYER_COMPUTER)
-                    this.playAnimation("c_idle_r");
+                    _this.playAnimation("c_idle_r");
+                return _this;
             }
             Object.defineProperty(Player.prototype, "playerType", {
                 /**
@@ -1748,17 +1924,17 @@ var nurdz;
              * @param {String} name  the entity name for this subclass
              */
             function MazeCell(stage, name) {
-                var _this = this;
+                var _this = 
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
-                _super.call(this, name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+                _super.call(this, name, stage, 0, 0, 0, 0, 1, {}, {}, 'blue') || this;
                 /**
                  * The ActorPool that this MazeCell is defined in. This is null before
                  * it is put into a pool, and afterwards always tracks the last actor
                  * pool it was added to.
                  */
-                this._pool = null;
+                _this._pool = null;
                 /**
                  * This callback is invoked when the preload of our sprite sheet is
                  * finished and the image is fully loaded.
@@ -1769,14 +1945,15 @@ var nurdz;
                  *
                  * @param {SpriteSheet} sheet the sprite sheet that was loaded
                  */
-                this.preloadComplete = function (sheet) {
+                _this.preloadComplete = function (sheet) {
                     // Invoke the regular method now.
                     _this.spritesheetLoaded(sheet);
                 };
                 // Load the sprite sheet that will contain our sprites. The size of
                 // the entity is based on the size of the sprites, so we let the
                 // callback handle that.
-                this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.preloadComplete);
+                _this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, _this.preloadComplete);
+                return _this;
             }
             Object.defineProperty(MazeCell.prototype, "name", {
                 /**
@@ -2010,7 +2187,7 @@ var nurdz;
                 // Invoke the super; note that this does not set a position because
                 // we're rendered wherever we are needed. We do set our dimensions
                 // however.
-                _super.call(this, "marker", stage, 0, 0, cellSize, cellSize, 1, {}, {}, 'white');
+                return _super.call(this, "marker", stage, 0, 0, cellSize, cellSize, 1, {}, {}, 'white') || this;
             }
             return Marker;
         }(game.Entity));
@@ -2025,11 +2202,25 @@ var nurdz;
          * This is used to indicate what type of ball this is. This is just for
          * visual identification on the board.
          */
+        var BallType;
+        /**
+         * This is used to indicate what type of ball this is. This is just for
+         * visual identification on the board.
+         */
         (function (BallType) {
             BallType[BallType["BALL_PLAYER"] = 0] = "BALL_PLAYER";
             BallType[BallType["BALL_COMPUTER"] = 1] = "BALL_COMPUTER";
-        })(game.BallType || (game.BallType = {}));
-        var BallType = game.BallType;
+        })(BallType = game.BallType || (game.BallType = {}));
+        /**
+         * As the ball is being moved through the maze, a value of this type is
+         * stored into it to indicate under what circumstances it moved. This allows
+         * a ball or other entity to make a decision about how to move the ball
+         * based on prior movement.
+         *
+         * The prime case of this is allowed a ball pushed by an arrow to roll over
+         * other stationary balls.
+         */
+        var BallMoveType;
         /**
          * As the ball is being moved through the maze, a value of this type is
          * stored into it to indicate under what circumstances it moved. This allows
@@ -2045,8 +2236,7 @@ var nurdz;
             BallMoveType[BallMoveType["BALL_MOVE_LEFT"] = 2] = "BALL_MOVE_LEFT";
             BallMoveType[BallMoveType["BALL_MOVE_RIGHT"] = 3] = "BALL_MOVE_RIGHT";
             BallMoveType[BallMoveType["BALL_MOVE_JUMP"] = 4] = "BALL_MOVE_JUMP";
-        })(game.BallMoveType || (game.BallMoveType = {}));
-        var BallMoveType = game.BallMoveType;
+        })(BallMoveType = game.BallMoveType || (game.BallMoveType = {}));
         /**
          * The entity that represents the bricks in the game. These can be used for
          * level geometry or in the actual play area. Some of them are statically
@@ -2067,33 +2257,35 @@ var nurdz;
              */
             function Ball(stage, typeOfBall) {
                 if (typeOfBall === void 0) { typeOfBall = BallType.BALL_PLAYER; }
+                var _this = 
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
-                _super.call(this, stage, "ball");
+                _super.call(this, stage, "ball") || this;
                 // Set up all of the animations that will be used for this entity.
                 // There are two sets; one for the player ball and one for the
                 // computer ball.
-                this.addAnimation("p_idle", 1, false, [10]);
-                this.addAnimation("p_idle_gone", 1, false, [14]);
-                this.addAnimation("p_vanish", 10, false, [10, 11, 12, 13, 14]);
-                this.addAnimation("p_appear", 10, false, [14, 13, 12, 11, 10]);
-                this.addAnimation("c_idle", 1, false, [15]);
-                this.addAnimation("c_idle_gone", 1, false, [19]);
-                this.addAnimation("c_vanish", 10, false, [15, 16, 17, 18, 19]);
-                this.addAnimation("c_appear", 10, false, [19, 18, 17, 16, 15]);
+                _this.addAnimation("p_idle", 1, false, [10]);
+                _this.addAnimation("p_idle_gone", 1, false, [14]);
+                _this.addAnimation("p_vanish", 10, false, [10, 11, 12, 13, 14]);
+                _this.addAnimation("p_appear", 10, false, [14, 13, 12, 11, 10]);
+                _this.addAnimation("c_idle", 1, false, [15]);
+                _this.addAnimation("c_idle_gone", 1, false, [19]);
+                _this.addAnimation("c_vanish", 10, false, [15, 16, 17, 18, 19]);
+                _this.addAnimation("c_appear", 10, false, [19, 18, 17, 16, 15]);
                 // The ball is not hidden by default (the first animation in the list
                 // is the one that plays by default).
-                this._hidden = false;
+                _this._hidden = false;
                 // Set the ball type to the value passed in. This will make sure
                 // that the ball is properly represented by playing the appropriate
                 // idle animation.
-                this.ballType = typeOfBall;
+                _this.ballType = typeOfBall;
                 // The ball does not start rolling
-                this.moveType = BallMoveType.BALL_MOVE_NONE;
+                _this.moveType = BallMoveType.BALL_MOVE_NONE;
                 // Create the point for our saved position during simulations.
-                this._savedPosition = new game.Point(0, 0);
-                this._savedScore = 0;
+                _this._savedPosition = new game.Point(0, 0);
+                _this._savedScore = 0;
+                return _this;
             }
             Object.defineProperty(Ball.prototype, "ballType", {
                 /**
@@ -2293,13 +2485,18 @@ var nurdz;
          * static bricks that make up the level, as well as bricks that make up the
          * actual play area.
          */
+        var BrickType;
+        /**
+         * This is used to specify the valid values for brick types. This includes
+         * static bricks that make up the level, as well as bricks that make up the
+         * actual play area.
+         */
         (function (BrickType) {
             BrickType[BrickType["BRICK_BACKGROUND"] = 0] = "BRICK_BACKGROUND";
             BrickType[BrickType["BRICK_SOLID"] = 1] = "BRICK_SOLID";
             BrickType[BrickType["BRICK_GRAY"] = 2] = "BRICK_GRAY";
             BrickType[BrickType["BRICK_BONUS"] = 3] = "BRICK_BONUS";
-        })(game.BrickType || (game.BrickType = {}));
-        var BrickType = game.BrickType;
+        })(BrickType = game.BrickType || (game.BrickType = {}));
         /**
          * The entity that represents the bricks in the game. These can be used for
          * level geometry or in the actual play area. Some of them are statically
@@ -2322,29 +2519,31 @@ var nurdz;
              */
             function Brick(stage, typeOfBrick) {
                 if (typeOfBrick === void 0) { typeOfBrick = BrickType.BRICK_SOLID; }
+                var _this = 
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
-                _super.call(this, stage, "brick");
+                _super.call(this, stage, "brick") || this;
                 // The non-animated bricks don't have their update methods called,
                 // so no special setup is needed here.
                 //
                 // For the animated brick types, we set up animations for them,
                 // which includes the idle states (where they are not animating).
-                this.addAnimation("gray_idle", 1, false, [5]);
-                this.addAnimation("gray_idle_gone", 1, false, [9]);
-                this.addAnimation("gray_vanish", 10, false, [5, 6, 7, 8, 9]);
-                this.addAnimation("gray_appear", 10, false, [9, 8, 7, 6, 5]);
-                this.addAnimation("bonus_idle", 1, false, [30]);
-                this.addAnimation("bonus_idle_gone", 1, false, [34]);
-                this.addAnimation("bonus_vanish", 10, false, [30, 31, 32, 33, 34]);
-                this.addAnimation("bonus_appear", 10, false, [34, 33, 32, 31, 30]);
+                _this.addAnimation("gray_idle", 1, false, [5]);
+                _this.addAnimation("gray_idle_gone", 1, false, [9]);
+                _this.addAnimation("gray_vanish", 10, false, [5, 6, 7, 8, 9]);
+                _this.addAnimation("gray_appear", 10, false, [9, 8, 7, 6, 5]);
+                _this.addAnimation("bonus_idle", 1, false, [30]);
+                _this.addAnimation("bonus_idle_gone", 1, false, [34]);
+                _this.addAnimation("bonus_vanish", 10, false, [30, 31, 32, 33, 34]);
+                _this.addAnimation("bonus_appear", 10, false, [34, 33, 32, 31, 30]);
                 // Set a default brick type. This will make sure that this brick
                 // is properly visually represented, either by playing the correct
                 // animation or by selecting the appropriate sprite.
-                this.brickType = typeOfBrick;
+                _this.brickType = typeOfBrick;
                 // Start out not collected in the simulation:
-                this._simulationCollected = false;
+                _this._simulationCollected = false;
+                return _this;
             }
             Object.defineProperty(Brick.prototype, "brickType", {
                 /**
@@ -2584,15 +2783,17 @@ var nurdz;
              * @param {Stage} stage the stage that we use to render ourselves
              */
             function Teleport(stage) {
+                var _this = 
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
-                _super.call(this, stage, "blackHole");
+                _super.call(this, stage, "blackHole") || this;
                 // Set up an animation. As this is the first animation, it will play
                 // by default.
-                this.addAnimation("idle", 10, true, [35, 36, 37, 38, 39]);
+                _this.addAnimation("idle", 10, true, [35, 36, 37, 38, 39]);
                 // Create the list of destinations
-                this._destinations = new Array();
+                _this._destinations = new Array();
+                return _this;
             }
             Object.defineProperty(Teleport.prototype, "destination", {
                 /**
@@ -2774,12 +2975,28 @@ var nurdz;
          * touched. An automatic arrow randomly swaps directions while the ball is
          * dropping, even if it is not touched.
          */
+        var ArrowType;
+        /**
+         * This is used to specify the two types of arrows in the game.
+         *
+         * A normal arrow faces some direction and only swaps directions when it is
+         * touched. An automatic arrow randomly swaps directions while the ball is
+         * dropping, even if it is not touched.
+         */
         (function (ArrowType) {
             ArrowType[ArrowType["ARROW_NORMAL"] = 0] = "ARROW_NORMAL";
             ArrowType[ArrowType["ARROW_AUTOMATIC"] = 1] = "ARROW_AUTOMATIC";
-        })(game.ArrowType || (game.ArrowType = {}));
-        var ArrowType = game.ArrowType;
+        })(ArrowType = game.ArrowType || (game.ArrowType = {}));
         ;
+        /**
+         * This is used to specify the direction that an arrow is currently facing,
+         * which represents what direction a ball touching it from above will be
+         * pushed.
+         *
+         * When an arrow changes directions, the direction is instantaneously
+         * changed, although the animation may still show it transitioning.
+         */
+        var ArrowDirection;
         /**
          * This is used to specify the direction that an arrow is currently facing,
          * which represents what direction a ball touching it from above will be
@@ -2791,8 +3008,7 @@ var nurdz;
         (function (ArrowDirection) {
             ArrowDirection[ArrowDirection["ARROW_LEFT"] = 0] = "ARROW_LEFT";
             ArrowDirection[ArrowDirection["ARROW_RIGHT"] = 1] = "ARROW_RIGHT";
-        })(game.ArrowDirection || (game.ArrowDirection = {}));
-        var ArrowDirection = game.ArrowDirection;
+        })(ArrowDirection = game.ArrowDirection || (game.ArrowDirection = {}));
         /**
          * The entity that represents arrows in the game. This covers both style
          * of arrows (the kind that move only when touched by a ball and the kind
@@ -2814,37 +3030,39 @@ var nurdz;
             function Arrow(stage, arrowType, direction) {
                 if (arrowType === void 0) { arrowType = ArrowType.ARROW_NORMAL; }
                 if (direction === void 0) { direction = ArrowDirection.ARROW_LEFT; }
+                var _this = 
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // our sprites, so we don't set anything here.
-                _super.call(this, stage, "arrow");
+                _super.call(this, stage, "arrow") || this;
                 // Capture the type and direction of the arrow.
-                this._arrowType = arrowType;
-                this._arrowDirection = direction;
-                this._savedArrowDirection = direction;
+                _this._arrowType = arrowType;
+                _this._arrowDirection = direction;
+                _this._savedArrowDirection = direction;
                 // If this is an automatic arrow, set up the auto flip timer right
                 // away.
                 if (arrowType == ArrowType.ARROW_AUTOMATIC)
-                    this.setAutoFlipTimer();
+                    _this.setAutoFlipTimer();
                 // Set up animations for this entity. We need animations for two
                 // different types of entity, so animations are prefixed with 'n'
                 // for "normal" arrows and 'a' for "automatically rotating" arrows.
                 //
                 // We need idle animations for facing in both directions for both
                 // types of arrow.
-                this.addAnimation("n_idle_right", 1, false, [20]);
-                this.addAnimation("n_idle_left", 1, false, [24]);
-                this.addAnimation("a_idle_right", 1, false, [25]);
-                this.addAnimation("a_idle_left", 1, false, [29]);
+                _this.addAnimation("n_idle_right", 1, false, [20]);
+                _this.addAnimation("n_idle_left", 1, false, [24]);
+                _this.addAnimation("a_idle_right", 1, false, [25]);
+                _this.addAnimation("a_idle_left", 1, false, [29]);
                 // Now we need animations that swap facing from either right to left
                 // or left to right. As above, we need two different versions.
-                this.addAnimation("n_rotate_r_to_l", 10, false, [20, 21, 22, 23, 24]);
-                this.addAnimation("n_rotate_l_to_r", 10, false, [24, 23, 22, 21, 20]);
-                this.addAnimation("a_rotate_r_to_l", 10, false, [25, 26, 27, 28, 29]);
-                this.addAnimation("a_rotate_l_to_r", 10, false, [29, 28, 27, 26, 25]);
+                _this.addAnimation("n_rotate_r_to_l", 10, false, [20, 21, 22, 23, 24]);
+                _this.addAnimation("n_rotate_l_to_r", 10, false, [24, 23, 22, 21, 20]);
+                _this.addAnimation("a_rotate_r_to_l", 10, false, [25, 26, 27, 28, 29]);
+                _this.addAnimation("a_rotate_l_to_r", 10, false, [29, 28, 27, 26, 25]);
                 // Based on the type and direction, set the appropriate animation
                 // playing. We always start out being idle.
-                this.resetAnimation();
+                _this.resetAnimation();
+                return _this;
             }
             Object.defineProperty(Arrow.prototype, "arrowType", {
                 /**
@@ -3088,16 +3306,16 @@ var nurdz;
              * @param {Stage} stage the stage that we use to render ourselves
              */
             function Maze(stage) {
-                var _this = this;
+                var _this = 
                 // Invoke the super; note that this does not set a position because
                 // that is set by whoever created us. Our dimensions are based on
                 // the size of the brick sprites, which we don't know yet.
-                _super.call(this, "maze", stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+                _super.call(this, "maze", stage, 0, 0, 0, 0, 1, {}, {}, 'blue') || this;
                 /**
                  * This callback is invoked when our sprite sheet finishes loading the
                  * underlying image for the sprites.
                  */
-                this.setDimensions = function (sheet) {
+                _this.setDimensions = function (sheet) {
                     // Alter our collision properties so that our bounds represent the
                     // entire maze area.
                     _this.makeRectangle(sheet.width * game.MAZE_WIDTH, sheet.height * game.MAZE_HEIGHT);
@@ -3136,55 +3354,56 @@ var nurdz;
                 // are using. This will allow us to capture the callback that
                 // indicates that the sprite size is known, so that we can set up
                 // our dimensions.
-                new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, this.setDimensions);
+                new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, _this.setDimensions);
                 // Create our singleton maze entities; these are entities for which
                 // we only ever have a single instance that's used everywhere.
-                this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
-                this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
-                this._blackHole = new game.Teleport(stage);
+                _this._empty = new game.Brick(stage, game.BrickType.BRICK_BACKGROUND);
+                _this._solid = new game.Brick(stage, game.BrickType.BRICK_SOLID);
+                _this._blackHole = new game.Teleport(stage);
                 // Create our maze contents, generator, and debugger; order is
                 // important here, the generator and debugger need to get the
                 // contents from us to initialize, and the debugger requires the
                 // generator to already be available.
-                this._contents = new game.MazeContents();
-                this._generator = new game.MazeGenerator(this);
-                this._debugger = new game.MazeDebugger(this);
-                this._generator.wall = this._solid;
-                this._debugger.wall = this._solid;
-                this._generator.teleporter = this._blackHole;
-                this._debugger.teleporter = this._blackHole;
+                _this._contents = new game.MazeContents();
+                _this._generator = new game.MazeGenerator(_this);
+                _this._debugger = new game.MazeDebugger(_this);
+                _this._generator.wall = _this._solid;
+                _this._debugger.wall = _this._solid;
+                _this._generator.teleporter = _this._blackHole;
+                _this._debugger.teleporter = _this._blackHole;
                 // Create our entity pools.
-                this._arrows = new game.ActorPool();
-                this._grayBricks = new game.ActorPool();
-                this._bonusBricks = new game.ActorPool();
-                this._balls = new game.ActorPool();
+                _this._arrows = new game.ActorPool();
+                _this._grayBricks = new game.ActorPool();
+                _this._bonusBricks = new game.ActorPool();
+                _this._balls = new game.ActorPool();
                 // There is no ball dropping by default; also set up default values
                 // for the drop time and speed (drop time is not consulted unless
                 // a ball is dropping).
-                this._droppingBall = null;
-                this._dropSpeed = NORMAL_DROP_SPEED;
-                this._lastDropTick = 0;
+                _this._droppingBall = null;
+                _this._dropSpeed = NORMAL_DROP_SPEED;
+                _this._lastDropTick = 0;
                 // No ball has finished moving and no gray bricks have been removed.
                 // These also get reset on level generation.
-                this._ballMoveFinalized = false;
-                this._grayBricksRemoved = false;
-                this._droppingFinalBall = false;
+                _this._ballMoveFinalized = false;
+                _this._grayBricksRemoved = false;
+                _this._droppingFinalBall = false;
                 // Pre-populate all of our actor pools with the maximum possible
                 // number of actors that we could need.
                 //
                 // This is here to get around a ts-game-engine bug that stops creation
                 // of entities that load images after the preload is finished.
-                for (var i = 0; i < this._generator.maxArrows; i++)
-                    this._arrows.addEntity(new game.Arrow(stage), false);
-                for (var i = 0; i < this._generator.maxGrayBricks; i++)
-                    this._grayBricks.addEntity(new game.Brick(stage, game.BrickType.BRICK_GRAY), false);
-                for (var i = 0; i < this._generator.maxBonusBricks; i++)
-                    this._bonusBricks.addEntity(new game.Brick(stage, game.BrickType.BRICK_BONUS), false);
+                for (var i = 0; i < _this._generator.maxArrows; i++)
+                    _this._arrows.addEntity(new game.Arrow(stage), false);
+                for (var i = 0; i < _this._generator.maxGrayBricks; i++)
+                    _this._grayBricks.addEntity(new game.Brick(stage, game.BrickType.BRICK_GRAY), false);
+                for (var i = 0; i < _this._generator.maxBonusBricks; i++)
+                    _this._bonusBricks.addEntity(new game.Brick(stage, game.BrickType.BRICK_BONUS), false);
                 // Fill the actor pool for balls with a complete set of balls; this
                 // only ever happens once and is the one case where we always know
                 // exactly how many entities of a type we need.
                 for (var i = 0; i < (game.MAZE_WIDTH - 2) * 2; i++)
-                    this._balls.addEntity(new game.Ball(stage), false);
+                    _this._balls.addEntity(new game.Ball(stage), false);
+                return _this;
             }
             Object.defineProperty(Maze.prototype, "cellSize", {
                 /**
@@ -3859,21 +4078,23 @@ var nurdz;
              * @constructor
              */
             function GameScene(stage) {
+                var _this = 
                 // Create the scene via our super class.
-                _super.call(this, "gameScreen", stage);
+                _super.call(this, "gameScreen", stage) || this;
                 // Create the maze and player objects and add them to the scene so
                 // they can render themselves.
-                this._maze = new game.Maze(stage);
-                this._player = new game.Player(stage, game.PlayerType.PLAYER_HUMAN);
-                this.addActor(this._maze);
-                this.addActor(this._player);
+                _this._maze = new game.Maze(stage);
+                _this._player = new game.Player(stage, game.PlayerType.PLAYER_HUMAN);
+                _this.addActor(_this._maze);
+                _this.addActor(_this._player);
                 // The player starts at map position 1,0 so that it is above the
                 // first column in the maze.
-                this._player.mapPosition.setToXY(1, 0);
+                _this._player.mapPosition.setToXY(1, 0);
                 // Start out with a default mouse location.
-                this._mouse = new game.Point(0, 0);
+                _this._mouse = new game.Point(0, 0);
                 // Stash the debugger.
-                this._debugger = this._maze.debugger;
+                _this._debugger = _this._maze.debugger;
+                return _this;
             }
             /**
              * This is invoked when we are becoming the current scene.
