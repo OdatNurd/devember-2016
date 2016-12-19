@@ -11,12 +11,32 @@ module nurdz.game
      * @type {Number}
      */
     const FINAL_DROP_SPEED = 1;
+
+    /**
+     * This interface is implemented by any class that wants to be told about
+     * game specific events that occur as a result of operations in the maze.
+     */
+    export interface MazeEventListener
+    {
+        /**
+         * This will get invoked every time we're told to generate a maze and
+         * our generation is finally completed.
+         */
+        mazeGenerationComplete () : void;
+    }
+
     /**
      * The entity that represents the maze in the game. This is the entire play
      * area of the game.
      */
     export class Maze extends Entity
     {
+        /**
+         * The object that gets events when important things happen. This is
+         * currently constrained to a single owning object for simplicity.
+         */
+        private _listener : MazeEventListener;
+
         /**
          * The object that we use to store our maze contents.
          */
@@ -173,6 +193,29 @@ module nurdz.game
         { return this._contents; }
 
         /**
+         * Get the object that is currently being told about events happening in
+         * this maze object; this can be null.
+         *
+         * @returns {MazeEventListener} the current event listener if any, or
+         * null otherwise.
+         */
+        get listener () : MazeEventListener
+        { return this._listener; }
+
+        /**
+         * Set the object that will be told about events happening in this maze
+         * object. This will replace any existing listener.
+         *
+         * You can set this to null to turn off event listening for the
+         * currently registered object.
+         *
+         * @param {MazeEventListener} newListener the object to use as listener
+         * or null for none
+         */
+        set listener (newListener : MazeEventListener)
+        { this._listener = newListener; }
+
+        /**
          * Get the object that is used to generate the contents of this maze.
          * Using this object, external code can regenerate or otherwise tweak
          * the maze.
@@ -203,6 +246,9 @@ module nurdz.game
             // that is set by whoever created us. Our dimensions are based on
             // the size of the brick sprites, which we don't know yet.
             super ("maze", stage, 0, 0, 0, 0, 1, {}, {}, 'blue');
+
+            // There is no listener by default.
+            this._listener = null;
 
             // Set up a preload for the same sprite sheet that the brick entities
             // are using. This will allow us to capture the callback that
@@ -985,6 +1031,11 @@ module nurdz.game
 
             // Now generate the contents of the maze.
             this._generator.generate ();
+
+            // If there is a listener, tell it now that the generation has
+            // completed.
+            if (this._listener != null)
+                this._listener.mazeGenerationComplete ();
         }
 
         /**
