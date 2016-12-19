@@ -407,6 +407,43 @@ module nurdz.game
         }
 
         /**
+         * This gets invoked when either the player or the computer has selected
+         * a ball to push and told the maze to push it, and the maze has decided
+         * that this is allowed and it is about to drop the ball.
+         *
+         * We get told what ball is currently being dropped. We can determine
+         * who pushed the ball by the current state.
+         *
+         * @param {Ball} ball the ball entity that is being pushed.
+         */
+        startBallPush (ball : Ball) : void
+        {
+            // Set the state to indicate that a ball is being dropped.
+            this.state = GameState.BALL_DROPPING;
+        }
+
+        /**
+         * A ball drop that was in progress has now finished. The event features
+         * the ball that was dropped and also an indication as to whether the
+         * ball reached the goal or not.
+         *
+         * This gets triggered once the ball comes to a rest and before it is
+         * vanished away (if it should be).
+         *
+         * @param {Ball}    ball        the ball that stopped dropping
+         * @param {boolean} reachedGoal true if the ball reached the goal, false
+         * if it stopped in the maze somewhere.
+         */
+        ballDropComplete (ball : Ball, reachedGoal : boolean) : void
+        {
+            if (reachedGoal)
+                console.log ("GOOOOOAL!");
+
+            // Switch back to the player now.
+            this.state = GameState.PLAYER_TURN;
+        }
+
+        /**
          * This gets triggered every time our state machine gets put into a new
          * state.
          *

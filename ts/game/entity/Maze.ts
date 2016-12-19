@@ -19,6 +19,28 @@ module nurdz.game
     export interface MazeEventListener
     {
         /**
+         * The maze was asked to push a ball somehow and the ball push has
+         * started now.
+         *
+         * @param {Ball} ball the ball entity that is being pushed.
+         */
+        startBallPush (ball : Ball) : void;
+
+        /**
+         * A ball drop that was in progress has now finished. The event features
+         * the ball that was dropped and also an indication as to whether the
+         * ball reached the goal or not.
+         *
+         * This gets triggered once the ball comes to a rest and before it is
+         * vanished away (if it should be).
+         *
+         * @param {Ball}    ball        the ball that stopped dropping
+         * @param {boolean} reachedGoal true if the ball reached the goal, false
+         * if it stopped in the maze somewhere.
+         */
+        ballDropComplete (ball : Ball, reachedGoal : boolean) : void;
+
+        /**
          * This will get invoked every time we're told to generate a maze and
          * our generation is finally completed.
          */
@@ -539,6 +561,11 @@ module nurdz.game
 
             // Set up the drop speed.
             this._dropSpeed = speed;
+
+            // Now that the ball has started moving, if there is a listener,
+            // tell it.
+            if (this._listener != null)
+                this._listener.startBallPush (ball);
         }
 
         /**
@@ -813,6 +840,12 @@ module nurdz.game
                 {
                     // Add the ball back to the maze at it's current position.
                     this._contents.setCellAt (pos.x, pos.y, this._droppingBall);
+
+                    // If there is a listener, tell it that this ball has stopped
+                    // moving now.
+                    if (this._listener != null)
+                        this._listener.ballDropComplete (this._droppingBall,
+                                                         pos.y == MAZE_HEIGHT - 2);
 
                     // If the ball position is at the bottom of the maze or it
                     // is one of the final balls, then, get it to play it's

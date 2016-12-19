@@ -3570,6 +3570,10 @@ var nurdz;
                 this._lastDropTick = this._stage.tick;
                 // Set up the drop speed.
                 this._dropSpeed = speed;
+                // Now that the ball has started moving, if there is a listener,
+                // tell it.
+                if (this._listener != null)
+                    this._listener.startBallPush(ball);
             };
             /**
              * Given a point that represents the position that is expected to be a
@@ -3800,6 +3804,10 @@ var nurdz;
                     if (this.nextBallPosition(this._droppingBall, pos, false) == false) {
                         // Add the ball back to the maze at it's current position.
                         this._contents.setCellAt(pos.x, pos.y, this._droppingBall);
+                        // If there is a listener, tell it that this ball has stopped
+                        // moving now.
+                        if (this._listener != null)
+                            this._listener.ballDropComplete(this._droppingBall, pos.y == game.MAZE_HEIGHT - 2);
                         // If the ball position is at the bottom of the maze or it
                         // is one of the final balls, then, get it to play it's
                         // vanish animation. When this is not the case, the ball
@@ -4344,6 +4352,38 @@ var nurdz;
             GameScene.prototype.mazeGenerationComplete = function () {
                 // For now, after maze generation it is always the human player's
                 // turn.
+                this.state = game.GameState.PLAYER_TURN;
+            };
+            /**
+             * This gets invoked when either the player or the computer has selected
+             * a ball to push and told the maze to push it, and the maze has decided
+             * that this is allowed and it is about to drop the ball.
+             *
+             * We get told what ball is currently being dropped. We can determine
+             * who pushed the ball by the current state.
+             *
+             * @param {Ball} ball the ball entity that is being pushed.
+             */
+            GameScene.prototype.startBallPush = function (ball) {
+                // Set the state to indicate that a ball is being dropped.
+                this.state = game.GameState.BALL_DROPPING;
+            };
+            /**
+             * A ball drop that was in progress has now finished. The event features
+             * the ball that was dropped and also an indication as to whether the
+             * ball reached the goal or not.
+             *
+             * This gets triggered once the ball comes to a rest and before it is
+             * vanished away (if it should be).
+             *
+             * @param {Ball}    ball        the ball that stopped dropping
+             * @param {boolean} reachedGoal true if the ball reached the goal, false
+             * if it stopped in the maze somewhere.
+             */
+            GameScene.prototype.ballDropComplete = function (ball, reachedGoal) {
+                if (reachedGoal)
+                    console.log("GOOOOOAL!");
+                // Switch back to the player now.
                 this.state = game.GameState.PLAYER_TURN;
             };
             /**
