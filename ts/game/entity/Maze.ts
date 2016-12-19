@@ -307,12 +307,6 @@ module nurdz.game
             // maze contents so that it can update the position of things.
             this._contents.cellSize = this._cellSize;
             this._contents.position = this._position;
-
-            // Generate a maze now.
-            //
-            // This has to be here because we can't generate the maze without
-            // knowing the size of the cells.
-            this.generateMaze ();
         }
 
         /**

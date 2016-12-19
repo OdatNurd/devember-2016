@@ -3344,11 +3344,6 @@ var nurdz;
                     // maze contents so that it can update the position of things.
                     _this._contents.cellSize = _this._cellSize;
                     _this._contents.position = _this._position;
-                    // Generate a maze now.
-                    //
-                    // This has to be here because we can't generate the maze without
-                    // knowing the size of the cells.
-                    _this.generateMaze();
                 };
                 // Set up a preload for the same sprite sheet that the brick entities
                 // are using. This will allow us to capture the callback that
