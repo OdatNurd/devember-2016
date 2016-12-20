@@ -96,11 +96,14 @@ module nurdz.game
             this._maze.listener = this;
 
             // Now create the player and the computer player objects and set
-            // the position of each of them to be the first column in the map.
+            // the position of each of them to be the first column in the map
+            // and their visibility state to hidden.
             this._player = new Player (stage, PlayerType.PLAYER_HUMAN);
             this._player.mapPosition.setToXY (1, 0);
+            this._player.visible = false;
             this._computer = new Player (stage, PlayerType.PLAYER_COMPUTER);
             this._computer.mapPosition.setToXY (1, 0);
+            this._computer.visible = false;
 
             // Add all of our child entities so that they update and render.
             this.addActor (this._maze);
@@ -494,6 +497,20 @@ module nurdz.game
                 // We are supposed to be generating a maze, so do that now.
                 case GameState.MAZE_GENERATION:
                     this._maze.generateMaze ();
+                    break;
+
+                // It is now the turn of the human player, so make sure that
+                // they are visible and the computer is not.
+                case GameState.PLAYER_TURN:
+                    this._player.visible = true;
+                    this._computer.visible = false;
+                    break;
+
+                // It is now the turn of the computer player, so make sure that
+                // they are visible and the player is not.
+                case GameState.COMPUTER_TURN:
+                    this._computer.visible = true;
+                    this._player.visible = false;
                     break;
             }
         }
