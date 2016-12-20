@@ -24,6 +24,11 @@ module nurdz.game
         private _player : Player;
 
         /**
+         * The entity that represents the computer player.
+         */
+        private _computer : Player;
+
+        /**
          * The debugger for our maze. We store a reference to make access easier.
          */
         private _debugger : MazeDebugger;
@@ -85,19 +90,22 @@ module nurdz.game
             this._state = new StateMachine ();
             this._state.addListener (this);
 
-            // Create the maze and player objects and add them to the scene so
-            // they can render themselves.
+            // Create the maze that holds most of our game state and tell it
+            // that we are interested in when game related events trigger.
             this._maze = new Maze (stage);
-            this._player = new Player (stage, PlayerType.PLAYER_HUMAN);
-            this.addActor (this._maze);
-            this.addActor (this._player);
-
-            // Tell the maze that we want to know when game events trigger.
             this._maze.listener = this;
 
-            // The player starts at map position 1,0 so that it is above the
-            // first column in the maze.
+            // Now create the player and the computer player objects and set
+            // the position of each of them to be the first column in the map.
+            this._player = new Player (stage, PlayerType.PLAYER_HUMAN);
             this._player.mapPosition.setToXY (1, 0);
+            this._computer = new Player (stage, PlayerType.PLAYER_COMPUTER);
+            this._computer.mapPosition.setToXY (1, 0);
+
+            // Add all of our child entities so that they update and render.
+            this.addActor (this._maze);
+            this.addActor (this._player);
+            this.addActor (this._computer);
 
             // Start out with a default mouse location.
             this._mouse = new Point (0, 0);
@@ -119,9 +127,11 @@ module nurdz.game
             // Let the super work its magic.
             super.activating (previousScene);
 
-            // Set the reference position of the player to that of the maze,
-            // shifted up a bit to put the player above the maze.
+            // Set the reference position of the player and computer entities
+            // to that of the maze, shifted up some cell so that they appear in
+            // the virtual cell on top of the maze.
             this._player.referencePoint = this._maze.position.copyTranslatedXY (0, -this._maze.cellSize);
+            this._computer.referencePoint = this._maze.position.copyTranslatedXY (0, -this._maze.cellSize);
 
             // If there is no current state, it's time to generate a new level.
             if (this.state == GameState.NO_STATE)
