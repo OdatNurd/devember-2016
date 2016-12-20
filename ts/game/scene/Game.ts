@@ -105,6 +105,10 @@ module nurdz.game
             this._computer.mapPosition.setToXY (1, 0);
             this._computer.visible = false;
 
+            // The computer player needs a handle to the maze so that it can
+            // determine what moves to make.
+            this._computer.maze = this._maze;
+
             // Add all of our child entities so that they update and render.
             this.addActor (this._maze);
             this.addActor (this._player);
@@ -511,6 +515,9 @@ module nurdz.game
                 case GameState.COMPUTER_TURN:
                     this._computer.visible = true;
                     this._player.visible = false;
+
+                    // Tell the computer that they're starting their turn now.
+                    this._computer.ai_startingTurn ();
                     break;
             }
         }

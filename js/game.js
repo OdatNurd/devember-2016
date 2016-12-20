@@ -1725,6 +1725,9 @@ var nurdz;
                 // the one that was automatically selected (the first one added).
                 if (playerType == PlayerType.PLAYER_COMPUTER)
                     this.playAnimation("c_idle_r");
+                // Set up default AI parameters.
+                this._aiSelectedColumn = 0;
+                this._maze = null;
             }
             Object.defineProperty(Player.prototype, "playerType", {
                 /**
@@ -1792,6 +1795,26 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Player.prototype, "maze", {
+                /**
+                 * Get the maze entity that this computer AI controlled Player will use
+                 * to select its moves. A human controlled player entity ignroes this
+                 * value.
+                 *
+                 * @returns {Maze} the maze currently being used for move selection.
+                 */
+                get: function () { return this._maze; },
+                /**
+                 * Set the maze entity that this computer AI controlled player will use
+                 * to select its moves. A human controlled player entity ignores this
+                 * value.
+                 *
+                 * @param {Maze} newMaze [description]
+                 */
+                set: function (newMaze) { this._maze = newMaze; },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * Update our screen position based on our currently set reference point
              * and our map position.
@@ -1817,9 +1840,27 @@ var nurdz;
             Player.prototype.update = function (stage, tick) {
                 // Let the super do its job.
                 _super.prototype.update.call(this, stage, tick);
-                // If we are not visible, leave now.
-                if (this._visible == false)
+                // The remainder of the logic is for the computer player when it is
+                // taking a turn. Thus it does not need to execute if this is a
+                // human player, the entity is not currently visible, or we are
+                // already done with our turn.
+                if (this._visible == false || this._playerType == PlayerType.PLAYER_HUMAN ||
+                    this._aiSelectedColumn == 0)
                     return;
+                // If there is not a target column for the ball to push yet, then we
+                // need to select that right now.
+                if (this._aiSelectedColumn == -1) {
+                    console.log("AI is selecting a move");
+                    this.ai_selectTargetColumn();
+                }
+                else if (this._aiSelectedColumn != this._mapPosition.x) {
+                    console.log("AI is walking towards target");
+                    this.ai_stepTowardsTargetBall();
+                }
+                else {
+                    console.log("AI is pushing the ball now");
+                    this.ai_pushTargetBall();
+                }
             };
             /**
              * Render this player using the renderer provided. The position given is
@@ -1935,6 +1976,88 @@ var nurdz;
             Player.prototype.jumpTo = function (newX) {
                 this._mapPosition.x = newX;
                 this.updateScreenPosition();
+            };
+            /**
+             * This method is for use when this player entity represents a computer
+             * AI player.
+             *
+             * This is to inform the entity that it is becoming their turn and so on
+             * the next call to the update method, we should start our turn.
+             */
+            Player.prototype.ai_startingTurn = function () {
+                // Indicate that we need to select a column to push on the next
+                // update loop.
+                this._aiSelectedColumn = -1;
+            };
+            /**
+             * When invoked, this method selects the ball from the current maze
+             * layout that it wants to push.
+             *
+             * This will always select a ball to push, so this should only be
+             * invoked when we know that we need to select a new ball.
+             */
+            Player.prototype.ai_selectTargetColumn = function () {
+                // Use the AI function to select a ball in the maze.
+                //
+                // This should always return a valid ball to push (and never null)
+                // because we ensure that there is actually a move available prior
+                // to switching to the AI turn.
+                var ball = game.AI_selectBestMove(this._maze);
+                if (ball == null) {
+                    // Disregard that comment above; this is bad and can conceivably
+                    // happen because we don't actually perform that check like the
+                    // comment says we do (yet).
+                    this._aiSelectedColumn = 0;
+                    console.log("AI decided it cannot make a move; this is bad mojo");
+                    return;
+                }
+                // Set the target position to the one that is in the ball that
+                // we want to push.
+                this._aiSelectedColumn = ball.mapPosition.x;
+                console.log("AI selected ball at column " + this._aiSelectedColumn);
+            };
+            /**
+             * When the AI player is not currently at the correct column in the maze
+             * to push its target ball, this method should be invoked.
+             *
+             * It will cause the player to step towards the correct column, making
+             * sure that we change our facing as needed first.
+             */
+            Player.prototype.ai_stepTowardsTargetBall = function () {
+                // Assume that we want to go left, which is a positional offset of
+                // -1.
+                var direction = PlayerDirection.DIRECTION_LEFT;
+                var offset = -1;
+                // If the target map position is larger than  us, we actually want
+                // to turn right instead.
+                if (this._mapPosition.x < this._aiSelectedColumn) {
+                    direction = PlayerDirection.DIRECTION_RIGHT;
+                    offset = 1;
+                }
+                // If we are not currently facing in the correct direction, then we
+                // need to turn to that direction.
+                if (this._playerDirection != direction)
+                    this.turnTo(direction);
+                else if (this.animations.isPlaying == false)
+                    this.moveBy(offset);
+            };
+            /**
+             * When the AI player is standing in the correct column in the maze to
+             * push its target ball, this method should be invoked.
+             *
+             * It will cause the computer player to turn towards the ball and push
+             * it.
+             */
+            Player.prototype.ai_pushTargetBall = function () {
+                // If we are not currently facing downards, then we need to face
+                // in that direction now.
+                if (this._playerDirection != PlayerDirection.DIRECTION_DOWN)
+                    this.turnTo(PlayerDirection.DIRECTION_DOWN);
+                else if (this.animations.isPlaying == false) {
+                    this.push();
+                    if (this._maze.pushBall(this._aiSelectedColumn))
+                        this._aiSelectedColumn = 0;
+                }
             };
             return Player;
         }(game.Entity));
@@ -4128,6 +4251,9 @@ var nurdz;
                 this._computer = new game.Player(stage, game.PlayerType.PLAYER_COMPUTER);
                 this._computer.mapPosition.setToXY(1, 0);
                 this._computer.visible = false;
+                // The computer player needs a handle to the maze so that it can
+                // determine what moves to make.
+                this._computer.maze = this._maze;
                 // Add all of our child entities so that they update and render.
                 this.addActor(this._maze);
                 this.addActor(this._player);
@@ -4498,6 +4624,8 @@ var nurdz;
                     case game.GameState.COMPUTER_TURN:
                         this._computer.visible = true;
                         this._player.visible = false;
+                        // Tell the computer that they're starting their turn now.
+                        this._computer.ai_startingTurn();
                         break;
                 }
             };

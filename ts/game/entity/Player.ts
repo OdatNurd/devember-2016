@@ -73,6 +73,33 @@ module nurdz.game
         private _visible : boolean;
 
         /**
+         * For an AI player, this value represents the maze entity that is
+         * currently in use in the game. This is needed to allow us to apply our
+         * last generation AI technology.
+         *
+         * This value can safely be null for a human Player entity, since it
+         * would never be used anyway.
+         */
+        private _maze : Maze;
+
+        /**
+         * In a computer player entity, this represents the column in the maze
+         * that represents the ball that they want to attempt to push on this
+         * turn.
+         *
+         * A value of 0 indicates that the computer player is done their turn
+         * now and should take no further actions.
+         *
+         * A value of -1 indicates that the AI is ready to take a new turn and
+         * so it should select a column.
+         *
+         * Any other value indicates the column that the computer is trying to
+         * push. This can never be 0 because column 0 in the maze is the side
+         * wall, where we can't move to.
+         */
+        private _aiSelectedColumn : number;
+
+        /**
          * Get the type of the current player; this controls what the player
          * looks like.
          *
@@ -133,6 +160,26 @@ module nurdz.game
          */
         set visible (newState : boolean)
         { this._visible = newState; }
+
+        /**
+         * Get the maze entity that this computer AI controlled Player will use
+         * to select its moves. A human controlled player entity ignroes this
+         * value.
+         *
+         * @returns {Maze} the maze currently being used for move selection.
+         */
+        get maze () : Maze
+        { return this._maze; }
+
+        /**
+         * Set the maze entity that this computer AI controlled player will use
+         * to select its moves. A human controlled player entity ignores this
+         * value.
+         *
+         * @param {Maze} newMaze [description]
+         */
+        set maze (newMaze : Maze)
+        { this._maze = newMaze; }
 
         /**
          * Construct a new maze cell that will render on the stage provided and
@@ -216,6 +263,10 @@ module nurdz.game
             // the one that was automatically selected (the first one added).
             if (playerType == PlayerType.PLAYER_COMPUTER)
                 this.playAnimation ("c_idle_r");
+
+            // Set up default AI parameters.
+            this._aiSelectedColumn = 0;
+            this._maze = null;
         }
 
         /**
@@ -263,9 +314,39 @@ module nurdz.game
             // Let the super do its job.
             super.update (stage, tick);
 
-            // If we are not visible, leave now.
-            if (this._visible == false)
+            // The remainder of the logic is for the computer player when it is
+            // taking a turn. Thus it does not need to execute if this is a
+            // human player, the entity is not currently visible, or we are
+            // already done with our turn.
+            if (this._visible == false || this._playerType == PlayerType.PLAYER_HUMAN ||
+                this._aiSelectedColumn == 0)
                 return;
+
+            // If there is not a target column for the ball to push yet, then we
+            // need to select that right now.
+            if (this._aiSelectedColumn == -1)
+            {
+                console.log ("AI is selecting a move");
+                this.ai_selectTargetColumn ();
+            }
+
+            // There is a target column; if we're not there yet, then take a
+            // step towards it. This call will turn the entity in the correct
+            // direction and be sure not to take a step until the turn is
+            // completed.
+            else if (this._aiSelectedColumn != this._mapPosition.x)
+            {
+                console.log ("AI is walking towards target");
+                this.ai_stepTowardsTargetBall ();
+            }
+
+            // We are at the target column, so turn to face the ball and push
+            // it.
+            else
+            {
+                console.log ("AI is pushing the ball now");
+                this.ai_pushTargetBall ();
+            }
         }
 
         /**
@@ -404,6 +485,109 @@ module nurdz.game
         {
             this._mapPosition.x = newX;
             this.updateScreenPosition ();
+        }
+
+        /**
+         * This method is for use when this player entity represents a computer
+         * AI player.
+         *
+         * This is to inform the entity that it is becoming their turn and so on
+         * the next call to the update method, we should start our turn.
+         */
+        ai_startingTurn () : void
+        {
+            // Indicate that we need to select a column to push on the next
+            // update loop.
+            this._aiSelectedColumn = -1;
+        }
+
+        /**
+         * When invoked, this method selects the ball from the current maze
+         * layout that it wants to push.
+         *
+         * This will always select a ball to push, so this should only be
+         * invoked when we know that we need to select a new ball.
+         */
+        private ai_selectTargetColumn () : void
+        {
+            // Use the AI function to select a ball in the maze.
+            //
+            // This should always return a valid ball to push (and never null)
+            // because we ensure that there is actually a move available prior
+            // to switching to the AI turn.
+            let ball = AI_selectBestMove (this._maze);
+            if (ball == null)
+            {
+                // Disregard that comment above; this is bad and can conceivably
+                // happen because we don't actually perform that check like the
+                // comment says we do (yet).
+                this._aiSelectedColumn = 0;
+                console.log ("AI decided it cannot make a move; this is bad mojo");
+                return;
+            }
+
+            // Set the target position to the one that is in the ball that
+            // we want to push.
+            this._aiSelectedColumn = ball.mapPosition.x;
+            console.log ("AI selected ball at column " + this._aiSelectedColumn);
+        }
+
+        /**
+         * When the AI player is not currently at the correct column in the maze
+         * to push its target ball, this method should be invoked.
+         *
+         * It will cause the player to step towards the correct column, making
+         * sure that we change our facing as needed first.
+         */
+        private ai_stepTowardsTargetBall () : void
+        {
+            // Assume that we want to go left, which is a positional offset of
+            // -1.
+            let direction = PlayerDirection.DIRECTION_LEFT;
+            let offset = -1;
+
+            // If the target map position is larger than  us, we actually want
+            // to turn right instead.
+            if (this._mapPosition.x < this._aiSelectedColumn)
+            {
+                direction = PlayerDirection.DIRECTION_RIGHT;
+                offset = 1;
+            }
+
+            // If we are not currently facing in the correct direction, then we
+            // need to turn to that direction.
+            if (this._playerDirection != direction)
+                this.turnTo (direction);
+
+            // We are facing the right direction, so as long as our animation is
+            // not playing we are not still actively turning in that direction,
+            // so we can update our position by the proper offset now.
+            else if (this.animations.isPlaying == false)
+                this.moveBy (offset);
+        }
+
+        /**
+         * When the AI player is standing in the correct column in the maze to
+         * push its target ball, this method should be invoked.
+         *
+         * It will cause the computer player to turn towards the ball and push
+         * it.
+         */
+        private ai_pushTargetBall () : void
+        {
+            // If we are not currently facing downards, then we need to face
+            // in that direction now.
+            if (this._playerDirection != PlayerDirection.DIRECTION_DOWN)
+                this.turnTo (PlayerDirection.DIRECTION_DOWN);
+
+            // We are facing downwards, so play our push animation and then
+            // get the maze to push the ball.
+            else if (this.animations.isPlaying == false)
+            {
+                this.push ();
+                if (this._maze.pushBall (this._aiSelectedColumn))
+                    this._aiSelectedColumn = 0;
+            }
         }
     }
 }
