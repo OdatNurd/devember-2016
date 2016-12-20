@@ -1695,6 +1695,8 @@ var nurdz;
                 _this._sheet = new game.SpriteSheet(stage, "sprites_5_12.png", 5, 12, true, _this.setDimensions);
                 // The default reference point is the upper left corner of the screen.
                 _this._referencePoint = new game.Point(0, 0);
+                // We start out visible.
+                _this._visible = true;
                 // Set up animations. There are multiple idle and rotate animations,
                 // and a set for the player and human.
                 //
@@ -1786,6 +1788,25 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Player.prototype, "visible", {
+                /**
+                 * Get the visibility state of this entity; when the entity is
+                 * invisible, its update() and render() methods do nothing.
+                 *
+                 * @returns {boolean} true to be visible and active or false to be
+                 * invisible and inactive.
+                 */
+                get: function () { return this._visible; },
+                /**
+                 * Set the visibility state of this entity; when the entity is invisible,
+                 * its update() and render() methods do nothing
+                 *
+                 * @param {boolean} newState the new visibility state to apply
+                 */
+                set: function (newState) { this._visible = newState; },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * Update our screen position based on our currently set reference point
              * and our map position.
@@ -1796,6 +1817,42 @@ var nurdz;
             Player.prototype.updateScreenPosition = function () {
                 this._position.setToXY(this._referencePoint.x +
                     (this.mapPosition.x * this._width), this._referencePoint.y);
+            };
+            /**
+             * Update internal state for this pklayer entity.
+             *
+             * This always invokes the super to do engine housekeeping (such as
+             * updating animations), but if we are not visible, no further logic is
+             * applied.
+             *
+             * @param stage the stage that the actor is on
+             * @param tick the game tick; this is a count of how many times the game
+             * loop has executed
+             */
+            Player.prototype.update = function (stage, tick) {
+                // Let the super do its job.
+                _super.prototype.update.call(this, stage, tick);
+                // If we are not visible, leave now.
+                if (this._visible == false)
+                    return;
+            };
+            /**
+             * Render this player using the renderer provided. The position given is
+             * the position to render on the screen.
+             *
+             * This will invoke the super version by default, unless we're not
+             * visible, in which case it does nothing.
+             *
+             * @param x the x location to render the actor at, in stage coordinates
+             * (NOT world)
+             * @param y the y location to render the actor at, in stage coordinates
+             * (NOT world)
+             * @param renderer the class to use to render the actor
+             */
+            Player.prototype.render = function (x, y, renderer) {
+                // If we're visible, let the super render us.
+                if (this._visible)
+                    _super.prototype.render.call(this, x, y, renderer);
             };
             /**
              * Get an indication as to whether the player is capable of pushing at

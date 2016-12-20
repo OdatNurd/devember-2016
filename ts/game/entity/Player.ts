@@ -63,6 +63,16 @@ module nurdz.game
         private _referencePoint : Point;
 
         /**
+         * True if we are visible on the screen or false if we are currently
+         * invisible. We default to visible when we are created, but we can
+         * toggle this.
+         *
+         * When we are invisible, our update() and render() methods take no
+         * actions.
+         */
+        private _visible : boolean;
+
+        /**
          * Get the type of the current player; this controls what the player
          * looks like.
          *
@@ -106,6 +116,25 @@ module nurdz.game
         }
 
         /**
+         * Get the visibility state of this entity; when the entity is
+         * invisible, its update() and render() methods do nothing.
+         *
+         * @returns {boolean} true to be visible and active or false to be
+         * invisible and inactive.
+         */
+        get visible () : boolean
+        { return this._visible; }
+
+        /**
+         * Set the visibility state of this entity; when the entity is invisible,
+         * its update() and render() methods do nothing
+         *
+         * @param {boolean} newState the new visibility state to apply
+         */
+        set visible (newState : boolean)
+        { this._visible = newState; }
+
+        /**
          * Construct a new maze cell that will render on the stage provided and
          * which has the entity name provided.
          *
@@ -133,6 +162,9 @@ module nurdz.game
 
             // The default reference point is the upper left corner of the screen.
             this._referencePoint = new Point (0, 0);
+
+            // We start out visible.
+            this._visible = true;
 
             // Set up animations. There are multiple idle and rotate animations,
             // and a set for the player and human.
@@ -213,6 +245,47 @@ module nurdz.game
             this._position.setToXY (this._referencePoint.x +
                                          (this.mapPosition.x * this._width),
                                     this._referencePoint.y);
+        }
+
+        /**
+         * Update internal state for this pklayer entity.
+         *
+         * This always invokes the super to do engine housekeeping (such as
+         * updating animations), but if we are not visible, no further logic is
+         * applied.
+         *
+         * @param stage the stage that the actor is on
+         * @param tick the game tick; this is a count of how many times the game
+         * loop has executed
+         */
+        update (stage : Stage, tick : number) : void
+        {
+            // Let the super do its job.
+            super.update (stage, tick);
+
+            // If we are not visible, leave now.
+            if (this._visible == false)
+                return;
+        }
+
+        /**
+         * Render this player using the renderer provided. The position given is
+         * the position to render on the screen.
+         *
+         * This will invoke the super version by default, unless we're not
+         * visible, in which case it does nothing.
+         *
+         * @param x the x location to render the actor at, in stage coordinates
+         * (NOT world)
+         * @param y the y location to render the actor at, in stage coordinates
+         * (NOT world)
+         * @param renderer the class to use to render the actor
+         */
+        render (x : number, y : number, renderer : nurdz.game.Renderer) : void
+        {
+            // If we're visible, let the super render us.
+            if (this._visible)
+                super.render (x, y, renderer);
         }
 
         /**
