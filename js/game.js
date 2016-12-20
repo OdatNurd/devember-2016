@@ -1473,36 +1473,31 @@ var nurdz;
              */
             GameState[GameState["CHECK_VALID_PLAY_COMPUTER"] = 4] = "CHECK_VALID_PLAY_COMPUTER";
             /**
-             * The computer is now selecting its move by analyzing the maze to see
-             * what it should do.
-             */
-            GameState[GameState["COMPUTER_SELECT_MOVE"] = 5] = "COMPUTER_SELECT_MOVE";
-            /**
              * The computer has selected its move and is now in the process of
              * taking it. This covers moving to the ball, turning, and pushing.
              */
-            GameState[GameState["COMPUTER_TURN"] = 6] = "COMPUTER_TURN";
+            GameState[GameState["COMPUTER_TURN"] = 5] = "COMPUTER_TURN";
             /**
              * A ball is currently dropping through the maze. This can be either due
              * to the player pushing the ball, the AI pushing a ball, or the end of
              * round.
              */
-            GameState[GameState["BALL_DROPPING"] = 7] = "BALL_DROPPING";
+            GameState[GameState["BALL_DROPPING"] = 6] = "BALL_DROPPING";
             /**
              * All of the balls have been pushed (or are blocked) so it is time to
              * remove all of the gray bricks from the maze.
              */
-            GameState[GameState["REMOVE_GRAY_BRICKS"] = 8] = "REMOVE_GRAY_BRICKS";
+            GameState[GameState["REMOVE_GRAY_BRICKS"] = 7] = "REMOVE_GRAY_BRICKS";
             /**
              * All of the gray bricks have been removed, so we are now in the
              * process of finding all balls that can still drop and dropping them.
              */
-            GameState[GameState["FINAL_BALL_DROP"] = 9] = "FINAL_BALL_DROP";
+            GameState[GameState["FINAL_BALL_DROP"] = 8] = "FINAL_BALL_DROP";
             /**
              * All gray bricks have been removed and all of the final ball drops
              * have finished, so everything is done now.
              */
-            GameState[GameState["GAME_OVER"] = 10] = "GAME_OVER";
+            GameState[GameState["GAME_OVER"] = 9] = "GAME_OVER";
         })(game.GameState || (game.GameState = {}));
         var GameState = game.GameState;
         /**

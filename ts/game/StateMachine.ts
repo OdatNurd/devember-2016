@@ -38,12 +38,6 @@ module nurdz.game
         CHECK_VALID_PLAY_COMPUTER,
 
         /**
-         * The computer is now selecting its move by analyzing the maze to see
-         * what it should do.
-         */
-        COMPUTER_SELECT_MOVE,
-
-        /**
          * The computer has selected its move and is now in the process of
          * taking it. This covers moving to the ball, turning, and pushing.
          */
