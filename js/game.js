@@ -4381,10 +4381,27 @@ var nurdz;
              * if it stopped in the maze somewhere.
              */
             GameScene.prototype.ballDropComplete = function (ball, reachedGoal) {
+                // Did the ball reach the goal? This is good enough for testing.
                 if (reachedGoal)
                     console.log("GOOOOOAL!");
-                // Switch back to the player now.
-                this.state = game.GameState.PLAYER_TURN;
+                // Now that the ball is done, where we go depends on where we came
+                // from.
+                switch (this.priorState) {
+                    // If it was the players turn before the ball started dropping,
+                    // it is the computers turn now.
+                    case game.GameState.PLAYER_TURN:
+                        this.state = game.GameState.COMPUTER_TURN;
+                        break;
+                    // If it was the computers turn before the ball started
+                    // dropping, it is the players turn now.
+                    case game.GameState.COMPUTER_TURN:
+                        this.state = game.GameState.PLAYER_TURN;
+                        break;
+                    // If we get here, we don't know.
+                    default:
+                        console.log("DEBUG: Do not know how to get to the next state from here");
+                        break;
+                }
             };
             /**
              * This gets triggered every time our state machine gets put into a new

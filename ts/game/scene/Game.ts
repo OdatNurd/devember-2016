@@ -436,11 +436,31 @@ module nurdz.game
          */
         ballDropComplete (ball : Ball, reachedGoal : boolean) : void
         {
+            // Did the ball reach the goal? This is good enough for testing.
             if (reachedGoal)
                 console.log ("GOOOOOAL!");
 
-            // Switch back to the player now.
-            this.state = GameState.PLAYER_TURN;
+            // Now that the ball is done, where we go depends on where we came
+            // from.
+            switch (this.priorState)
+            {
+                // If it was the players turn before the ball started dropping,
+                // it is the computers turn now.
+                case GameState.PLAYER_TURN:
+                    this.state = GameState.COMPUTER_TURN;
+                    break;
+
+                // If it was the computers turn before the ball started
+                // dropping, it is the players turn now.
+                case GameState.COMPUTER_TURN:
+                    this.state = GameState.PLAYER_TURN;
+                    break;
+
+                // If we get here, we don't know.
+                default:
+                    console.log ("DEBUG: Do not know how to get to the next state from here");
+                    break;
+            }
         }
 
         /**
