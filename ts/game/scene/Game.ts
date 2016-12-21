@@ -346,6 +346,10 @@ module nurdz.game
                 // no new maze is generated first.
                 case KeyCodes.KEY_W:
                     return this._debugger.debugWipeMaze ();
+
+                case KeyCodes.KEY_Z:
+                    this._maze.contents.swapVisibleBalls ();
+                    return true;
             }
 
             // We did not handle it
@@ -508,6 +512,8 @@ module nurdz.game
                 case GameState.PLAYER_TURN:
                     this._player.visible = true;
                     this._computer.visible = false;
+                    if (this._maze.contents.visibleBallType != PlayerType.PLAYER_HUMAN)
+                        this._maze.contents.swapVisibleBalls ();
                     break;
 
                 // It is now the turn of the computer player, so make sure that
@@ -515,9 +521,11 @@ module nurdz.game
                 case GameState.COMPUTER_TURN:
                     this._computer.visible = true;
                     this._player.visible = false;
+                    if (this._maze.contents.visibleBallType != PlayerType.PLAYER_COMPUTER)
+                        this._maze.contents.swapVisibleBalls ();
 
                     // Tell the computer that they're starting their turn now.
-                    this._computer.ai_startingTurn ();
+                    // this._computer.ai_startingTurn ();
                     break;
             }
         }
