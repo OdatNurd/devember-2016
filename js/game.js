@@ -4128,22 +4128,13 @@ var nurdz;
              * of the level for the final phase of the round.
              */
             Maze.prototype.checkForAllBallsPlayed = function () {
-                // Scan every cell in the top row of the maze contents.
-                for (var cellX = 1; cellX < game.MAZE_WIDTH - 1; cellX++) {
-                    // Get the content of this cell. If there is content here, we
-                    // need to check below it.
-                    if (this._contents.getCellAt(cellX, 0) != null) {
-                        // If the cell below this ball isn't blocked, this ball is
-                        // still playable, so we can leave now.
-                        //
-                        // This always assumes that this is not a simulation.
-                        if (this._contents.getBlockingCellAt(cellX, 1, false) == null)
-                            return;
-                    }
-                }
-                // If we get here, all of the balls in the top row are either gone
-                // or blocked from moving. In either case, hide all of the gray
-                // bricks now.
+                // If there are any playable balls for either the computer or human
+                // player, leave.
+                if (this._contents.hasPlayableHumanBall || this._contents.hasPlayableComputerBall)
+                    return;
+                // If we get here, neither ball has a ball that is playable due to
+                // it being played or blocked from moving. In either case, hide all
+                // gray bricks now.
                 for (var i = 0; i < this._grayBricks.liveEntities.length; i++)
                     this._grayBricks.liveEntities[i].vanish();
             };
