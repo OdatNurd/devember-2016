@@ -1026,22 +1026,33 @@ var nurdz;
              * structure.
              */
             MazeGenerator.prototype.placeBalls = function () {
-                // There should be two sets of balls that we cycle between, but for
-                // now we just put a set of player balls into the top row of the
-                // maze.
-                for (var col = 1; col < game.MAZE_WIDTH - 1; col++) {
-                    // Get a ball; this pool always has enough entities for us
-                    // because the number is fixed.
-                    var ball = this._maze.getBall();
-                    // Set the score and type.
-                    ball.score = 0;
-                    ball.ballType = game.BallType.BALL_PLAYER;
-                    // Have the ball appear onto the screen (instead of just being
-                    // there)
-                    ball.appear();
-                    // Set the ball in now.
-                    this._contents.setCellAt(col, 0, ball);
+                // Get the arrays that store the player and comptuer balls from
+                // the contents object.
+                var playerBalls = this._contents.playerBalls;
+                var computerBalls = this._contents.computerBalls;
+                // For each element in the ball arrays, pull out a ball and set it
+                // to the appropriate type.
+                //
+                // This always works because the ball pool always has exactly enough
+                // balls for our purposes.
+                for (var ballIndex = 0; ballIndex < game.MAZE_WIDTH - 2; ballIndex++) {
+                    // Get the balls from the pool
+                    playerBalls[ballIndex] = this._maze.getBall();
+                    computerBalls[ballIndex] = this._maze.getBall();
+                    // Make sure that their score values are 0 to begin with.
+                    playerBalls[ballIndex].score = 0;
+                    computerBalls[ballIndex].score = 0;
+                    // Both balls should be at idle to start with.
+                    playerBalls[ballIndex].idle();
+                    computerBalls[ballIndex].idle();
+                    // Now set the appropriate type so that they visually display
+                    // as we want them to.
+                    playerBalls[ballIndex].ballType = game.BallType.BALL_PLAYER;
+                    computerBalls[ballIndex].ballType = game.BallType.BALL_COMPUTER;
                 }
+                // Now restore the balls that the maze thinks are currently active.
+                // This is the only place we pass false to this parameter.
+                this._contents.swapVisibleBalls(false);
             };
             /**
              * Generate a new maze into the maze we were given at construction time.
