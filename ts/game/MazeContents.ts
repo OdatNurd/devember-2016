@@ -155,6 +155,27 @@ module nurdz.game
         { return this._visibleBallType; }
 
         /**
+         * Set the balls that are currently visible in the maze to the balls for
+         * the player type provided.
+         *
+         * This clobbers what is already in the top row of the maze with the
+         * new contents, so use this with care; if the balls in the top row are
+         * of a different type and have been manipulated, those manipulations
+         * will be lost.
+         *
+         * @param {PlayerType} newType the new player type.
+         */
+        set visibleBallType (newType : PlayerType)
+        {
+            // Set the type and then force the provided balls to be visible.
+            this._visibleBallType = newType;
+            if (this._visibleBallType == PlayerType.PLAYER_HUMAN)
+                this.restoreFromBallArray (this._playerBalls);
+            else
+                this.restoreFromBallArray (this._computerBalls);
+        }
+
+        /**
          * Construct a new maze content object. This will create the underlying
          * data structure and initialize it to be completely devoid of cells
          * and markers.
@@ -165,16 +186,17 @@ module nurdz.game
             this._contents = new Array (MAZE_WIDTH * MAZE_HEIGHT);
             this._markers = new Array (MAZE_WIDTH * MAZE_HEIGHT);
 
-            // Create a position point and set a default cell size.
-            this._position = new Point (0, 0);
-            this._cellSize = 0;
-
             // Create the arrays that store the balls that the human and
             // computer players play with. These are not permanently stored in
             // the maze because their starting positions occupy the same part of
             // the maze.
             this._playerBalls = new Array<Ball> (MAZE_WIDTH - 2);
             this._computerBalls = new Array<Ball> (MAZE_WIDTH - 2);
+
+            // Create a position point and set a default cell size.
+            this._position = new Point (0, 0);
+            this._cellSize = 0;
+
 
             // Start out with the player balls originally visible.
             this._visibleBallType = PlayerType.PLAYER_HUMAN;
@@ -371,7 +393,7 @@ module nurdz.game
                 this._contents[i] = null;
 
             // Ensure that the ball arrays for both players are fully empty.
-            for (let i = 0 ; i < MAZE_WIDTH - 1 ; i++)
+            for (let i = 0 ; i < MAZE_WIDTH - 2 ; i++)
             {
                 this._playerBalls[i] = null;
                 this._computerBalls[i] = null;
@@ -491,7 +513,6 @@ module nurdz.game
                 this.setCellAt (ballIndex + 1, 0, ballArray[ballIndex]);
                 if (ballArray[ballIndex] != null)
                     ballArray[ballIndex].idle ();
-
             }
         }
 
@@ -503,26 +524,25 @@ module nurdz.game
          * can use the visibleBallType property.
          *
          * This will save the currently displayed balls in the top row before
-         * swapping in the opposing set if the saveFirst parameter is set to
-         * true. Except for initial maze generation, this is almost always what
-         * you want.
-         *
-         * @param {boolean} saveFirst true if we should save the current ball
-         * layout into the appropriate array or false otherwise
+         * swapping in the opposing set.
          */
-        swapVisibleBalls (saveFirst : boolean = true) : void
+        swapVisibleBalls () : void
         {
+            // Based on the visible ball type, save to one ball array and
+            // restore from the other.
             if (this._visibleBallType == PlayerType.PLAYER_HUMAN)
             {
-                if (saveFirst)
-                    this.saveToBallArray (this._computerBalls);
-                this.restoreFromBallArray (this._playerBalls);
+                console.log ("Swapping from human to computer balls");
+                this.saveToBallArray (this._playerBalls);
+                this.restoreFromBallArray (this._computerBalls);
+                this._visibleBallType = PlayerType.PLAYER_COMPUTER;
             }
             else
             {
-                if (saveFirst)
-                    this.saveToBallArray (this._playerBalls);
-                this.restoreFromBallArray (this._computerBalls);
+                console.log ("Swapping from computer to human balls");
+                this.saveToBallArray (this._computerBalls);
+                this.restoreFromBallArray (this._playerBalls);
+                this._visibleBallType = PlayerType.PLAYER_HUMAN;
             }
         }
 
