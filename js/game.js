@@ -227,6 +227,14 @@ var nurdz;
                 // Create a position point and set a default cell size.
                 this._position = new game.Point(0, 0);
                 this._cellSize = 0;
+                // Create the arrays that store the balls that the human and
+                // computer players play with. These are not permanently stored in
+                // the maze because their starting positions occupy the same part of
+                // the maze.
+                this._playerBalls = new Array(game.MAZE_WIDTH - 2);
+                this._computerBalls = new Array(game.MAZE_WIDTH - 2);
+                // Start out with the player balls originally visible.
+                this._visibleBallType = game.PlayerType.PLAYER_HUMAN;
                 // Start everything cleared out. This ensures that the arrays are
                 // properly initialized.
                 this.clearCells();
@@ -270,6 +278,46 @@ var nurdz;
                  * @param {number} newSize the new cell size
                  */
                 set: function (newSize) { this._cellSize = newSize; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(MazeContents.prototype, "playerBalls", {
+                /**
+                 * Get the array of balls that represents the balls that the human
+                 * player is allowed to push into the maze. This is stored separate from
+                 * the maze content in general so that it can be swapped in and out as
+                 * needed.
+                 *
+                 * @returns {Array<Ball>} the array of balls; indicies that are null
+                 * indicate the ball at this location has already been pushed.
+                 */
+                get: function () { return this._playerBalls; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(MazeContents.prototype, "computerBalls", {
+                /**
+                 * Get the array of balls that represents the balls that the computer
+                 * player is allowed to push into the maze. This is stored separate from
+                 * the maze content in general so that it can be swapped in and out as
+                 * needed.
+                 *
+                 * @returns {Array<Ball>} the array of balls; indicies that are null
+                 * indicate the ball at this location has already been pushed.
+                 */
+                get: function () { return this._computerBalls; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(MazeContents.prototype, "visibleBallType", {
+                /**
+                 * We can only view the balls playable by the player or by the computer
+                 * in the top row of the maze, not both at once. This indicates which
+                 * one is currently being displayed.
+                 *
+                 * @returns {PlayerType} the player whose balls are currently visible.
+                 */
+                get: function () { return this._visibleBallType; },
                 enumerable: true,
                 configurable: true
             });
@@ -428,6 +476,130 @@ var nurdz;
                 // Clear cells at all locations.
                 for (var i = 0; i < game.MAZE_WIDTH * game.MAZE_HEIGHT; i++)
                     this._contents[i] = null;
+                // Ensure that the ball arrays for both players are fully empty.
+                for (var i = 0; i < game.MAZE_WIDTH - 1; i++) {
+                    this._playerBalls[i] = null;
+                    this._computerBalls[i] = null;
+                }
+            };
+            /**
+             * Given an array of balls which is the full size of the content area of
+             * the maze (less the walls on either sides), check and see if any of
+             * the balls still in this array are playable or not.
+             *
+             * A ball is considered playable if the row directly under it is not
+             * blocked by something.
+             *
+             * This checks the array for the presence of the ball and then the
+             * current content of the maze below it to determine if it is playable;
+             * thus this does not require the balls to be stored in the content
+             * array.
+             *
+             * @param   {Array<Ball>} ballArray the ball array to check
+             *
+             * @returns {boolean}               true if any ball is playable, false
+             * otherwise
+             */
+            MazeContents.prototype.playableBallsInArray = function (ballArray) {
+                // Scan all balls in the ball array.
+                for (var ballIndex = 0; ballIndex < ballArray.length; ballIndex++) {
+                    // We only need to do something if there is a ball at this index
+                    // in the array.
+                    if (ballArray[ballIndex] != null) {
+                        // The index is the offset from the first content column in
+                        // the maze; if the cell below that column is not a blocking
+                        // cell, this ball is playable.
+                        //
+                        // This has to always assume no simulation.
+                        if (this.getBlockingCellAt(ballIndex + 1, 1, false) == null)
+                            return true;
+                    }
+                }
+                // There must be nothing playable.
+                return false;
+            };
+            /**
+             * Check to see if the human player has any balls that are still
+             * playable or not.
+             *
+             * This does not require the human player balls to be swapped into the
+             * maze first.
+             *
+             * @returns {boolean} true if the human player has any playable balls or
+             * false otherwise.
+             */
+            MazeContents.prototype.hasPlayableHumanBall = function () {
+                return this.playableBallsInArray(this._playerBalls);
+            };
+            /**
+             * Check to see if the computer player has any balls that are still
+             * playable or not.
+             *
+             * This does not require the computer player balls to be swapped into
+             * the maze first.
+             *
+             * @returns {boolean} true if the computer player has any playable balls
+             * or false otherwise.
+             */
+            MazeContents.prototype.hasPlayableComputerBall = function () {
+                return this.playableBallsInArray(this._computerBalls);
+            };
+            /**
+             * Copy the balls from the first row of the maze into the ball array
+             * passed in. Any missing balls become a null entry in the ball array as
+             * well.
+             *
+             * @param {Array<Ball>} ballArray the ball array to save into
+             */
+            MazeContents.prototype.saveToBallArray = function (ballArray) {
+                // Search the top row of the maze contents and store what we find.
+                // The ball index in the array is the offset from the first column
+                // in the maze contents.
+                for (var ballIndex = 0; ballIndex < ballArray.length; ballIndex++) {
+                    ballArray[ballIndex] = this.getCellAt(ballIndex + 1, 0);
+                }
+            };
+            /**
+             * Copy the balls from the ball array provided into the first row of the
+             * maze. Any missing balls become a null entry in the maze contents.
+             *
+             * @param {Array<Ball>} ballArray the ball array to store into the maze
+             */
+            MazeContents.prototype.restoreFromBallArray = function (ballArray) {
+                // Replace the top row of the maze contents with the ball array. The
+                // ball index in the array is the offset from the first column in
+                // the maze contents.
+                for (var ballIndex = 0; ballIndex < ballArray.length; ballIndex++) {
+                    this.setCellAt(ballIndex + 1, 0, ballArray[ballIndex]);
+                }
+            };
+            /**
+             * Swap the balls that are currently visible in the maze top row between
+             * the currently visible ones and the balls for the opposing player.
+             *
+             * In order to determine which player's balls are currently visible you
+             * can use the visibleBallType property.
+             *
+             * This will save the currently displayed balls in the top row before
+             * swapping in the opposing set if the saveFirst parameter is set to
+             * true. Except for initial maze generation, this is almost always what
+             * you want.
+             *
+             * @param {boolean} saveFirst true if we should save the current ball
+             * layout into the appropriate array or false otherwise
+             */
+            MazeContents.prototype.swapVisibleBalls = function (saveFirst) {
+                if (saveFirst === void 0) { saveFirst = true; }
+                if (this._visibleBallType == game.PlayerType.PLAYER_HUMAN) {
+                    if (saveFirst)
+                        this.saveToBallArray(this._computerBalls);
+                    this.restoreFromBallArray(this._playerBalls);
+                }
+                else {
+                    if (saveFirst)
+                        this.saveToBallArray(this._playerBalls);
+                    this.restoreFromBallArray(this._computerBalls);
+                }
             };
             /**
              * Check the maze at the given position to see if it is blocked for ball
