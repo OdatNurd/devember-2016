@@ -549,6 +549,9 @@ var nurdz;
              * passed in. Any missing balls become a null entry in the ball array as
              * well.
              *
+             * During the save, every ball that is saved is marked as being hidden
+             * so that it will no longer visually appear on the screen.
+             *
              * @param {Array<Ball>} ballArray the ball array to save into
              */
             MazeContents.prototype.saveToBallArray = function (ballArray) {
@@ -557,11 +560,16 @@ var nurdz;
                 // in the maze contents.
                 for (var ballIndex = 0; ballIndex < ballArray.length; ballIndex++) {
                     ballArray[ballIndex] = this.getCellAt(ballIndex + 1, 0);
+                    if (ballArray[ballIndex] != null)
+                        ballArray[ballIndex].hide();
                 }
             };
             /**
              * Copy the balls from the ball array provided into the first row of the
              * maze. Any missing balls become a null entry in the maze contents.
+             *
+             * During the restore, every ball that is restored is marked as being
+             * idle so that it will visually appear on the screen.
              *
              * @param {Array<Ball>} ballArray the ball array to store into the maze
              */
@@ -571,6 +579,8 @@ var nurdz;
                 // the maze contents.
                 for (var ballIndex = 0; ballIndex < ballArray.length; ballIndex++) {
                     this.setCellAt(ballIndex + 1, 0, ballArray[ballIndex]);
+                    if (ballArray[ballIndex] != null)
+                        ballArray[ballIndex].idle();
                 }
             };
             /**
@@ -1042,13 +1052,15 @@ var nurdz;
                     // Make sure that their score values are 0 to begin with.
                     playerBalls[ballIndex].score = 0;
                     computerBalls[ballIndex].score = 0;
-                    // Both balls should be at idle to start with.
-                    playerBalls[ballIndex].idle();
-                    computerBalls[ballIndex].idle();
                     // Now set the appropriate type so that they visually display
                     // as we want them to.
                     playerBalls[ballIndex].ballType = game.BallType.BALL_PLAYER;
                     computerBalls[ballIndex].ballType = game.BallType.BALL_COMPUTER;
+                    // Both balls should be hidden to begin with. This has to come
+                    // after the type setting below because when the type of a ball
+                    // changes it idles by default.
+                    playerBalls[ballIndex].hide();
+                    computerBalls[ballIndex].hide();
                 }
                 // Now restore the balls that the maze thinks are currently active.
                 // This is the only place we pass false to this parameter.

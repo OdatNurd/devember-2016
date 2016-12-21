@@ -488,14 +488,16 @@ module nurdz.game
                 playerBalls[ballIndex].score = 0;
                 computerBalls[ballIndex].score = 0;
 
-                // Both balls should be at idle to start with.
-                playerBalls[ballIndex].idle ();
-                computerBalls[ballIndex].idle ();
-
                 // Now set the appropriate type so that they visually display
                 // as we want them to.
                 playerBalls[ballIndex].ballType = BallType.BALL_PLAYER;
                 computerBalls[ballIndex].ballType = BallType.BALL_COMPUTER
+
+                // Both balls should be hidden to begin with. This has to come
+                // after the type setting below because when the type of a ball
+                // changes it idles by default.
+                playerBalls[ballIndex].hide ();
+                computerBalls[ballIndex].hide ();
             }
 
             // Now restore the balls that the maze thinks are currently active.

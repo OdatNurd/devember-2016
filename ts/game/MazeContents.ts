@@ -454,6 +454,9 @@ module nurdz.game
          * passed in. Any missing balls become a null entry in the ball array as
          * well.
          *
+         * During the save, every ball that is saved is marked as being hidden
+         * so that it will no longer visually appear on the screen.
+         *
          * @param {Array<Ball>} ballArray the ball array to save into
          */
         private saveToBallArray (ballArray : Array<Ball>) : void
@@ -464,12 +467,17 @@ module nurdz.game
             for (let ballIndex = 0 ; ballIndex < ballArray.length ; ballIndex++)
             {
                 ballArray[ballIndex] = <Ball> this.getCellAt (ballIndex + 1, 0);
+                if (ballArray[ballIndex] != null)
+                    ballArray[ballIndex].hide ();
             }
         }
 
         /**
          * Copy the balls from the ball array provided into the first row of the
          * maze. Any missing balls become a null entry in the maze contents.
+         *
+         * During the restore, every ball that is restored is marked as being
+         * idle so that it will visually appear on the screen.
          *
          * @param {Array<Ball>} ballArray the ball array to store into the maze
          */
@@ -481,6 +489,9 @@ module nurdz.game
             for (let ballIndex = 0 ; ballIndex < ballArray.length ; ballIndex++)
             {
                 this.setCellAt (ballIndex + 1, 0, ballArray[ballIndex]);
+                if (ballArray[ballIndex] != null)
+                    ballArray[ballIndex].idle ();
+
             }
         }
 
