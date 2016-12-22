@@ -579,8 +579,14 @@ var nurdz;
                 // in the maze contents.
                 for (var ballIndex = 0; ballIndex < ballArray.length; ballIndex++) {
                     ballArray[ballIndex] = this.getCellAt(ballIndex + 1, 0);
-                    if (ballArray[ballIndex] != null)
+                    if (ballArray[ballIndex] != null) {
+                        // Just to be save, clear the cell before we hide this ball
+                        // so that the update loop can't whack it. Pretty sure this
+                        // can't happen but I never want to experience this bug
+                        // again, sooo...
+                        this.clearCellAt(ballIndex + 1, 0);
                         ballArray[ballIndex].hide();
+                    }
                 }
             };
             /**
