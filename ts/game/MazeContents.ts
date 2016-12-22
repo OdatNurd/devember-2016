@@ -539,14 +539,12 @@ module nurdz.game
             // restore from the other.
             if (this._visibleBallType == PlayerType.PLAYER_HUMAN)
             {
-                console.log ("Swapping from human to computer balls");
                 this.saveToBallArray (this._playerBalls);
                 this.restoreFromBallArray (this._computerBalls);
                 this._visibleBallType = PlayerType.PLAYER_COMPUTER;
             }
             else
             {
-                console.log ("Swapping from computer to human balls");
                 this.saveToBallArray (this._computerBalls);
                 this.restoreFromBallArray (this._playerBalls);
                 this._visibleBallType = PlayerType.PLAYER_HUMAN;

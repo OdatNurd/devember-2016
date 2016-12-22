@@ -622,13 +622,11 @@ var nurdz;
                 // Based on the visible ball type, save to one ball array and
                 // restore from the other.
                 if (this._visibleBallType == game.PlayerType.PLAYER_HUMAN) {
-                    console.log("Swapping from human to computer balls");
                     this.saveToBallArray(this._playerBalls);
                     this.restoreFromBallArray(this._computerBalls);
                     this._visibleBallType = game.PlayerType.PLAYER_COMPUTER;
                 }
                 else {
-                    console.log("Swapping from computer to human balls");
                     this.saveToBallArray(this._computerBalls);
                     this.restoreFromBallArray(this._playerBalls);
                     this._visibleBallType = game.PlayerType.PLAYER_HUMAN;
@@ -2096,18 +2094,12 @@ var nurdz;
                     return;
                 // If there is not a target column for the ball to push yet, then we
                 // need to select that right now.
-                if (this._aiSelectedColumn == -1) {
-                    console.log("AI is selecting a move");
+                if (this._aiSelectedColumn == -1)
                     this.ai_selectTargetColumn();
-                }
-                else if (this._aiSelectedColumn != this._mapPosition.x) {
-                    console.log("AI is walking towards target");
+                else if (this._aiSelectedColumn != this._mapPosition.x)
                     this.ai_stepTowardsTargetBall();
-                }
-                else {
-                    console.log("AI is pushing the ball now");
+                else
                     this.ai_pushTargetBall();
-                }
             };
             /**
              * Render this player using the renderer provided. The position given is

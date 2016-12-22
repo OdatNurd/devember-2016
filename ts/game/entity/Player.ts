@@ -325,28 +325,19 @@ module nurdz.game
             // If there is not a target column for the ball to push yet, then we
             // need to select that right now.
             if (this._aiSelectedColumn == -1)
-            {
-                console.log ("AI is selecting a move");
                 this.ai_selectTargetColumn ();
-            }
 
             // There is a target column; if we're not there yet, then take a
             // step towards it. This call will turn the entity in the correct
             // direction and be sure not to take a step until the turn is
             // completed.
             else if (this._aiSelectedColumn != this._mapPosition.x)
-            {
-                console.log ("AI is walking towards target");
                 this.ai_stepTowardsTargetBall ();
-            }
 
             // We are at the target column, so turn to face the ball and push
             // it.
             else
-            {
-                console.log ("AI is pushing the ball now");
                 this.ai_pushTargetBall ();
-            }
         }
 
         /**
