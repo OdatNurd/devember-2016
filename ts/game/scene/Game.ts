@@ -238,6 +238,11 @@ module nurdz.game
 
                 // The question mark key; this is not in ts-game-engine yet.
                 case 191:
+                    // If we're in debugging mode, don't handle the key here and
+                    // let the debug code handle it instead.
+                    if (this._maze.debugger.debugTracking)
+                        return false;
+
                     // Get the AI to select a ball. If one was selected, jump
                     // the player to that position, turn to face it, and push.
                     // The push might not work if we're not already facing down,
@@ -350,6 +355,10 @@ module nurdz.game
                 // no new maze is generated first.
                 case KeyCodes.KEY_W:
                     return this._debugger.debugWipeMaze ();
+
+                // The question mark key; this is not in ts-game-engine yet.
+                case 191:
+                    return this._debugger.debugShowContents ();
 
                 // For debugging purposes, this key swaps to human balls
                 case KeyCodes.KEY_Z:

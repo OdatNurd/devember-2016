@@ -159,6 +159,48 @@ module nurdz.game
         }
 
         /**
+         * Log to the console some information on the currently selected debug
+         * cell in the maze, such as it's class, position, etc.
+         */
+        debugShowContents () : boolean
+        {
+            // Do nothing if tracking is turned off.
+            if (this._debugTracking == false)
+                return false;
+
+            // We always display the maze location no matter what.
+            console.log ("[DEBUG]: =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+            console.log ("[DEBUG]: Selected maze location: " + this._debugPoint.toString ());
+
+            // Get the cell; if it's empty, say so and leave.
+            let cell = this.getDebugCell ();
+            if (cell == null)
+            {
+                console.log ("[DEBUG]: Maze reports empty at this location");
+                return true;
+            }
+
+            if (cell.pool != null)
+            {
+                let isAlive = cell.pool.liveEntities.indexOf (cell) != -1;
+
+                console.log ("[DEBUG]: Entity is in pool (" + (isAlive ? "alive" : "dead") + ")");
+            }
+            else
+                console.log ("[DEBUG]: No assigned actor pool");
+
+            // Display some core information about this entity
+            console.log ("[DEBUG]: Entity type: " + cell.name + " (id=" + cell.properties.id + ")");
+            console.log ("[DEBUG]: Maze position: " + cell.mapPosition.toString ());
+            console.log ("[DEBUG]: Screen position: " + cell.position.toString ());
+            console.log ("[DEBUG]: Current animation: " + cell.animations.current);
+            console.log ("[DEBUG]: Current sprite: " + cell["_sprite"]);
+            console.log ("[DEBUG]: Object: ", cell);
+
+            return true;
+        }
+
+        /**
          * Remove the contents of an existing cell from the maze, returning the
          * object back into its pool.
          *

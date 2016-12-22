@@ -1229,6 +1229,38 @@ var nurdz;
                 this._contents.setCellAt(this._debugPoint.x, this._debugPoint.y, newCell);
             };
             /**
+             * Log to the console some information on the currently selected debug
+             * cell in the maze, such as it's class, position, etc.
+             */
+            MazeDebugger.prototype.debugShowContents = function () {
+                // Do nothing if tracking is turned off.
+                if (this._debugTracking == false)
+                    return false;
+                // We always display the maze location no matter what.
+                console.log("[DEBUG]: =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+                console.log("[DEBUG]: Selected maze location: " + this._debugPoint.toString());
+                // Get the cell; if it's empty, say so and leave.
+                var cell = this.getDebugCell();
+                if (cell == null) {
+                    console.log("[DEBUG]: Maze reports empty at this location");
+                    return true;
+                }
+                if (cell.pool != null) {
+                    var isAlive = cell.pool.liveEntities.indexOf(cell) != -1;
+                    console.log("[DEBUG]: Entity is in pool (" + (isAlive ? "alive" : "dead") + ")");
+                }
+                else
+                    console.log("[DEBUG]: No assigned actor pool");
+                // Display some core information about this entity
+                console.log("[DEBUG]: Entity type: " + cell.name + " (id=" + cell.properties.id + ")");
+                console.log("[DEBUG]: Maze position: " + cell.mapPosition.toString());
+                console.log("[DEBUG]: Screen position: " + cell.position.toString());
+                console.log("[DEBUG]: Current animation: " + cell.animations.current);
+                console.log("[DEBUG]: Current sprite: " + cell["_sprite"]);
+                console.log("[DEBUG]: Object: ", cell);
+                return true;
+            };
+            /**
              * Remove the contents of an existing cell from the maze, returning the
              * object back into its pool.
              *
@@ -4592,6 +4624,10 @@ var nurdz;
                         return true;
                     // The question mark key; this is not in ts-game-engine yet.
                     case 191:
+                        // If we're in debugging mode, don't handle the key here and
+                        // let the debug code handle it instead.
+                        if (this._maze.debugger.debugTracking)
+                            return false;
                         // Get the AI to select a ball. If one was selected, jump
                         // the player to that position, turn to face it, and push.
                         // The push might not work if we're not already facing down,
@@ -4687,6 +4723,9 @@ var nurdz;
                     // no new maze is generated first.
                     case game.KeyCodes.KEY_W:
                         return this._debugger.debugWipeMaze();
+                    // The question mark key; this is not in ts-game-engine yet.
+                    case 191:
+                        return this._debugger.debugShowContents();
                     // For debugging purposes, this key swaps to human balls
                     case game.KeyCodes.KEY_Z:
                         console.log("human balls");
