@@ -4590,6 +4590,19 @@ var nurdz;
                         if (this._player.playerDirection == game.PlayerDirection.DIRECTION_DOWN)
                             this._maze.pushBall(this._player.mapPosition.x);
                         return true;
+                    // The question mark key; this is not in ts-game-engine yet.
+                    case 191:
+                        // Get the AI to select a ball. If one was selected, jump
+                        // the player to that position, turn to face it, and push.
+                        // The push might not work if we're not already facing down,
+                        // but that's OK.
+                        var ball = game.AI_selectBestMove(this._maze);
+                        if (ball != null) {
+                            this._player.jumpTo(ball.mapPosition.x);
+                            this._player.turnTo(game.PlayerDirection.DIRECTION_DOWN);
+                            this._player.push();
+                        }
+                        return true;
                     // We don't handle any other keys.
                     default:
                         return false;
@@ -4631,15 +4644,6 @@ var nurdz;
                         if (this._debugger.debugTracking)
                             this._maze.setDebugPoint(this._mouse);
                         return true;
-                    // The question mark key; this is not in ts-game-engine yet.
-                    case 191:
-                        var ball = game.AI_selectBestMove(this._maze);
-                        if (ball != null) {
-                            this._player.jumpTo(ball.mapPosition.x);
-                            this._player.push();
-                            this._maze.pushBall(this._player.mapPosition.x);
-                        }
-                        break;
                     // Delete the contents of the current cell, if anything is
                     // there.
                     //
