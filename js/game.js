@@ -4906,7 +4906,7 @@ var nurdz;
                         if (this._maze.contents.visibleBallType != game.PlayerType.PLAYER_COMPUTER)
                             this._maze.contents.swapVisibleBalls();
                         // Tell the computer that they're starting their turn now.
-                        // this._computer.ai_startingTurn ();
+                        this._computer.ai_startingTurn();
                         break;
                 }
             };

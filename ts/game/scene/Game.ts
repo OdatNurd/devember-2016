@@ -546,7 +546,7 @@ module nurdz.game
                         this._maze.contents.swapVisibleBalls ();
 
                     // Tell the computer that they're starting their turn now.
-                    // this._computer.ai_startingTurn ();
+                    this._computer.ai_startingTurn ();
                     break;
             }
         }
