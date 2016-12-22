@@ -347,8 +347,16 @@ module nurdz.game
                 case KeyCodes.KEY_W:
                     return this._debugger.debugWipeMaze ();
 
+                // For debugging purposes, this key swaps to human balls
                 case KeyCodes.KEY_Z:
-                    this._maze.contents.swapVisibleBalls ();
+                    console.log ("human balls");
+                    this._maze.contents.visibleBallType = PlayerType.PLAYER_HUMAN;
+                    return true;
+
+                // For debugging purposes, this key swaps to computer balls.
+                case KeyCodes.KEY_X:
+                console.log ("computer balls");
+                    this._maze.contents.visibleBallType = PlayerType.PLAYER_COMPUTER;
                     return true;
             }
 

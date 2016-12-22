@@ -396,7 +396,7 @@ module nurdz.game
         getBonusBrick () : Brick { return this._bonusBricks.resurrectEntity (); }
 
         /**
-         * Get a ball from the arrow pool; may return null if none are
+         * Get a ball from the ball pool; may return null if none are
          * available.
          */
         getBall () : Ball { return this._balls.resurrectEntity (); }
