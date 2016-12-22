@@ -736,6 +736,37 @@ module nurdz.game
         }
 
         /**
+         * Scan the maze to find all entities that are ball entities that are
+         * currently marked as hidden, and remove them from the maze by setting
+         * that position in the maze to null.
+         *
+         * The return value indicates how many such balls were removed from the
+         * maze during this call.
+         *
+         * @returns {number} the number of removed balls during this call, which
+         * may be 0.
+         */
+        private clearHiddenBalls () : number
+        {
+            let retVal = 0;
+
+            for (let row = 0 ; row < MAZE_HEIGHT - 1 ; row++)
+            {
+                for (let col = 1 ; col < MAZE_WIDTH - 2 ; col++)
+                {
+                    let ball = <Ball> this._contents.getCellAt (col, row);
+                    if (ball != null && ball.name == "ball" && ball.isHidden)
+                    {
+                        this._contents.clearCellAt (col, row);
+                        retVal++;
+                    }
+                }
+            }
+
+            return retVal;
+        }
+
+        /**
          * Select the next ball on the screen that should start it's final
          * descent through the maze.
          */
@@ -797,7 +828,7 @@ module nurdz.game
             // When this happens, we can set the flag that indicates that the
             // ball move is finalized, so that the update code can trigger a
             // check to see if all balls have been played or not.
-            if (this.reapHiddenEntitiesFromPool (this._balls) > 0)
+            if (this.clearHiddenBalls () > 0)
                 this._ballMoveFinalized = true;
 
             // Reap any dead gray bricks; these are the gray bricks that have

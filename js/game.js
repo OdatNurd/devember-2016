@@ -4139,6 +4139,30 @@ var nurdz;
                 return retVal;
             };
             /**
+             * Scan the maze to find all entities that are ball entities that are
+             * currently marked as hidden, and remove them from the maze by setting
+             * that position in the maze to null.
+             *
+             * The return value indicates how many such balls were removed from the
+             * maze during this call.
+             *
+             * @returns {number} the number of removed balls during this call, which
+             * may be 0.
+             */
+            Maze.prototype.clearHiddenBalls = function () {
+                var retVal = 0;
+                for (var row = 0; row < game.MAZE_HEIGHT - 1; row++) {
+                    for (var col = 1; col < game.MAZE_WIDTH - 2; col++) {
+                        var ball = this._contents.getCellAt(col, row);
+                        if (ball != null && ball.name == "ball" && ball.isHidden) {
+                            this._contents.clearCellAt(col, row);
+                            retVal++;
+                        }
+                    }
+                }
+                return retVal;
+            };
+            /**
              * Select the next ball on the screen that should start it's final
              * descent through the maze.
              */
@@ -4190,7 +4214,7 @@ var nurdz;
                 // When this happens, we can set the flag that indicates that the
                 // ball move is finalized, so that the update code can trigger a
                 // check to see if all balls have been played or not.
-                if (this.reapHiddenEntitiesFromPool(this._balls) > 0)
+                if (this.clearHiddenBalls() > 0)
                     this._ballMoveFinalized = true;
                 // Reap any dead gray bricks; these are the gray bricks that have
                 // been vanished out of the level because all of the balls have been
