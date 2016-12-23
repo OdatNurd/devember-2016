@@ -362,14 +362,12 @@ module nurdz.game
 
                 // For debugging purposes, this key swaps to human balls
                 case KeyCodes.KEY_Z:
-                    console.log ("human balls");
-                    this._maze.contents.visibleBallType = PlayerType.PLAYER_HUMAN;
+                    this._maze.contents.showPlayerBalls ();
                     return true;
 
                 // For debugging purposes, this key swaps to computer balls.
                 case KeyCodes.KEY_X:
-                console.log ("computer balls");
-                    this._maze.contents.visibleBallType = PlayerType.PLAYER_COMPUTER;
+                    this._maze.contents.showComputerBalls ();
                     return true;
             }
 
@@ -533,8 +531,7 @@ module nurdz.game
                 case GameState.PLAYER_TURN:
                     this._player.visible = true;
                     this._computer.visible = false;
-                    if (this._maze.contents.visibleBallType != PlayerType.PLAYER_HUMAN)
-                        this._maze.contents.swapVisibleBalls ();
+                    this._maze.contents.showPlayerBalls ();
                     break;
 
                 // It is now the turn of the computer player, so make sure that
@@ -542,8 +539,7 @@ module nurdz.game
                 case GameState.COMPUTER_TURN:
                     this._computer.visible = true;
                     this._player.visible = false;
-                    if (this._maze.contents.visibleBallType != PlayerType.PLAYER_COMPUTER)
-                        this._maze.contents.swapVisibleBalls ();
+                    this._maze.contents.showComputerBalls ();
 
                     // Tell the computer that they're starting their turn now.
                     this._computer.ai_startingTurn ();

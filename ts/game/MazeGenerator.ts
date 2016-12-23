@@ -499,12 +499,6 @@ module nurdz.game
                 playerBalls[ballIndex].hide ();
                 computerBalls[ballIndex].hide ();
             }
-
-            // Now set the visible ball type in the maze content back to its
-            // current value. This will force it to display the balls of the
-            // player that is currently set so that the swaps will work from
-            // here on out.
-            this._contents.visibleBallType = this._contents.visibleBallType;
         }
 
         /**

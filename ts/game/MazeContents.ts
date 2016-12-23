@@ -52,12 +52,6 @@ module nurdz.game
         private _computerBalls : Array<Ball>;
 
         /**
-         * The set of balls (human or computer player) that is currently
-         * visualized into the top row of the maze content area.
-         */
-        private _visibleBallType : PlayerType;
-
-        /**
          * This is an array the same size as the _contents array which contains
          * a boolean that indicates if this position should be marked with a
          * debug marker or not.
@@ -145,37 +139,6 @@ module nurdz.game
         { return this._computerBalls; }
 
         /**
-         * We can only view the balls playable by the player or by the computer
-         * in the top row of the maze, not both at once. This indicates which
-         * one is currently being displayed.
-         *
-         * @returns {PlayerType} the player whose balls are currently visible.
-         */
-        get visibleBallType () : PlayerType
-        { return this._visibleBallType; }
-
-        /**
-         * Set the balls that are currently visible in the maze to the balls for
-         * the player type provided.
-         *
-         * This clobbers what is already in the top row of the maze with the
-         * new contents, so use this with care; if the balls in the top row are
-         * of a different type and have been manipulated, those manipulations
-         * will be lost.
-         *
-         * @param {PlayerType} newType the new player type.
-         */
-        set visibleBallType (newType : PlayerType)
-        {
-            // Set the type and then force the provided balls to be visible.
-            this._visibleBallType = newType;
-            if (this._visibleBallType == PlayerType.PLAYER_HUMAN)
-                this.restoreFromBallArray (this._playerBalls);
-            else
-                this.restoreFromBallArray (this._computerBalls);
-        }
-
-        /**
          * Construct a new maze content object. This will create the underlying
          * data structure and initialize it to be completely devoid of cells
          * and markers.
@@ -196,10 +159,6 @@ module nurdz.game
             // Create a position point and set a default cell size.
             this._position = new Point (0, 0);
             this._cellSize = 0;
-
-
-            // Start out with the player balls originally visible.
-            this._visibleBallType = PlayerType.PLAYER_HUMAN;
 
             // Start everything cleared out. This ensures that the arrays are
             // properly initialized.
@@ -472,36 +431,6 @@ module nurdz.game
         }
 
         /**
-         * Copy the balls from the first row of the maze into the ball array
-         * passed in. Any missing balls become a null entry in the ball array as
-         * well.
-         *
-         * During the save, every ball that is saved is marked as being hidden
-         * so that it will no longer visually appear on the screen.
-         *
-         * @param {Array<Ball>} ballArray the ball array to save into
-         */
-        private saveToBallArray (ballArray : Array<Ball>) : void
-        {
-            // Search the top row of the maze contents and store what we find.
-            // The ball index in the array is the offset from the first column
-            // in the maze contents.
-            for (let ballIndex = 0 ; ballIndex < ballArray.length ; ballIndex++)
-            {
-                ballArray[ballIndex] = <Ball> this.getCellAt (ballIndex + 1, 0);
-                if (ballArray[ballIndex] != null)
-                {
-                    // Just to be save, clear the cell before we hide this ball
-                    // so that the update loop can't whack it. Pretty sure this
-                    // can't happen but I never want to experience this bug
-                    // again, sooo...
-                    this.clearCellAt (ballIndex + 1, 0);
-                    ballArray[ballIndex].hide ();
-                }
-            }
-        }
-
-        /**
          * Copy the balls from the ball array provided into the first row of the
          * maze. Any missing balls become a null entry in the maze contents.
          *
@@ -524,31 +453,72 @@ module nurdz.game
         }
 
         /**
-         * Swap the balls that are currently visible in the maze top row between
-         * the currently visible ones and the balls for the opposing player.
+         * Invoke the hide method for all balls currently in the array provided,
+         * removing them from the screen.
          *
-         * In order to determine which player's balls are currently visible you
-         * can use the visibleBallType property.
-         *
-         * This will save the currently displayed balls in the top row before
-         * swapping in the opposing set.
+         * @param {Array<Ball>} ballArray the array of balls to hide
          */
-        swapVisibleBalls () : void
+        private hideBallsInArray (ballArray : Array<Ball>) : void
         {
-            // Based on the visible ball type, save to one ball array and
-            // restore from the other.
-            if (this._visibleBallType == PlayerType.PLAYER_HUMAN)
+            // Iterate all balls in the provided array and hide them.
+            for (let ballIndex = 0; ballIndex < ballArray.length ; ballIndex++)
             {
-                this.saveToBallArray (this._playerBalls);
-                this.restoreFromBallArray (this._computerBalls);
-                this._visibleBallType = PlayerType.PLAYER_COMPUTER;
+                if (ballArray[ballIndex] != null)
+                    ballArray[ballIndex].hide ();
             }
-            else
+        }
+
+        /**
+         * Given a ball, this checks to see if this ball entity exists in either
+         * the list of unplayed player balls or unplayed computer balls. If the
+         * ball is found in one of those arrays, it is removed from the array so
+         * that the code knows that this ball has now been played.
+         *
+         * @param {Ball} ball the ball to remove
+         */
+        markBallPlayed (ball : Ball) : void
+        {
+            let index = this._playerBalls.indexOf (ball);
+            if (index != -1)
             {
-                this.saveToBallArray (this._computerBalls);
-                this.restoreFromBallArray (this._playerBalls);
-                this._visibleBallType = PlayerType.PLAYER_HUMAN;
+                console.log("Marking a player ball as played");
+                this._playerBalls[index] = null;
+                return;
             }
+
+            index = this._computerBalls.indexOf (ball)
+            if (index != -1)
+            {
+                console.log("Marking a computer ball as played");
+                this._computerBalls[index] = null;
+                return;
+            }
+
+            // Theoretically this can only happen when the debug code inserts a
+            // ball into the top row that the generator did not insert there.
+            console.log("Played a ball that is not in either of the two ball arrays");
+        }
+
+        /**
+         * Replace the top row contents of the maze with the list of balls that
+         * remain to be played for the player and simultaneously hide all of the
+         * computer balls still in the top row.
+         */
+        showPlayerBalls () : void
+        {
+            this.restoreFromBallArray (this._playerBalls);
+            this.hideBallsInArray (this._computerBalls);
+        }
+
+        /**
+         * Replace the top row contents of the maze with the list of balls that
+         * remain to be played for the computer and simultaneously hide all of
+         * the player balls still in the top row.
+         */
+        showComputerBalls () : void
+        {
+            this.restoreFromBallArray (this._computerBalls);
+            this.hideBallsInArray (this._playerBalls);
         }
 
         /**

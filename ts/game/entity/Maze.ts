@@ -545,6 +545,12 @@ module nurdz.game
          */
         private dropBall (ball : Ball, speed : number) : void
         {
+            // Get the maze contents to mark this ball as played. If this is
+            // one of the generated human or computer balls from the top row,
+            // this will remove it from the list of balls so that the code knows
+            // that this ball is no longer available.
+            this._contents.markBallPlayed (ball);
+
             // Set the entity that is currently dropping to the one provided,
             // then remove it from the maze. It will be re-added when
             // it is finished moving
