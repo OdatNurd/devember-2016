@@ -4837,6 +4837,22 @@ var nurdz;
                 return true;
             };
             /**
+             * This is invoked once per update loop while this scene is the active
+             * scene
+             *
+             * @param {number} tick the game tick; this is a count of how many times
+             * the game loop has executed
+             */
+            GameScene.prototype.update = function (tick) {
+                // Let the super do it's business, which updates all of our registered
+                // actors.
+                _super.prototype.update.call(this, tick);
+                // Update the state machine tick and then handle our state logic for
+                // this update.
+                this._state.update(tick);
+                this.stateLogic();
+            };
+            /**
              * This is invoked every frame to render the current scene to the stage.
              */
             GameScene.prototype.render = function () {
@@ -4852,7 +4868,7 @@ var nurdz;
             GameScene.prototype.mazeGenerationComplete = function () {
                 // For now, after maze generation it is always the human player's
                 // turn.
-                this.state = game.GameState.PLAYER_TURN;
+                this.state = game.GameState.CHECK_VALID_PLAY_PLAYER;
             };
             /**
              * This gets invoked when either the player or the computer has selected
@@ -4890,12 +4906,12 @@ var nurdz;
                     // If it was the players turn before the ball started dropping,
                     // it is the computers turn now.
                     case game.GameState.PLAYER_TURN:
-                        this.state = game.GameState.COMPUTER_TURN;
+                        this.state = game.GameState.CHECK_VALID_PLAY_COMPUTER;
                         break;
                     // If it was the computers turn before the ball started
                     // dropping, it is the players turn now.
                     case game.GameState.COMPUTER_TURN:
-                        this.state = game.GameState.PLAYER_TURN;
+                        this.state = game.GameState.CHECK_VALID_PLAY_PLAYER;
                         break;
                     // If we get here, we don't know.
                     default:
@@ -4906,6 +4922,12 @@ var nurdz;
             /**
              * This gets triggered every time our state machine gets put into a new
              * state.
+             *
+             * This is used to handle state logic that only needs to happen one
+             * time, when the state actively changes into a new state. All other
+             * state logic happens in the stateLogic() method below. This allows us
+             * to handle simple 1 time logic without requiring a boolean to flag
+             * if we have done it or not.
              *
              * WARNING: All hell (probably) breaks loose if this method immediately
              * changes the state of the machine that was passed in, so maybe don't
@@ -4938,6 +4960,52 @@ var nurdz;
                         // Tell the computer that they're starting their turn now.
                         this._computer.ai_startingTurn();
                         break;
+                }
+            };
+            /**
+             * This method is used to handle all of the ongoing state logic; logic
+             * that needs to be checked every update loop to handle something while
+             * inside of a particular state.
+             *
+             * For logic that applies only when the state is initially changed to a
+             * new state, see the stateChanged() method. This allows us to handle
+             * such logic without requiring a bunch of sentinel boolean values to
+             * flag that it has been done.
+             */
+            GameScene.prototype.stateLogic = function () {
+                // Handle based on state.
+                switch (this.state) {
+                    // It is becoming the player's turn; check to see if there is
+                    // a valid play for them; if yes, make it their turn. Otherwise,
+                    // make it the computer turn.
+                    case game.GameState.CHECK_VALID_PLAY_PLAYER:
+                        if (this._maze.contents.hasPlayableHumanBall())
+                            this.state = game.GameState.PLAYER_TURN;
+                        else {
+                            // If there is a computer ball to play, make it the
+                            // computer's turn. Otherwise, time to do the final ball
+                            // drop.
+                            if (this._maze.contents.hasPlayableComputerBall())
+                                this.state = game.GameState.COMPUTER_TURN;
+                            else
+                                this.state = game.GameState.FINAL_BALL_DROP;
+                        }
+                        break;
+                    // It is becoming the computer's turn; check to see if there is
+                    // a valid play for them; if yes, make it their tun. Otherwise
+                    // make it the player's turn.
+                    case game.GameState.CHECK_VALID_PLAY_COMPUTER:
+                        if (this._maze.contents.hasPlayableComputerBall())
+                            this.state = game.GameState.COMPUTER_TURN;
+                        else {
+                            // If there is a player ball to play, make it the
+                            // player's turn. Otherwise, time to do the final ball
+                            // drop.
+                            if (this._maze.contents.hasPlayableHumanBall())
+                                this.state = game.GameState.PLAYER_TURN;
+                            else
+                                this.state = game.GameState.FINAL_BALL_DROP;
+                        }
                 }
             };
             return GameScene;
