@@ -115,6 +115,13 @@ module nurdz.game
         private _listeners : Array<StateMachineChangeListener>;
 
         /**
+         * The number of ticks that have elapsed since the state machine was
+         * switched into the current state. This gets updated when our update
+         * method is invoked and reset when our state changes.
+         */
+        private _ticksInState : number;
+
+        /**
          * Get the current state of this state machine.
          *
          * @returns {GameState} the state that this machine is currently in
@@ -137,6 +144,9 @@ module nurdz.game
                 // Save the current state, then switch it.
                 this._previousState = this._currentState;
                 this._currentState = newState;
+
+                // Reset the number of ticks that have happened in this state.
+                this._ticksInState = 0;
 
                 // Trigger listeners.
                 for (let i = 0 ; i < this._listeners.length ; i++)
@@ -167,8 +177,63 @@ module nurdz.game
             this._currentState = GameState.NO_STATE;
             this._previousState = GameState.NO_STATE;
 
+            // Default our tick value.
+            this._ticksInState = 0;
+
             // Create the listener array.
             this._listeners = new Array<StateMachineChangeListener> ();
+        }
+
+        /**
+         * This is invoked once per update loop while this scene is the active
+         * scene
+         *
+         * @param {number} tick the game tick; this is a count of how many times
+         * the game loop has executed
+         */
+        update (tick : number) : void
+        {
+            // Count this as an elapsed tick.
+            this._ticksInState++;
+        }
+
+        /**
+         * Check to see if the machine has been in the current state for at
+         * least the number of ticks provided, returning a boolean that
+         * indicates if this is the case.
+         *
+         * This is not meant to be used as a timer that you check multiple times,
+         * as once the tick count hit has elapsed, this will continue to return
+         * true.
+         *
+         * @param   {number}  tickCount the tick count to check
+         *
+         * @returns {boolean}           true if at least this many ticks have
+         * elapsed, or false otherwise.
+         */
+        hasElapsed (tickCount : number) : boolean
+        {
+            return this._ticksInState >= tickCount;
+        }
+
+        /**
+         * Check to see if a timer that triggers on a multiple of the number of
+         * ticks given has triggered or not. Unlike hasElapsed(), this can be
+         * used for a recurring timer.
+         *
+         * In order to use this effectively this needs to be checked on every
+         * frame update; if you skip a check during a frame you run the risk of
+         * missing the tick that causes the timer to fire.
+         *
+         * @param   {number}  tickMultiple the multiple of the tick to trigger
+         * for, e.g. 30 triggers once a second
+         *
+         * @returns {boolean}              true if the timer triggers during
+         * this tick or false otherwise
+         */
+        timerTrigger (tickMultiple : number) : boolean
+        {
+            return this._ticksInState % tickMultiple == 0;
         }
 
         /**
