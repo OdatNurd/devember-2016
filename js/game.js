@@ -3772,7 +3772,6 @@ var nurdz;
                 // No ball has finished moving and no gray bricks have been removed.
                 // These also get reset on level generation.
                 _this._ballMoveFinalized = false;
-                _this._grayBricksRemoved = false;
                 _this._droppingFinalBall = false;
                 // Pre-populate all of our actor pools with the maximum possible
                 // number of actors that we could need.
@@ -4125,26 +4124,6 @@ var nurdz;
                 return false;
             };
             /**
-             * This performs a check to see if all of the balls have been played by
-             * both players or not. This involves checking that the top row is
-             * either empty of all balls, or any balls that remain have a cell under
-             * them that is going to stop them from moving.
-             *
-             * When this determination is made, we vanish all of the gray bricks out
-             * of the level for the final phase of the round.
-             */
-            Maze.prototype.checkForAllBallsPlayed = function () {
-                // If there are any playable balls for either the computer or human
-                // player, leave.
-                if (this._contents.hasPlayableHumanBall || this._contents.hasPlayableComputerBall)
-                    return;
-                // If we get here, neither ball has a ball that is playable due to
-                // it being played or blocked from moving. In either case, hide all
-                // gray bricks now.
-                for (var i = 0; i < this._grayBricks.liveEntities.length; i++)
-                    this._grayBricks.liveEntities[i].vanish();
-            };
-            /**
              * Given an ActorPool that contains maze cells that conform to the
              * hide-able maze cell interface, scan the pool for all live entities
              * that are currently hidden and not actively hiding themselves and
@@ -4255,8 +4234,8 @@ var nurdz;
                 // If this collects all gray bricks, we can set the flag that
                 // indicates that we're done removing them now.
                 if (this.reapHiddenEntitiesFromPool(this._grayBricks) > 0 &&
-                    this._grayBricks.liveEntities.length == 0)
-                    this._grayBricksRemoved = true;
+                    this._grayBricks.liveEntities.length == 0) {
+                }
                 // If there is a dropping ball and it's time to drop it, take a step
                 // now.
                 if (this._droppingBall && tick >= this._lastDropTick + this._dropSpeed) {
@@ -4301,13 +4280,6 @@ var nurdz;
                         this._droppingBall.position.translate(this._position);
                     }
                 }
-                // If all of the gray bricks have been removed from the level, kick
-                // off the process of dropping all remaining balls, one at a time.
-                //
-                // Kick off the process by selecting and dropping a ball now. This
-                // call will do nothing if this is already in progress.
-                if (this._grayBricksRemoved == true)
-                    this.dropNextFinalBall();
                 // When this flag is set, it means that a ball has been dropped and
                 // is now finished moving. This can either have triggered from the
                 // code above, or if the code above vanished the ball, the code that
@@ -4320,11 +4292,10 @@ var nurdz;
                 if (this._ballMoveFinalized) {
                     // Reset the flag now for next time
                     this._ballMoveFinalized = false;
-                    // If we have not already removed all of the gray bricks, now is
-                    // the time to see if we should.
-                    if (this._grayBricksRemoved == false)
-                        this.checkForAllBallsPlayed();
-                    else if (this._droppingFinalBall == true) {
+                    // The gray bricks have been removed, so if we are currently
+                    // dropping a final ball, then turn the flag off and invoke
+                    // the method to select a new one to drop.
+                    if (this._droppingFinalBall == true) {
                         this._droppingFinalBall = false;
                         this.dropNextFinalBall();
                     }
@@ -4448,7 +4419,6 @@ var nurdz;
                 this.resetMazeEntities();
                 // No ball has finished moving and no gray bricks have been removed.
                 this._ballMoveFinalized = false;
-                this._grayBricksRemoved = false;
                 this._droppingFinalBall = false;
                 // Now generate the contents of the maze.
                 this._generator.generate();
