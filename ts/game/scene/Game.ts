@@ -521,6 +521,12 @@ module nurdz.game
                     this.state = GameState.CHECK_VALID_PLAY_PLAYER;
                     break;
 
+                // If we were doing the final ball drop before, go back there
+                // now.
+                case GameState.FINAL_BALL_DROP:
+                    this.state = GameState.FINAL_BALL_DROP;
+                    break;
+
                 // If we get here, we don't know.
                 default:
                     console.log ("DEBUG: Do not know how to get to the next state from here");
@@ -646,6 +652,18 @@ module nurdz.game
                 case GameState.REMOVE_GRAY_BRICKS:
                     if (this._state.timerTrigger (ROUND_BRICK_VANISH_TIME))
                         this._maze.removeNextGrayBrick ();
+                    break;
+
+                // We are dropping the final balls through the maze now. Select
+                // one and drop it; if there are none left to drop, set the
+                // state to the game over state.
+                //
+                // When a ball is successfully started dropping using this
+                // method the state is changed to the dropping ball state
+                // automatically.
+                case GameState.FINAL_BALL_DROP:
+                    if (this._maze.dropNextFinalBall () == false)
+                        this.state = GameState.GAME_OVER;
                     break;
             }
         }
