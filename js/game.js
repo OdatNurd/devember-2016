@@ -4273,11 +4273,12 @@ var nurdz;
                 // been vanished out of the level because all of the balls have been
                 // played.
                 //
-                // If this collects all gray bricks, we can set the flag that
-                // indicates that we're done removing them now.
+                // If this collects all gray bricks, we can tell our listener that
+                // we're done removing them now.
                 if (this.reapHiddenEntitiesFromPool(this._grayBricks) > 0 &&
                     this._grayBricks.liveEntities.length == 0) {
-                    console.log("DEBUG: All gray bricks have fully vanished");
+                    if (this._listener != null)
+                        this._listener.grayBrickRemovalComplete();
                 }
                 // If there is a dropping ball and it's time to drop it, take a step
                 // now.
@@ -4937,6 +4938,16 @@ var nurdz;
                         console.log("DEBUG: Do not know how to get to the next state from here");
                         break;
                 }
+            };
+            /**
+             * The Maze is telling us that it is now empty of gray bricks because it
+             * has just reaped the last fully hidden gray brick.
+             *
+             * This triggers the start of the final ball drop.
+             */
+            GameScene.prototype.grayBrickRemovalComplete = function () {
+                // Swap states to the final ball drop
+                this.state = game.GameState.FINAL_BALL_DROP;
             };
             /**
              * This gets triggered every time our state machine gets put into a new

@@ -45,6 +45,16 @@ module nurdz.game
          * our generation is finally completed.
          */
         mazeGenerationComplete () : void;
+
+        /**
+         * This will get invoked by the Maze update loop when it actively reaps
+         * gray bricks that are finished vanishing (or just plain hidden) and it
+         * detects that there are no further such bricks left.
+         *
+         * Once this triggers, it cannot trigger again unless something puts
+         * more bricks into the maze.
+         */
+        grayBrickRemovalComplete () : void;
     }
 
     /**
@@ -839,13 +849,14 @@ module nurdz.game
             // been vanished out of the level because all of the balls have been
             // played.
             //
-            // If this collects all gray bricks, we can set the flag that
-            // indicates that we're done removing them now.
+            // If this collects all gray bricks, we can tell our listener that
+            // we're done removing them now.
             if (this.reapHiddenEntitiesFromPool (this._grayBricks) > 0 &&
                     this._grayBricks.liveEntities.length == 0)
-                {
-                    console.log("DEBUG: All gray bricks have fully vanished");
-                }
+            {
+                if (this._listener != null)
+                    this._listener.grayBrickRemovalComplete ();
+            }
 
             // If there is a dropping ball and it's time to drop it, take a step
             // now.

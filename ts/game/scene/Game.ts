@@ -529,6 +529,18 @@ module nurdz.game
         }
 
         /**
+         * The Maze is telling us that it is now empty of gray bricks because it
+         * has just reaped the last fully hidden gray brick.
+         *
+         * This triggers the start of the final ball drop.
+         */
+        grayBrickRemovalComplete () : void
+        {
+            // Swap states to the final ball drop
+            this.state = GameState.FINAL_BALL_DROP;
+        }
+
+        /**
          * This gets triggered every time our state machine gets put into a new
          * state.
          *
