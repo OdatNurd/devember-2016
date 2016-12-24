@@ -13,61 +13,76 @@ module nurdz.game
         NO_STATE,
 
         /**
-         * There is a maze currently being generated; no players are visible
-         * and no interactions with the maze are allowed.
+         * This state is set while the maze is undergoing generation. The Maze
+         * entity doing the generation will inform the registered event listener
+         * when the generation is completed, at which point it will switch away
+         * from this state.
          */
         MAZE_GENERATION,
 
         /**
-         * It is going to be the human players turn, but first we have to check
-         * and see if it's even possible for them to make a play at the moment.
+         * We want it to be the human player's turn. In this state we check to
+         * see if the human (or computer) can take a turn. If yes, the
+         * appropriate player state is swapped to. Otherwise we skip to the
+         * state where we start removing gray bricks.
          */
         CHECK_VALID_PLAY_PLAYER,
 
         /**
-         * The human player can take a turn now. Their controls work and they
-         * can attempt to push a ball.
+         * We have determined that the player has at least one play to make, so
+         * they can take a turn now. In this state, the controls available to
+         * the player to make a move are enabled.
          */
         PLAYER_TURN,
 
         /**
-         * It is going to be the computer players turn, but first we have to
-         * check and see if it's even possible for them to make a play at the
-         * moment.
+         * We want it to be the computer player's turn. In this state we check
+         * to see if the computer (or human) can take a turn. If yes, the
+         * appropriate player state is swapped to. Otherwise we skip to the
+         * state where we start removing gray bricks.
          */
         CHECK_VALID_PLAY_COMPUTER,
 
         /**
-         * The computer has selected its move and is now in the process of
-         * taking it. This covers moving to the ball, turning, and pushing.
+         * The computer is taking its turn now. This state encompasses the
+         * entirety of the computer taking it's turn, from selecting the move to
+         * arriving at the correct position and pushing the ball. The update()
+         * method in the Player entity is used to control this entire process.
          */
         COMPUTER_TURN,
 
         /**
-         * A ball is currently dropping through the maze. This can be either due
-         * to the player pushing the ball, the AI pushing a ball, or the end of
-         * round.
+         * Either the human player or the AI has pushed a ball. This state
+         * remains in effect until the ball has finished moving, in which case
+         * the handling code will either cycle to the state for the next player
+         * to take their turn or to the state where we start the end of round
+         * proceedings. round.
          */
         BALL_DROPPING,
 
         /**
-         * All of the balls have been pushed (or are blocked) so it is time to
-         * remove all of the gray bricks from the maze.
+         * All of the possible plays have been made. In this state we are
+         * removing all of the gray bricks that are in the maze by vanishing
+         * them away. Once that is done we transition to the state where we
+         * start dropping the final balls.
          */
         REMOVE_GRAY_BRICKS,
 
         /**
          * All of the gray bricks have been removed, so we are now in the
          * process of finding all balls that can still drop and dropping them.
+         * We remain in this state until all balls have been dropped, and then
+         * we either cycle back to the generation state for the next round or to
+         * the game over state.
          */
         FINAL_BALL_DROP,
 
         /**
-         * All gray bricks have been removed and all of the final ball drops
-         * have finished, so everything is done now.
+         * All of the gray bricks have been removed, all of the final ball drops
+         * have finished, and we have no more rounds to play; the game is just
+         * over now.
          */
         GAME_OVER,
-
     }
 
     /**
