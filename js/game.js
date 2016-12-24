@@ -4214,6 +4214,32 @@ var nurdz;
                 }
             };
             /**
+             * Scan through the maze (left to right, bottom to top) looking for the
+             * first gray brick entity that has not already been told to vanish
+             * and tell it to.
+             *
+             * If there are no such bricks, this does nothing. This is currently
+             * rather brute force; it might be better to sort the live entity list
+             * somehow or do a random selection, but that gets tricky when we have
+             * run out the list of bricks.
+             */
+            Maze.prototype.removeNextGrayBrick = function () {
+                for (var row = game.MAZE_HEIGHT - 2; row >= 0; row--) {
+                    for (var col = 1; col < game.MAZE_WIDTH - 1; col++) {
+                        // Get the cell as a brick (it may not be).
+                        var cell = this._contents.getCellAt(col, row);
+                        // If it is a gray brick that is not already hidden, call
+                        // the vanish method.
+                        if (cell != null && cell.name == "brick" &&
+                            cell.brickType == game.BrickType.BRICK_GRAY &&
+                            cell.isHidden == false) {
+                            cell.vanish();
+                            return;
+                        }
+                    }
+                }
+            };
+            /**
              * This is called every frame update (tick tells us how many times this
              * has happened) to allow us to update ourselves.
              *
@@ -4251,6 +4277,7 @@ var nurdz;
                 // indicates that we're done removing them now.
                 if (this.reapHiddenEntitiesFromPool(this._grayBricks) > 0 &&
                     this._grayBricks.liveEntities.length == 0) {
+                    console.log("DEBUG: All gray bricks have fully vanished");
                 }
                 // If there is a dropping ball and it's time to drop it, take a step
                 // now.
@@ -4487,6 +4514,12 @@ var nurdz;
 (function (nurdz) {
     var game;
     (function (game) {
+        /**
+         * When we are in the state that we're removing gray bricks from the maze,
+         * this is the delay (in ticks) for telling the next brick when it should
+         * start to vanish.
+         */
+        var ROUND_BRICK_VANISH_TIME = 2;
         /**
          * This scene represents the game screen, where the game will actually be
          * played.
@@ -4974,7 +5007,7 @@ var nurdz;
                             if (this._maze.contents.hasPlayableComputerBall())
                                 this.state = game.GameState.COMPUTER_TURN;
                             else
-                                this.state = game.GameState.FINAL_BALL_DROP;
+                                this.state = game.GameState.REMOVE_GRAY_BRICKS;
                         }
                         break;
                     // It is becoming the computer's turn; check to see if there is
@@ -4990,8 +5023,15 @@ var nurdz;
                             if (this._maze.contents.hasPlayableHumanBall())
                                 this.state = game.GameState.PLAYER_TURN;
                             else
-                                this.state = game.GameState.FINAL_BALL_DROP;
+                                this.state = game.GameState.REMOVE_GRAY_BRICKS;
                         }
+                        break;
+                    // When we are in the remove gray bricks state, use the state
+                    // timer to remove a brick every so often.
+                    case game.GameState.REMOVE_GRAY_BRICKS:
+                        if (this._state.timerTrigger(ROUND_BRICK_VANISH_TIME))
+                            this._maze.removeNextGrayBrick();
+                        break;
                 }
             };
             return GameScene;

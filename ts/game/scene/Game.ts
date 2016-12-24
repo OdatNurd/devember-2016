@@ -1,6 +1,13 @@
 module nurdz.game
 {
     /**
+     * When we are in the state that we're removing gray bricks from the maze,
+     * this is the delay (in ticks) for telling the next brick when it should
+     * start to vanish.
+     */
+    const ROUND_BRICK_VANISH_TIME = 2;
+
+    /**
      * This scene represents the game screen, where the game will actually be
      * played.
      */
@@ -600,7 +607,7 @@ module nurdz.game
                         if (this._maze.contents.hasPlayableComputerBall ())
                             this.state = GameState.COMPUTER_TURN;
                         else
-                            this.state = GameState.FINAL_BALL_DROP;
+                            this.state = GameState.REMOVE_GRAY_BRICKS;
                     }
                     break;
 
@@ -618,8 +625,16 @@ module nurdz.game
                         if (this._maze.contents.hasPlayableHumanBall ())
                             this.state = GameState.PLAYER_TURN;
                         else
-                            this.state = GameState.FINAL_BALL_DROP;
+                            this.state = GameState.REMOVE_GRAY_BRICKS;
                     }
+                    break;
+
+                // When we are in the remove gray bricks state, use the state
+                // timer to remove a brick every so often.
+                case GameState.REMOVE_GRAY_BRICKS:
+                    if (this._state.timerTrigger (ROUND_BRICK_VANISH_TIME))
+                        this._maze.removeNextGrayBrick ();
+                    break;
             }
         }
     }

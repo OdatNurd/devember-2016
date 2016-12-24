@@ -769,6 +769,38 @@ module nurdz.game
         }
 
         /**
+         * Scan through the maze (left to right, bottom to top) looking for the
+         * first gray brick entity that has not already been told to vanish
+         * and tell it to.
+         *
+         * If there are no such bricks, this does nothing. This is currently
+         * rather brute force; it might be better to sort the live entity list
+         * somehow or do a random selection, but that gets tricky when we have
+         * run out the list of bricks.
+         */
+        removeNextGrayBrick () : void
+        {
+            for (let row = MAZE_HEIGHT - 2 ; row >= 0 ; row--)
+            {
+                for (let col = 1 ; col < MAZE_WIDTH - 1 ; col++)
+                {
+                    // Get the cell as a brick (it may not be).
+                    let cell = <Brick> this._contents.getCellAt (col, row);
+
+                    // If it is a gray brick that is not already hidden, call
+                    // the vanish method.
+                    if (cell != null && cell.name == "brick" &&
+                        cell.brickType == BrickType.BRICK_GRAY &&
+                        cell.isHidden == false)
+                    {
+                        cell.vanish ();
+                        return;
+                    }
+                }
+            }
+        }
+
+        /**
          * This is called every frame update (tick tells us how many times this
          * has happened) to allow us to update ourselves.
          *
@@ -812,8 +844,7 @@ module nurdz.game
             if (this.reapHiddenEntitiesFromPool (this._grayBricks) > 0 &&
                     this._grayBricks.liveEntities.length == 0)
                 {
-                    // TODO: This should set a state
-                    // this._grayBricksRemoved = true;
+                    console.log("DEBUG: All gray bricks have fully vanished");
                 }
 
             // If there is a dropping ball and it's time to drop it, take a step
