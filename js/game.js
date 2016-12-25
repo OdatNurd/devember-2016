@@ -4195,10 +4195,6 @@ var nurdz;
                 return retVal;
             };
             /**
-             * Select the next ball on the screen that should start it's final
-             * descent through the maze.
-             */
-            /**
              * Select the next ball in the maze that should start it's final descent
              * through the maze.
              *
@@ -4233,29 +4229,50 @@ var nurdz;
             };
             /**
              * Scan through the maze (left to right, bottom to top) looking for the
-             * first gray brick entity that has not already been told to vanish
-             * and tell it to.
+             * first gray brick entity that has not already been told to vanish and
+             * tell it to.
              *
-             * If there are no such bricks, this does nothing. This is currently
-             * rather brute force; it might be better to sort the live entity list
-             * somehow or do a random selection, but that gets tricky when we have
-             * run out the list of bricks.
+             * If there are no gray bricks at all in the maze, this will return
+             * false to indicate that there can be no brick removal.
+             *
+             * The return value will be true if a brick was told to vanish OR we ran
+             * across a brick that is hidden but still in the maze; in this case we
+             * know that it has not vanished yet, so we can wait.
+             *
+             * This allows calling code to detect when there are no gray bricks at
+             * all (debugging) so that it can skip over the state where we remove
+             * gray bricks, but still make sure that we can naturally trigger the
+             * "all gray bricks are now vanished" event once the last of them
+             * vanishes away and is reaped.
+             *
+             * @returns {boolean} false if there are no gray bricks in the maze at
+             * all or true otherwise
              */
             Maze.prototype.removeNextGrayBrick = function () {
+                // Assume be default we did not see any gray bricks at all.
+                var sawBrick = false;
+                // Scan from the bottom up.
                 for (var row = game.MAZE_HEIGHT - 2; row >= 0; row--) {
                     for (var col = 1; col < game.MAZE_WIDTH - 1; col++) {
                         // Get the cell as a brick (it may not be).
                         var cell = this._contents.getCellAt(col, row);
-                        // If it is a gray brick that is not already hidden, call
-                        // the vanish method.
+                        // If we got a cell and it's a gray brick, it might be
+                        // interesting.
                         if (cell != null && cell.name == "brick" &&
-                            cell.brickType == game.BrickType.BRICK_GRAY &&
-                            cell.isHidden == false) {
-                            cell.vanish();
-                            return;
+                            cell.brickType == game.BrickType.BRICK_GRAY) {
+                            // If the brick is not already hidden, hide it and return
+                            // true right away.
+                            if (cell.isHidden == false) {
+                                cell.vanish();
+                                return true;
+                            }
+                            // It's already hidden so we need to ignore it, but at
+                            // least we saw it.
+                            sawBrick = true;
                         }
                     }
                 }
+                return sawBrick;
             };
             /**
              * This is called every frame update (tick tells us how many times this
@@ -5060,8 +5077,12 @@ var nurdz;
                     // When we are in the remove gray bricks state, use the state
                     // timer to remove a brick every so often.
                     case game.GameState.REMOVE_GRAY_BRICKS:
-                        if (this._state.timerTrigger(ROUND_BRICK_VANISH_TIME))
-                            this._maze.removeNextGrayBrick();
+                        if (this._state.timerTrigger(ROUND_BRICK_VANISH_TIME)) {
+                            // If there is no brick to remove, trigger the state
+                            // change right away.
+                            if (this._maze.removeNextGrayBrick() == false)
+                                this.grayBrickRemovalComplete();
+                        }
                         break;
                     // We are dropping the final balls through the maze now. Select
                     // one and drop it; if there are none left to drop, set the

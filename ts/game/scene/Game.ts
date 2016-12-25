@@ -651,7 +651,12 @@ module nurdz.game
                 // timer to remove a brick every so often.
                 case GameState.REMOVE_GRAY_BRICKS:
                     if (this._state.timerTrigger (ROUND_BRICK_VANISH_TIME))
-                        this._maze.removeNextGrayBrick ();
+                    {
+                        // If there is no brick to remove, trigger the state
+                        // change right away.
+                        if (this._maze.removeNextGrayBrick () == false)
+                            this.grayBrickRemovalComplete ();
+                    }
                     break;
 
                 // We are dropping the final balls through the maze now. Select

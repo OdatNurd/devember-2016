@@ -767,11 +767,6 @@ module nurdz.game
         }
 
         /**
-         * Select the next ball on the screen that should start it's final
-         * descent through the maze.
-         */
-
-        /**
          * Select the next ball in the maze that should start it's final descent
          * through the maze.
          *
@@ -814,16 +809,31 @@ module nurdz.game
 
         /**
          * Scan through the maze (left to right, bottom to top) looking for the
-         * first gray brick entity that has not already been told to vanish
-         * and tell it to.
+         * first gray brick entity that has not already been told to vanish and
+         * tell it to.
          *
-         * If there are no such bricks, this does nothing. This is currently
-         * rather brute force; it might be better to sort the live entity list
-         * somehow or do a random selection, but that gets tricky when we have
-         * run out the list of bricks.
+         * If there are no gray bricks at all in the maze, this will return
+         * false to indicate that there can be no brick removal.
+         *
+         * The return value will be true if a brick was told to vanish OR we ran
+         * across a brick that is hidden but still in the maze; in this case we
+         * know that it has not vanished yet, so we can wait.
+         *
+         * This allows calling code to detect when there are no gray bricks at
+         * all (debugging) so that it can skip over the state where we remove
+         * gray bricks, but still make sure that we can naturally trigger the
+         * "all gray bricks are now vanished" event once the last of them
+         * vanishes away and is reaped.
+         *
+         * @returns {boolean} false if there are no gray bricks in the maze at
+         * all or true otherwise
          */
-        removeNextGrayBrick () : void
+        removeNextGrayBrick () : boolean
         {
+            // Assume be default we did not see any gray bricks at all.
+            let sawBrick = false;
+
+            // Scan from the bottom up.
             for (let row = MAZE_HEIGHT - 2 ; row >= 0 ; row--)
             {
                 for (let col = 1 ; col < MAZE_WIDTH - 1 ; col++)
@@ -831,17 +841,27 @@ module nurdz.game
                     // Get the cell as a brick (it may not be).
                     let cell = <Brick> this._contents.getCellAt (col, row);
 
-                    // If it is a gray brick that is not already hidden, call
-                    // the vanish method.
+                    // If we got a cell and it's a gray brick, it might be
+                    // interesting.
                     if (cell != null && cell.name == "brick" &&
-                        cell.brickType == BrickType.BRICK_GRAY &&
-                        cell.isHidden == false)
+                        cell.brickType == BrickType.BRICK_GRAY)
                     {
-                        cell.vanish ();
-                        return;
+                        // If the brick is not already hidden, hide it and return
+                        // true right away.
+                        if (cell.isHidden == false)
+                        {
+                            cell.vanish ();
+                            return true;
+                        }
+
+                        // It's already hidden so we need to ignore it, but at
+                        // least we saw it.
+                        sawBrick = true;
                     }
                 }
             }
+
+            return sawBrick;
         }
 
         /**
