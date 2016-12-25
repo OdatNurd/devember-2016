@@ -478,25 +478,20 @@ module nurdz.game
          */
         markBallPlayed (ball : Ball) : void
         {
+            // Try it first as a player ball.
             let index = this._playerBalls.indexOf (ball);
             if (index != -1)
-            {
-                console.log("Marking a player ball as played");
                 this._playerBalls[index] = null;
-                return;
-            }
-
-            index = this._computerBalls.indexOf (ball)
-            if (index != -1)
+            else
             {
-                console.log("Marking a computer ball as played");
-                this._computerBalls[index] = null;
-                return;
+                index = this._computerBalls.indexOf (ball)
+                if (index != -1)
+                    this._computerBalls[index] = null;
             }
 
-            // Theoretically this can only happen when the debug code inserts a
-            // ball into the top row that the generator did not insert there.
-            console.log("Played a ball that is not in either of the two ball arrays");
+            // The code can get here if the debug code starts a ball moving or
+            // during the final ball drop, where this method gets called but
+            // the ball pushed is not contained in either of the arrays.
         }
 
         /**

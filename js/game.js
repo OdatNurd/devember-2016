@@ -571,21 +571,18 @@ var nurdz;
              * @param {Ball} ball the ball to remove
              */
             MazeContents.prototype.markBallPlayed = function (ball) {
+                // Try it first as a player ball.
                 var index = this._playerBalls.indexOf(ball);
-                if (index != -1) {
-                    console.log("Marking a player ball as played");
+                if (index != -1)
                     this._playerBalls[index] = null;
-                    return;
+                else {
+                    index = this._computerBalls.indexOf(ball);
+                    if (index != -1)
+                        this._computerBalls[index] = null;
                 }
-                index = this._computerBalls.indexOf(ball);
-                if (index != -1) {
-                    console.log("Marking a computer ball as played");
-                    this._computerBalls[index] = null;
-                    return;
-                }
-                // Theoretically this can only happen when the debug code inserts a
-                // ball into the top row that the generator did not insert there.
-                console.log("Played a ball that is not in either of the two ball arrays");
+                // The code can get here if the debug code starts a ball moving or
+                // during the final ball drop, where this method gets called but
+                // the ball pushed is not contained in either of the arrays.
             };
             /**
              * Replace the top row contents of the maze with the list of balls that
