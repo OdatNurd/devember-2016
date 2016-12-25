@@ -755,7 +755,8 @@ module nurdz.game
                 for (let col = 1 ; col < MAZE_WIDTH - 1 ; col++)
                 {
                     let ball = <Ball> this._contents.getCellAt (col, row);
-                    if (ball != null && ball.name == "ball" && ball.isHidden)
+                    if (ball != null && ball.name == "ball" &&
+                        ball.isHidden && ball.animations.isPlaying == false)
                     {
                         this._contents.clearCellAt (col, row);
                         retVal++;
