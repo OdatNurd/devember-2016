@@ -4184,7 +4184,7 @@ var nurdz;
             Maze.prototype.clearHiddenBalls = function () {
                 var retVal = 0;
                 for (var row = 0; row < game.MAZE_HEIGHT - 1; row++) {
-                    for (var col = 1; col < game.MAZE_WIDTH - 2; col++) {
+                    for (var col = 1; col < game.MAZE_WIDTH - 1; col++) {
                         var ball = this._contents.getCellAt(col, row);
                         if (ball != null && ball.name == "ball" && ball.isHidden) {
                             this._contents.clearCellAt(col, row);

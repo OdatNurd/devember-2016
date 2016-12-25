@@ -752,7 +752,7 @@ module nurdz.game
 
             for (let row = 0 ; row < MAZE_HEIGHT - 1 ; row++)
             {
-                for (let col = 1 ; col < MAZE_WIDTH - 2 ; col++)
+                for (let col = 1 ; col < MAZE_WIDTH - 1 ; col++)
                 {
                     let ball = <Ball> this._contents.getCellAt (col, row);
                     if (ball != null && ball.name == "ball" && ball.isHidden)
