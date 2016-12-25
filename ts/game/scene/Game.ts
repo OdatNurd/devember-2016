@@ -593,6 +593,13 @@ module nurdz.game
                     // Tell the computer that they're starting their turn now.
                     this._computer.ai_startingTurn ();
                     break;
+
+                // When we enter the final ball drop, hide the player and
+                // computer characters.
+                case GameState.FINAL_BALL_DROP:
+                    this._player.visible = false;
+                    this._computer.visible = false;
+                    break;
             }
         }
 
