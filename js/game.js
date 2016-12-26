@@ -4273,6 +4273,68 @@ var nurdz;
                 return sawBrick;
             };
             /**
+             * Scan through the maze from the bottom to the top looking for balls
+             * that we need to vanish away because there is no possibility of them
+             * moving further.
+             *
+             * Primarily this is a ball that is either directly resting on an arrow
+             * or a ball that is resting on a ball that is an arrow.
+             *
+             * In practice since we are scanning from the bottom up, we remove a
+             * ball in the situations mentioned above as well as when the cell below
+             * a ball is either empty or a hidden ball, both of which being a
+             * consequence of a previous call to this method having been invoked.
+             *
+             * The return value is false in the exact situation where there are no
+             * balls at all in the maze that require being removed or true if we
+             * told a ball to vanish or there is at least still one ball waiting to
+             * finish vanishing.
+             *
+             * This should be called repeatedly (over time) until it returns false.
+             *
+             * @returns {boolean} true if there are still balls to remove/waiting to
+             * be removed or false when no balls need to be removed any longer.
+             */
+            Maze.prototype.removeNextBlockedBall = function () {
+                var sawBall = false;
+                // Scan from the bottom up.
+                for (var row = game.MAZE_HEIGHT - 2; row >= 0; row--) {
+                    for (var col = 1; col < game.MAZE_WIDTH - 1; col++) {
+                        // Get the cell that we're searching for as a ball and the
+                        // cell below it.
+                        var cell = this._contents.getCellAt(col, row);
+                        var below = this._contents.getCellAt(col, row + 1);
+                        // Skip this cell if it is empty or not a ball.
+                        if (cell == null || cell.name != "ball")
+                            continue;
+                        // This is a ball; if it has already been hidden we can skip
+                        // any further checks, but set our flag to indicate that we're
+                        // still waiting for this ball to be removed.
+                        if (cell.isHidden == true) {
+                            sawBall = true;
+                            continue;
+                        }
+                        // This is a ball that is not already hidden. The criteria
+                        // for hiding a ball during this call are that it is not
+                        // already hidden (not already selected) and:
+                        //
+                        //   1) The cell below is an arrow
+                        //   2) The cell below is a blank space (has to be a ball
+                        //      that we previously vanished with a call like this)
+                        //   3) What is below is a ball that is hidden (will soon
+                        //      become #2, just not there yet)
+                        if (below.name == "arrow" ||
+                            below == null ||
+                            (below.name == "ball" && below.isHidden == true)) {
+                            cell.vanish();
+                            return true;
+                        }
+                    }
+                }
+                // Return if we saw a ball waiting to vanish or not.
+                return sawBall;
+            };
+            /**
              * This is called every frame update (tick tells us how many times this
              * has happened) to allow us to update ourselves.
              *
