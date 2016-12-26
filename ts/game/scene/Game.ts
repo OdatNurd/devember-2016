@@ -1,6 +1,13 @@
 module nurdz.game
 {
     /**
+     * When we are in the state that we're removing blocked balls from the maze,
+     * this is the delay (in ticks) for telling the next ball when it should
+     * start to vanish.
+     */
+    const ROUND_BALL_VANISH_TIME = 3;
+
+    /**
      * When we are in the state that we're removing gray bricks from the maze,
      * this is the delay (in ticks) for telling the next brick when it should
      * start to vanish.
@@ -632,7 +639,7 @@ module nurdz.game
                         if (this._maze.contents.hasPlayableComputerBall ())
                             this.state = GameState.COMPUTER_TURN;
                         else
-                            this.state = GameState.REMOVE_GRAY_BRICKS;
+                            this.state = GameState.REMOVE_BLOCKED_BALLS;
                     }
                     break;
 
@@ -650,6 +657,20 @@ module nurdz.game
                         if (this._maze.contents.hasPlayableHumanBall ())
                             this.state = GameState.PLAYER_TURN;
                         else
+                            this.state = GameState.REMOVE_BLOCKED_BALLS;
+                    }
+                    break;
+
+                // When we are in the remove blocked balls state, use the state
+                // timer to remove a blocked ball every so often, until we
+                // determine that there are none left.
+                case GameState.REMOVE_BLOCKED_BALLS:
+                    if (this._state.timerTrigger (ROUND_BALL_VANISH_TIME))
+                    {
+                        // Try to remove a ball; this returns false when there
+                        // are no more balls to remove AND all balls we were
+                        // waiting for are now gone.
+                        if (this._maze.removeNextBlockedBall () == false)
                             this.state = GameState.REMOVE_GRAY_BRICKS;
                     }
                     break;
