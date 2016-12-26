@@ -496,20 +496,21 @@ module nurdz.game
 
         /**
          * A ball drop that was in progress has now finished. The event features
-         * the ball that was dropped and also an indication as to whether the
-         * ball reached the goal or not.
+         * the ball that was dropped.
          *
          * This gets triggered once the ball comes to a rest and before it is
          * vanished away (if it should be).
          *
-         * @param {Ball}    ball        the ball that stopped dropping
-         * @param {boolean} reachedGoal true if the ball reached the goal, false
-         * if it stopped in the maze somewhere.
+         * This is triggered for any ball drop; human or computer, during the
+         * regular game or as the final ball drop.
+         *
+         * @param {Ball} ball  the ball that stopped dropping
          */
-        ballDropComplete (ball : Ball, reachedGoal : boolean) : void
+        ballDropComplete (ball : Ball) : void
         {
+
             // Did the ball reach the goal? This is good enough for testing.
-            if (reachedGoal)
+            if (ball.mapPosition.y == MAZE_HEIGHT - 2)
                 console.log ("GOOOOOAL!");
 
             // Now that the ball is done, where we go depends on where we came
