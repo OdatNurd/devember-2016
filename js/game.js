@@ -1710,12 +1710,19 @@ var nurdz;
              */
             GameState[GameState["BALL_DROPPING"] = 6] = "BALL_DROPPING";
             /**
-             * All of the possible plays have been made. In this state we are
-             * removing all of the gray bricks that are in the maze by vanishing
-             * them away. Once that is done we transition to the state where we
-             * start dropping the final balls.
+             * ALl of the possible plays have been made. In this state we are
+             * finding and removing all balls that can't possibly move any farther
+             * because they are not sitting on top of a gray brick that will vanish
+             * and allow them to fall.
              */
-            GameState[GameState["REMOVE_GRAY_BRICKS"] = 7] = "REMOVE_GRAY_BRICKS";
+            GameState[GameState["REMOVE_BLOCKED_BALLS"] = 7] = "REMOVE_BLOCKED_BALLS";
+            /**
+             * All of the possible plays have been made and all blocked ball have
+             * beem removed. In this state we are removing all of the gray bricks
+             * that are in the maze by vanishing them away. Once that is done we
+             * transition to the state where we start dropping the final balls.
+             */
+            GameState[GameState["REMOVE_GRAY_BRICKS"] = 8] = "REMOVE_GRAY_BRICKS";
             /**
              * All of the gray bricks have been removed, so we are now in the
              * process of finding all balls that can still drop and dropping them.
@@ -1723,13 +1730,13 @@ var nurdz;
              * we either cycle back to the generation state for the next round or to
              * the game over state.
              */
-            GameState[GameState["FINAL_BALL_DROP"] = 8] = "FINAL_BALL_DROP";
+            GameState[GameState["FINAL_BALL_DROP"] = 9] = "FINAL_BALL_DROP";
             /**
              * All of the gray bricks have been removed, all of the final ball drops
              * have finished, and we have no more rounds to play; the game is just
              * over now.
              */
-            GameState[GameState["GAME_OVER"] = 9] = "GAME_OVER";
+            GameState[GameState["GAME_OVER"] = 10] = "GAME_OVER";
         })(GameState = game.GameState || (game.GameState = {}));
         /**
          * This class represents the state of the game in the current game. This is

@@ -61,10 +61,18 @@ module nurdz.game
         BALL_DROPPING,
 
         /**
-         * All of the possible plays have been made. In this state we are
-         * removing all of the gray bricks that are in the maze by vanishing
-         * them away. Once that is done we transition to the state where we
-         * start dropping the final balls.
+         * ALl of the possible plays have been made. In this state we are
+         * finding and removing all balls that can't possibly move any farther
+         * because they are not sitting on top of a gray brick that will vanish
+         * and allow them to fall.
+         */
+        REMOVE_BLOCKED_BALLS,
+
+        /**
+         * All of the possible plays have been made and all blocked ball have
+         * beem removed. In this state we are removing all of the gray bricks
+         * that are in the maze by vanishing them away. Once that is done we
+         * transition to the state where we start dropping the final balls.
          */
         REMOVE_GRAY_BRICKS,
 
