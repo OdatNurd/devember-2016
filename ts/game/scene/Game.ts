@@ -543,6 +543,23 @@ module nurdz.game
         }
 
         /**
+         * A ball that is blocked has been told that it's being removed from
+         * the maze during the final part of the round just prior to the gray
+         * bricks being removed and the final ball drop.
+         *
+         * This gets triggered once the ball has been told to vanish away but
+         * before the vanish starts.
+         *
+         * This is triggered for both human and computer balls.
+         *
+         * @param {Ball} ball the ball that being removed
+         */
+        blockedBallRemoved (ball : Ball) : void
+        {
+            console.log("Removing blocked ball at " + ball.mapPosition.toString ());
+        }
+
+        /**
          * The Maze is telling us that it is now empty of gray bricks because it
          * has just reaped the last fully hidden gray brick.
          *

@@ -34,9 +34,23 @@ module nurdz.game
          * This is triggered for any ball drop; human or computer, during the
          * regular game or as the final ball drop.
          *
-         * @param {Ball} ball  the ball that stopped dropping
+         * @param {Ball} ball the ball that stopped dropping
          */
         ballDropComplete (ball : Ball) : void;
+
+        /**
+         * A ball that is blocked has been told that it's being removed from
+         * the maze during the final part of the round just prior to the gray
+         * bricks being removed and the final ball drop.
+         *
+         * This gets triggered once the ball has been told to vanish away but
+         * before the vanish starts.
+         *
+         * This is triggered for both human and computer balls.
+         *
+         * @param {Ball} ball the ball that being removed
+         */
+        blockedBallRemoved (ball : Ball) : void;
 
         /**
          * This will get invoked every time we're told to generate a maze and
@@ -928,6 +942,9 @@ module nurdz.game
                         below.name == "arrow" ||
                         (below.name == "ball" && (<Ball>below).isHidden == true))
                     {
+                        // Tell our listener (if any) that this is happening
+                        if (this._listener != null)
+                            this._listener.blockedBallRemoved (cell);
                         cell.vanish ();
                         return true;
                     }
@@ -967,10 +984,14 @@ module nurdz.game
             // Reap any dead balls; these are balls which are currently
             // invisible but still alive; they can be removed from the grid now.
             //
-            // When this happens, we can set the flag that indicates that the
-            // ball move is finalized, so that we can tell our listener that the
-            // move is done now.
-            if (this.clearHiddenBalls () > 0)
+            // When this happens and we are dropping a ball, then we can set the
+            // flag that indicates that the ball movement is finalized, so that
+            // we can tell our listener that the move is done now.
+            //
+            // This also gets triggered during non-dropped ball removal, such
+            // as vanishing blocked balls, but in that case we don't set the
+            // flag because the appropriate handling has already been done.
+            if (this.clearHiddenBalls () > 0 && this._droppingBall != null)
                 this._ballMoveFinalized = true;
 
             // Reap any dead gray bricks; these are the gray bricks that have
@@ -1052,7 +1073,7 @@ module nurdz.game
 
                 // If there is a listener, tell it that this ball has stopped
                 // moving now.
-                if (this._listener != null && this._lastDroppedBall != null)
+                if (this._listener != null)
                     this._listener.ballDropComplete (this._lastDroppedBall);
 
                 // Done with the value now.
