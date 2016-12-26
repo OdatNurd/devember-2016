@@ -919,13 +919,13 @@ module nurdz.game
                     // for hiding a ball during this call are that it is not
                     // already hidden (not already selected) and:
                     //
-                    //   1) The cell below is an arrow
-                    //   2) The cell below is a blank space (has to be a ball
+                    //   1) The cell below is a blank space (has to be a ball
                     //      that we previously vanished with a call like this)
-                    //   3) What is below is a ball that is hidden (will soon
-                    //      become #2, just not there yet)
-                    if (below.name == "arrow" ||
-                        below == null ||
+                    //   2) What is below is a ball that is hidden (will soon
+                    //      become #1, just not there yet)
+                    //   3) The cell below is an arrow
+                    if (below == null ||
+                        below.name == "arrow" ||
                         (below.name == "ball" && (<Ball>below).isHidden == true))
                     {
                         cell.vanish ();
@@ -1052,7 +1052,7 @@ module nurdz.game
 
                 // If there is a listener, tell it that this ball has stopped
                 // moving now.
-                if (this._listener != null)
+                if (this._listener != null && this._lastDroppedBall != null)
                     this._listener.ballDropComplete (this._lastDroppedBall,
                                                      this._lastDroppedBall.mapPosition.y == MAZE_HEIGHT - 2);
 
