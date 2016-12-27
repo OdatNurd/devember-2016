@@ -4615,6 +4615,8 @@ var nurdz;
                 this._droppingFinalBall = false;
                 // Now generate the contents of the maze.
                 this._generator.generate();
+                // Reset the scores
+                game.resetScores();
                 // If there is a listener, tell it now that the generation has
                 // completed.
                 if (this._listener != null)
@@ -5040,6 +5042,8 @@ var nurdz;
                 // entities get painted.
                 this._renderer.fillRect(0, 0, this._stage.width, this._stage.height, '#000');
                 _super.prototype.render.call(this);
+                // Now render the score.
+                game.renderScores(this._renderer);
             };
             /**
              * This gets invoked by our maze entity when it has finished generating

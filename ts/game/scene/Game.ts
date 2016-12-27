@@ -477,6 +477,9 @@ module nurdz.game
             // entities get painted.
             this._renderer.fillRect (0, 0, this._stage.width, this._stage.height, '#000');
             super.render ();
+
+            // Now render the score.
+            renderScores (this._renderer);
         }
 
         /**

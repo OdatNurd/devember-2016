@@ -1224,6 +1224,9 @@ module nurdz.game
             // Now generate the contents of the maze.
             this._generator.generate ();
 
+            // Reset the scores
+            resetScores ();
+
             // If there is a listener, tell it now that the generation has
             // completed.
             if (this._listener != null)
