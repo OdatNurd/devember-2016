@@ -8,6 +8,10 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * The number of points that a bonus brick is worth.
+         */
+        game.BONUS_BRICK_SCORE = 10;
+        /**
          * The number of points the human player has.
          */
         var humanScore = 0;
@@ -38,7 +42,16 @@ var nurdz;
             else
                 computerScore += value;
         }
-        game.adjustScore = adjustScore;
+        /**
+         * Score points due to touching a bonus brick for the owner of the ball
+         * provided.
+         *
+         * @param {Ball} ball the ball that touched the bonus brick
+         */
+        function bonusBrickScore(ball) {
+            adjustScore(ball.player, game.BONUS_BRICK_SCORE);
+        }
+        game.bonusBrickScore = bonusBrickScore;
         /**
          * Render the scores of the two players to the screen. This renders the
          * scores to a known position on screen.
@@ -3217,6 +3230,8 @@ var nurdz;
                     // ourselves collected.
                     if (this._hidden == false)
                         this.vanish();
+                    // Score points for the owner of the ball as well.
+                    game.bonusBrickScore(ball);
                 }
                 else {
                     // We are simulating, so if we have not already set the flag

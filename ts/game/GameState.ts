@@ -1,6 +1,11 @@
 module nurdz.game
 {
     /**
+     * The number of points that a bonus brick is worth.
+     */
+    export const BONUS_BRICK_SCORE = 10;
+
+    /**
      * The number of points the human player has.
      */
     let humanScore : number = 0;
@@ -27,13 +32,24 @@ module nurdz.game
      * @param {number}     value  the adjustment value; can be positive or
      * negative
      */
-    export function adjustScore (player : PlayerType, value : number) : void
+    function adjustScore (player : PlayerType, value : number) : void
     {
         // Update the correct score.
         if (player == PlayerType.PLAYER_HUMAN)
             humanScore += value;
         else
             computerScore += value;
+    }
+
+    /**
+     * Score points due to touching a bonus brick for the owner of the ball
+     * provided.
+     *
+     * @param {Ball} ball the ball that touched the bonus brick
+     */
+    export function bonusBrickScore (ball : Ball) : void
+    {
+        adjustScore (ball.player, BONUS_BRICK_SCORE);
     }
 
     /**

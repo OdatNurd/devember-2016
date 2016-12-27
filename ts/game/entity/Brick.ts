@@ -34,11 +34,15 @@ module nurdz.game
          * This value only tracks if you use the methods on the Ball entity to
          * vanish or appear it; if you modify it's animation yourself, this will
          * get out of sync.
-         *
-         * @type {boolean}
          */
         private _hidden : boolean;
 
+        /**
+         * This flag is used during the simulation and is used to track if we
+         * have already been collected or not. This allows the AI to not
+         * prioritize a move that passes through the same bonus brick twice for
+         * some reason higher than other paths.
+         */
         private _simulationCollected : boolean;
 
         /**
@@ -287,6 +291,9 @@ module nurdz.game
                 // ourselves collected.
                 if (this._hidden == false)
                     this.vanish ();
+
+                // Score points for the owner of the ball as well.
+                bonusBrickScore (ball);
             }
             else
             {
