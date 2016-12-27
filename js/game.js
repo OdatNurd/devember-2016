@@ -12,6 +12,11 @@ var nurdz;
          */
         game.BONUS_BRICK_SCORE = 10;
         /**
+         * The number of points that it's worth to get a ball all the way to the
+         * bottom of the screen, where the goal line is.
+         */
+        game.GOAL_BALL_SCORE = 60;
+        /**
          * The number of points the human player has.
          */
         var humanScore = 0;
@@ -52,6 +57,16 @@ var nurdz;
             adjustScore(ball.player, game.BONUS_BRICK_SCORE);
         }
         game.bonusBrickScore = bonusBrickScore;
+        /**
+         * Score points due to a ball reaching the goal line (the bottom of the
+         * maze).
+         *
+         * @param {Ball} ball the ball that reached the score line
+         */
+        function goalBallScore(ball) {
+            adjustScore(ball.player, game.GOAL_BALL_SCORE);
+        }
+        game.goalBallScore = goalBallScore;
         /**
          * Render the scores of the two players to the screen. This renders the
          * scores to a known position on screen.
@@ -5117,9 +5132,11 @@ var nurdz;
              * drop
              */
             GameScene.prototype.ballDropComplete = function (ball, isFinal) {
-                // Did the ball reach the goal? This is good enough for testing.
-                if (ball.mapPosition.y == game.MAZE_HEIGHT - 2)
+                // Did the ball reach the goal?
+                if (ball.mapPosition.y == game.MAZE_HEIGHT - 2) {
+                    game.goalBallScore(ball);
                     console.log("GOOOOOAL!");
+                }
                 // Now that the ball is done, where we go depends on where we came
                 // from.
                 switch (this.priorState) {

@@ -529,9 +529,12 @@ module nurdz.game
          */
         ballDropComplete (ball : Ball, isFinal : boolean) : void
         {
-            // Did the ball reach the goal? This is good enough for testing.
+            // Did the ball reach the goal?
             if (ball.mapPosition.y == MAZE_HEIGHT - 2)
+            {
+                goalBallScore (ball);
                 console.log ("GOOOOOAL!");
+            }
 
             // Now that the ball is done, where we go depends on where we came
             // from.

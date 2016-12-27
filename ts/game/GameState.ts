@@ -6,6 +6,12 @@ module nurdz.game
     export const BONUS_BRICK_SCORE = 10;
 
     /**
+     * The number of points that it's worth to get a ball all the way to the
+     * bottom of the screen, where the goal line is.
+     */
+    export const GOAL_BALL_SCORE = 60;
+
+    /**
      * The number of points the human player has.
      */
     let humanScore : number = 0;
@@ -50,6 +56,17 @@ module nurdz.game
     export function bonusBrickScore (ball : Ball) : void
     {
         adjustScore (ball.player, BONUS_BRICK_SCORE);
+    }
+
+    /**
+     * Score points due to a ball reaching the goal line (the bottom of the
+     * maze).
+     *
+     * @param {Ball} ball the ball that reached the score line
+     */
+    export function goalBallScore (ball : Ball) : void
+    {
+        adjustScore (ball.player, GOAL_BALL_SCORE);
     }
 
     /**
