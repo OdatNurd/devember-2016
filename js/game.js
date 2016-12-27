@@ -2848,6 +2848,21 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            Object.defineProperty(Ball.prototype, "player", {
+                /**
+                 * Return the type of player that owns this ball. This is derived from
+                 * the current ball type, and is read-only.
+                 *
+                 * @returns {PlayerType} the type of player that owns this ball. ball.
+                 */
+                get: function () {
+                    if (this._ballType == BallType.BALL_PLAYER)
+                        return game.PlayerType.PLAYER_HUMAN;
+                    return game.PlayerType.PLAYER_COMPUTER;
+                },
+                enumerable: true,
+                configurable: true
+            });
             /**
              * Set the visual state of the ball to idle; this is the normal state,
              * in which the ball just sits there, looking pretty.

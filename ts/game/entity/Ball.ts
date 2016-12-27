@@ -159,6 +159,19 @@ module nurdz.game
         { return this._hidden; }
 
         /**
+         * Return the type of player that owns this ball. This is derived from
+         * the current ball type, and is read-only.
+         *
+         * @returns {PlayerType} the type of player that owns this ball. ball.
+         */
+        get player () : PlayerType
+        {
+            if (this._ballType == BallType.BALL_PLAYER)
+                return PlayerType.PLAYER_HUMAN;
+            return PlayerType.PLAYER_COMPUTER;
+        }
+
+        /**
          * Construct a new ball entity that will render on the stage provided.
          *
          * The ball type provided is used to determine what the ball looks like
