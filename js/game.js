@@ -4722,6 +4722,8 @@ var nurdz;
             GameScene.prototype.activating = function (previousScene) {
                 // Let the super work its magic.
                 _super.prototype.activating.call(this, previousScene);
+                // Set up what our font should be while this screen is active.
+                this._renderer.context.font = '30px kenvector_futureregular';
                 // Set the reference position of the player and computer entities
                 // to that of the maze, shifted up some cell so that they appear in
                 // the virtual cell on top of the maze.

@@ -23,6 +23,11 @@ module nurdz.game
                                       MazeEventListener
     {
         /**
+         * Override the type of our renderer to be a canvas renderer.
+         */
+        protected _renderer : CanvasRenderer;
+
+        /**
          * Our state machine; this controls what we're doing at any given time.
          */
         private _state : StateMachine;
@@ -147,6 +152,9 @@ module nurdz.game
         {
             // Let the super work its magic.
             super.activating (previousScene);
+
+            // Set up what our font should be while this screen is active.
+            this._renderer.context.font = '30px kenvector_futureregular';
 
             // Set the reference position of the player and computer entities
             // to that of the maze, shifted up some cell so that they appear in
