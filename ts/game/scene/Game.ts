@@ -519,11 +519,16 @@ module nurdz.game
          * This is triggered for any ball drop; human or computer, during the
          * regular game or as the final ball drop.
          *
-         * @param {Ball} ball  the ball that stopped dropping
+         * The owner of the ball can be determined from the ball entity itself
+         * while isFinal tells you if the ball finished dropping as part of a
+         * regular or final ball drop.
+         *
+         * @param {Ball}    ball    the ball that stopped dropping
+         * @param {boolean} isFInal true if this ball was part of a final ball
+         * drop
          */
-        ballDropComplete (ball : Ball) : void
+        ballDropComplete (ball : Ball, isFinal : boolean) : void
         {
-
             // Did the ball reach the goal? This is good enough for testing.
             if (ball.mapPosition.y == MAZE_HEIGHT - 2)
                 console.log ("GOOOOOAL!");

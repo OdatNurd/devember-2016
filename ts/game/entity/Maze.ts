@@ -34,9 +34,15 @@ module nurdz.game
          * This is triggered for any ball drop; human or computer, during the
          * regular game or as the final ball drop.
          *
-         * @param {Ball} ball the ball that stopped dropping
+         * The owner of the ball can be determined from the ball entity itself
+         * while isFinal tells you if the ball finished dropping as part of a
+         * regular or final ball drop.
+         *
+         * @param {Ball}    ball    the ball that stopped dropping
+         * @param {boolean} isFInal true if this ball was part of a final ball
+         * drop
          */
-        ballDropComplete (ball : Ball) : void;
+        ballDropComplete (ball : Ball, isFinal : boolean) : void;
 
         /**
          * A ball that is blocked has been told that it's being removed from
@@ -1067,7 +1073,8 @@ module nurdz.game
                 // If there is a listener, tell it that this ball has stopped
                 // moving now.
                 if (this._listener != null)
-                    this._listener.ballDropComplete (this._lastDroppedBall);
+                    this._listener.ballDropComplete (this._lastDroppedBall,
+                                                     this._droppingFinalBall);
 
                 // Done with the value now.
                 this._lastDroppedBall = null;
