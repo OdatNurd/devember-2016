@@ -17,6 +17,11 @@ var nurdz;
          */
         game.GOAL_BALL_SCORE = 60;
         /**
+         * The number of points scored per row of advancement of a ball. This is
+         * applied at the end of the round when the final balls are removed.
+         */
+        game.BALL_POSITION_MULTIPLIER = 2;
+        /**
          * The number of points the human player has.
          */
         var humanScore = 0;
@@ -67,6 +72,16 @@ var nurdz;
             adjustScore(ball.player, game.GOAL_BALL_SCORE);
         }
         game.goalBallScore = goalBallScore;
+        /**
+         * Score partial points for a ball based on its final resting position in
+         * the maze.
+         *
+         * @param {Ball} ball the ball to score partial points for
+         */
+        function partialBallScore(ball) {
+            adjustScore(ball.player, ball.mapPosition.y * game.BALL_POSITION_MULTIPLIER);
+        }
+        game.partialBallScore = partialBallScore;
         /**
          * Render the scores of the two players to the screen. This renders the
          * scores to a known position on screen.
@@ -1113,7 +1128,7 @@ var nurdz;
                 //
                 // This always works because the ball pool always has exactly enough
                 // balls for our purposes.
-                for (var ballIndex = 0; ballIndex < game.MAZE_WIDTH - 2; ballIndex++) {
+                for (var ballIndex = 0; ballIndex < 1; ballIndex++) {
                     // Get the balls from the pool
                     playerBalls[ballIndex] = this._maze.getBall();
                     computerBalls[ballIndex] = this._maze.getBall();
@@ -5133,10 +5148,10 @@ var nurdz;
              */
             GameScene.prototype.ballDropComplete = function (ball, isFinal) {
                 // Did the ball reach the goal?
-                if (ball.mapPosition.y == game.MAZE_HEIGHT - 2) {
+                if (ball.mapPosition.y == game.MAZE_HEIGHT - 2)
                     game.goalBallScore(ball);
-                    console.log("GOOOOOAL!");
-                }
+                else if (isFinal == true)
+                    game.partialBallScore(ball);
                 // Now that the ball is done, where we go depends on where we came
                 // from.
                 switch (this.priorState) {
@@ -5174,7 +5189,9 @@ var nurdz;
              * @param {Ball} ball the ball that being removed
              */
             GameScene.prototype.blockedBallRemoved = function (ball) {
-                console.log("Removing blocked ball at " + ball.mapPosition.toString());
+                // This is a blocked ball that can no longer move, so apply a
+                // partial score value now.
+                game.partialBallScore(ball);
             };
             /**
              * The Maze is telling us that it is now empty of gray bricks because it

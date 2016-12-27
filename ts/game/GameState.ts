@@ -12,6 +12,12 @@ module nurdz.game
     export const GOAL_BALL_SCORE = 60;
 
     /**
+     * The number of points scored per row of advancement of a ball. This is
+     * applied at the end of the round when the final balls are removed.
+     */
+    export const BALL_POSITION_MULTIPLIER = 2;
+
+    /**
      * The number of points the human player has.
      */
     let humanScore : number = 0;
@@ -67,6 +73,17 @@ module nurdz.game
     export function goalBallScore (ball : Ball) : void
     {
         adjustScore (ball.player, GOAL_BALL_SCORE);
+    }
+
+    /**
+     * Score partial points for a ball based on its final resting position in
+     * the maze.
+     *
+     * @param {Ball} ball the ball to score partial points for
+     */
+    export function partialBallScore (ball : Ball) : void
+    {
+        adjustScore (ball.player, ball.mapPosition.y * BALL_POSITION_MULTIPLIER);
     }
 
     /**

@@ -531,10 +531,12 @@ module nurdz.game
         {
             // Did the ball reach the goal?
             if (ball.mapPosition.y == MAZE_HEIGHT - 2)
-            {
                 goalBallScore (ball);
-                console.log ("GOOOOOAL!");
-            }
+
+            // The ball did not reach the goal, but if this is a final ball drop
+            // then score partial points for the ending position of the ball.
+            else if (isFinal == true)
+                partialBallScore (ball);
 
             // Now that the ball is done, where we go depends on where we came
             // from.
@@ -579,7 +581,9 @@ module nurdz.game
          */
         blockedBallRemoved (ball : Ball) : void
         {
-            console.log("Removing blocked ball at " + ball.mapPosition.toString ());
+            // This is a blocked ball that can no longer move, so apply a
+            // partial score value now.
+            partialBallScore (ball);
         }
 
         /**
