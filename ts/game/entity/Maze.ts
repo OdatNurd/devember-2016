@@ -991,7 +991,7 @@ module nurdz.game
             // This also gets triggered during non-dropped ball removal, such
             // as vanishing blocked balls, but in that case we don't set the
             // flag because the appropriate handling has already been done.
-            if (this.clearHiddenBalls () > 0 && this._droppingBall != null)
+            if (this.clearHiddenBalls () > 0 && this._lastDroppedBall != null)
                 this._ballMoveFinalized = true;
 
             // Reap any dead gray bricks; these are the gray bricks that have
