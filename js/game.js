@@ -8,6 +8,55 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * The number of points the human player has.
+         */
+        var humanScore = 0;
+        /**
+         * The number of poitns the computer player has.
+         */
+        var computerScore = 0;
+        /**
+         * Reset the score values for both players.
+         */
+        function resetScores() {
+            humanScore = 0;
+            computerScore = 0;
+        }
+        game.resetScores = resetScores;
+        /**
+         * Update the score for the designated player by adding or subtracting the
+         * provided point value from the score.
+         *
+         * @param {PlayerType} player the player to adjust the score for
+         * @param {number}     value  the adjustment value; can be positive or
+         * negative
+         */
+        function adjustScore(player, value) {
+            // Update the correct score.
+            if (player == game.PlayerType.PLAYER_HUMAN)
+                humanScore += value;
+            else
+                computerScore += value;
+        }
+        game.adjustScore = adjustScore;
+        /**
+         * Render the scores of the two players to the screen. This renders the
+         * scores to a known position on screen.
+         *
+         * @param {Renderer} renderer the renderer to use to blit the text.
+         */
+        function renderScores(renderer) {
+            renderer.drawTxt(humanScore + "", 16, 32, "white");
+            renderer.drawTxt(computerScore + "", game.STAGE_WIDTH - (5 * 32), 32, "yellow");
+        }
+        game.renderScores = renderScores;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * This class represents an actor pool.
          *
          * The idea is that during the game we will want to construct multiple
