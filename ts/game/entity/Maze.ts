@@ -474,7 +474,7 @@ module nurdz.game
             if (entity != null && entity.name == "ball" && this._droppingBall == null)
             {
                 // Drop it and leave.
-                this.dropBall (<Ball> entity, NORMAL_DROP_SPEED);
+                this.dropBall (<Ball> entity, NORMAL_DROP_SPEED, false);
                 return true;
             }
 
@@ -520,7 +520,7 @@ module nurdz.game
             if (entity.name == "ball" && this._droppingBall == null)
             {
                 // Drop it and leave.
-                this.dropBall (<Ball> entity, NORMAL_DROP_SPEED);
+                this.dropBall (<Ball> entity, NORMAL_DROP_SPEED, false);
                 return true;
             }
 
@@ -564,16 +564,18 @@ module nurdz.game
          * its map position must accurately reflect the position it is stored
          * in, since that position will be cleared when the ball starts moving.
          *
-         * @param {Ball}   ball  the ball to drop
-         * @param {number} speed the number of ticks between ball step stages
+         * When isFinal is true, this ball will be vanished as soon as it stops
+         * moving, even if it doesn't reach the goal.
+         *
+         * @param {Ball}    ball    the ball to drop
+         * @param {number}  speed   the number of ticks between ball step stages
+         * @param {boolean} isFinal true if this is a final ball drop or false
+         * otherwise
          */
-        private dropBall (ball : Ball, speed : number) : void
+        private dropBall (ball : Ball, speed : number, isFinal: boolean) : void
         {
-            // At least during development, reset the flag that indicates the
-            // reason for this ball push to indicate that this is not the final
-            // ball. In practice this is not needed as long as this value gets
-            // reset on maze generation.
-            this._droppingFinalBall = false;
+            // Set the flag that indicates if this drop is a final drop or not.
+            this._droppingFinalBall = isFinal;
 
             // Get the maze contents to mark this ball as played. If this is
             // one of the generated human or computer balls from the top row,
@@ -803,16 +805,7 @@ module nurdz.game
                     if (cell != null && cell.name == "ball")
                     {
                         // Start this ball dropping.
-                        this.dropBall (<Ball> cell, FINAL_DROP_SPEED);
-
-                        // Set the flag indicating that we are dropping a final
-                        // ball. This allows us to make sure that this ball
-                        // always vanishes when it is finished dropping, even if
-                        // it doesn't reach the goal.
-                        //
-                        // This has to happen here because (for safety) the
-                        // above method sets the value to false.
-                        this._droppingFinalBall = true;
+                        this.dropBall (<Ball> cell, FINAL_DROP_SPEED, true);
                         return true;
                     }
                 }
