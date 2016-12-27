@@ -4810,7 +4810,7 @@ var nurdz;
                     case 191:
                         // If we're in debugging mode, don't handle the key here and
                         // let the debug code handle it instead.
-                        if (this._maze.debugger.debugTracking)
+                        if (this._debugger.debugTracking)
                             return false;
                         // Get the AI to select a ball. If one was selected, jump
                         // the player to that position, turn to face it, and push.
@@ -4855,8 +4855,11 @@ var nurdz;
                         return true;
                     // Trigger a new maze generation.
                     case game.KeyCodes.KEY_G:
-                        this._maze.generateMaze();
-                        return true;
+                        if (this._debugger.debugTracking) {
+                            this._maze.generateMaze();
+                            return true;
+                        }
+                        return false;
                     // Toggle mouse tracking of the debug location, then update the
                     // tracking with the last known mouse location.
                     case game.KeyCodes.KEY_F12:
@@ -4957,7 +4960,7 @@ var nurdz;
                 this._mouse = this._stage.calculateMousePos(eventObj, this._mouse);
                 // If we're tracking a debug location, tell the maze about this
                 // point.
-                if (this._maze.debugger.debugTracking)
+                if (this._debugger.debugTracking)
                     this._maze.setDebugPoint(this._mouse);
                 // We handled it.
                 return true;
