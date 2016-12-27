@@ -71,12 +71,12 @@ module nurdz.game
         // If the position where this ball stopped is the bottom of the maze,
         // it gets a bonus score.
         if (storedPos.y == MAZE_HEIGHT - 2)
-            ball.score += 100;
+            ball.score += GOAL_BALL_SCORE;
 
         // Return the final score, which is the number of bonus bricks that this
         // ball passed through, plus getting to the bottom (if it did), plus points
         // for each row it made it through the maze.
-        return ball.score + (storedPos.y * 5);
+        return ball.score + (storedPos.y * BALL_POSITION_MULTIPLIER);
     }
 
     /**

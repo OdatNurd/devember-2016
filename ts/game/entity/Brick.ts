@@ -301,7 +301,7 @@ module nurdz.game
                 // saying we are collected, update the score in the ball that
                 // touched us.
                 if (this._simulationCollected == false)
-                    ball.score += 10;
+                    ball.score += BONUS_BRICK_SCORE;
 
                 // We are collected now, no matter what.
                 this._simulationCollected = true;

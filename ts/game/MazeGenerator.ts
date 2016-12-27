@@ -478,7 +478,7 @@ module nurdz.game
             //
             // This always works because the ball pool always has exactly enough
             // balls for our purposes.
-            for (let ballIndex = 0 ; ballIndex < 1 ; ballIndex++)
+            for (let ballIndex = 0 ; ballIndex < MAZE_WIDTH - 2 ; ballIndex++)
             {
                 // Get the balls from the pool
                 playerBalls[ballIndex] = this._maze.getBall ();

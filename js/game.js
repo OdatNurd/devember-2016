@@ -1128,7 +1128,7 @@ var nurdz;
                 //
                 // This always works because the ball pool always has exactly enough
                 // balls for our purposes.
-                for (var ballIndex = 0; ballIndex < 1; ballIndex++) {
+                for (var ballIndex = 0; ballIndex < game.MAZE_WIDTH - 2; ballIndex++) {
                     // Get the balls from the pool
                     playerBalls[ballIndex] = this._maze.getBall();
                     computerBalls[ballIndex] = this._maze.getBall();
@@ -1662,11 +1662,11 @@ var nurdz;
             // If the position where this ball stopped is the bottom of the maze,
             // it gets a bonus score.
             if (storedPos.y == game.MAZE_HEIGHT - 2)
-                ball.score += 100;
+                ball.score += game.GOAL_BALL_SCORE;
             // Return the final score, which is the number of bonus bricks that this
             // ball passed through, plus getting to the bottom (if it did), plus points
             // for each row it made it through the maze.
-            return ball.score + (storedPos.y * 5);
+            return ball.score + (storedPos.y * game.BALL_POSITION_MULTIPLIER);
         }
         /**
          * Select the best move for an AI player based on the state of the maze
@@ -3268,7 +3268,7 @@ var nurdz;
                     // saying we are collected, update the score in the ball that
                     // touched us.
                     if (this._simulationCollected == false)
-                        ball.score += 10;
+                        ball.score += game.BONUS_BRICK_SCORE;
                     // We are collected now, no matter what.
                     this._simulationCollected = true;
                 }
