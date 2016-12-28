@@ -232,42 +232,6 @@ module nurdz.game
         }
 
         /**
-         * Randomly select a column in the maze for the purposes of generating
-         * maze contents.
-         *
-         * This ensures that the value selected is valid for a position inside
-         * of the maze; this means that it makes sure that the value is never
-         * one of the edge columns which bound the sides of the maze.
-         *
-         * @returns {number} the randomly selected column in the maze
-         */
-        private genRandomMazeColumn () : number
-        {
-            // Generate, ensuring that we never pick an edge.
-            return Utils.randomIntInRange (1, MAZE_WIDTH -1);
-        }
-
-        /**
-         * Randomly select a row in the maze for the purposes of generating maze
-         * contents.
-         *
-         * This ensures that the value selected is valid for a position inside
-         * of the maze. In particular we need a row at the top for the balls to
-         * start in and the balls to end up in, plus a row at the top to allow
-         * for at least a potential drop of one ball and a row at the bottom for
-         * the outer boundary.
-         *
-         * @returns {number} [the randomly selected row in the maze
-         */
-        private genRandomMazeRow () : number
-        {
-            // Generate, ensuring that we skip two rows for the initial ball
-            // placements and at least a single row of movement, and two rows on
-            // the bottom to make room for the lower boundary and the goal line.
-            return Utils.randomIntInRange (2, MAZE_HEIGHT - 3);
-        }
-
-        /**
          * Generate our black hole entities into the maze. There is an exact
          * number of this entity in the maze at any given time, which are
          * randomly spready around with the restriction that there only ever be
