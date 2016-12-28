@@ -1209,10 +1209,6 @@ module nurdz.game
             this._bonusBricks.killALl ();
             this._balls.killALl ();
             this._contents.clearMarkers ();
-
-            // Make sure that our black hole entity doesn't know about any
-            // destinations from a prior maze (if any).
-            this._blackHole.clearDestinations ();
         }
 
         /**

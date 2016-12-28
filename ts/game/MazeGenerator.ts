@@ -13,7 +13,7 @@ module nurdz.game
      * Be careful not to set this too high or the generation may deadlock due to
      * there being no suitable locations.
      */
-    const TELEPORT_MIN_DISTANCE = 2;
+    const TELEPORT_MIN_DISTANCE = 3;
 
     /**
      * The minimum and maximum number of arrows that are generated per row in
@@ -169,19 +169,22 @@ module nurdz.game
         }
 
         /**
-         * Scan the maze over the range of values given and check to see if any
-         * entities exist in this area or not. This is not specific to any
-         * particular entity.
+         * Scan the maze over the range of values given and check to see if the
+         * entity provided exists in that span. This is allows to go outside of
+         * the bounds of the maze.
          *
-         * @param   {number}  x1 the x location of the first cell to check
-         * @param   {number}  y1 the y location of the first cell to check
-         * @param   {number}  x2 the x location of the second cell to check
-         * @param   {number}  y2 the y location of the second cell to check
+         * @param   {number}  x1     the x location of the first cell to check
+         * @param   {number}  y1     the y location of the first cell to check
+         * @param   {number}  x2     the x location of the second cell to check
+         * @param   {number}  y2     the y location of the second cell to check
+         * @param   {Entity}  entity the entity to search for
          *
          * @returns {boolean}    true if any of the cells in the rectangular
-         * range between the two given points contains an entity.
+         * range between the two given points contains the entity.
          */
-        private entityInRange (x1 : number, y1 : number, x2 : number, y2 : number) : boolean
+        private entityInRange (x1 : number, y1 : number,
+                               x2 : number, y2 : number,
+                               entity : Entity) : boolean
         {
             // Scan the entire range; this is really inefficient but it gets
             // the job done.
@@ -192,9 +195,31 @@ module nurdz.game
             {
                 for (let y = y1 ; y <= y2 ; y++)
                 {
-                    if (this._contents.getCellAt (x, y) != null)
+                    if (this._contents.getCellAt (x, y) == entity)
                         return true;
                 }
+            }
+
+            return false;
+        }
+
+        /**
+         * Scan the entire column of the maze given to see if the entity
+         * provided exists in that column or not.
+         *
+         * @param   {number}  x      the column to search
+         * @param   {Entity}  entity the entity to look for
+         *
+         * @returns {boolean}        true if the entity is found, false
+         * otherwise
+         */
+        private entityInColumn (x : number, entity : Entity) : boolean
+        {
+            // Scan the maze content portion to see if the entity is there.
+            for (let y = 2 ; y < MAZE_HEIGHT - 2 ; y++)
+            {
+                if (this._contents.getCellAt (x, y) == entity)
+                    return true;
             }
 
             return false;
@@ -233,23 +258,23 @@ module nurdz.game
             // Generate, ensuring that we skip two rows for the initial ball
             // placements and at least a single row of movement, and two rows on
             // the bottom to make room for the lower boundary and the goal line.
-            return Utils.randomIntInRange (2, MAZE_HEIGHT - 2);
+            return Utils.randomIntInRange (2, MAZE_HEIGHT - 3);
         }
 
         /**
-         * Generate black holes into the maze. We generate a specific number of
-         * them at random locations in the grid.
+         * Generate our black hole entities into the maze. There is an exact
+         * number of this entity in the maze at any given time, which are
+         * randomly spready around with the restriction that there only ever be
+         * one in any given column in the maze.
          *
-         * This should be done first because unlike other elements in the maze,
-         * these can be anywhere instead of only a set number of them being
-         * allowed per row.
+         * There is expected to be a single global teleport entity that is
+         * stamped into the maze at all locations, and we update the destination
+         * list of the single entity to tell it where all of its other versions
+         * are.
          *
-         * MOTE:
-         *    The current generation scheme for this is that locations are
-         *    randomly selected, but if any entity is within two tiles of the
-         *    chosen tile (including the chosen tile itself), that location is
-         *    rejected.
-         *
+         * For this reason, this method does nothing if there is no assigned
+         * teleport entity instance, and every invocation resets the destination
+         * list of the teleport entity.
          */
         private genBlackHoles () : void
         {
@@ -258,27 +283,37 @@ module nurdz.game
             if (this._teleport == null)
                 return;
 
-            for (let i = 0 ; i < TOTAL_TELEPORTERS ; i++)
-            {
-                // Get a location.
-                let x = this.genRandomMazeColumn ();
-                let y = this.genRandomMazeRow ();
+            // Reset the destination list of the entity to make sure there are
+            // no phantoms.
+            this._teleport.clearDestinations ();
 
-                // If there are no entities within the proper distance of this
-                // selected square (which includes the square itself), then this
-                // is a good place to put the teleport; otherwise, try again.
-                if (this.entityInRange (x - TELEPORT_MIN_DISTANCE,
+            // Keep going until we hit a specific number of generated entities.
+            let generated = 0;
+            while (generated < TOTAL_TELEPORTERS)
+            {
+                // Get a location. These values don't cover the entire maze area;
+                // we want the teleports to be away from the edges a bit.
+                let x = Utils.randomIntInRange (2, MAZE_WIDTH - 3)
+                let y = Utils.randomIntInRange (5, MAZE_HEIGHT - 6)
+
+                // Don't generate here if this location is not empty, there is
+                // already a teleport in this column, or there is a teleport
+                // close to us.
+                if (this._contents.getCellAt (x, y) != null ||
+                    this.entityInColumn (x, this._teleport)  ||
+                    this.entityInRange (x - TELEPORT_MIN_DISTANCE,
                                         y - TELEPORT_MIN_DISTANCE,
                                         x + TELEPORT_MIN_DISTANCE,
-                                        y + TELEPORT_MIN_DISTANCE) == false)
-                {
-                    // Store it, then add this location to the list of possible
-                    // destinations in this black hole.
-                    this._contents.setCellAt (x, y, this._teleport);
-                    this._teleport.addDestination (new Point (x, y));
-                }
-                else
-                    i--;
+                                        y + TELEPORT_MIN_DISTANCE, this._teleport))
+                    continue;
+
+                // Set this location in the maze as a teleport and add this location
+                // as a destination.
+                this._contents.setCellAt (x, y, this._teleport);
+                this._teleport.addDestination (new Point (x, y));
+
+                // We added one.
+                generated++;
             }
         }
 
