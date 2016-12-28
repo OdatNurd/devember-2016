@@ -463,7 +463,8 @@ module nurdz.game
          * column in the maze, if possible.
          *
          * The ball can only be pushed if the cell in the maze at that position
-         * is not empty, is a ball, and there is not already a ball dropping.
+         * is not empty, is a ball, is not immediately blocked from moving, and
+         * there is not already a ball dropping.
          *
          * The return value tells you if the drop started or not.
          *
@@ -475,12 +476,18 @@ module nurdz.game
         pushBall (column : number) : boolean
         {
             // Try to get the entity in the first row of the given column. If
-            // it exists and it is a ball, push it.
-            let entity = this._contents.getCellAt (column, 0);
+            // it exists and it is a ball, we might want to push it.
+            let entity = <Ball> this._contents.getCellAt (column, 0);
             if (entity != null && entity.name == "ball" && this._droppingBall == null)
             {
+                // If the cell below the ball is blocked, this ball cannot be
+                // pushed, in which case we should leave without pushing the
+                // ball.
+                if (this._contents.getBlockingCellAt (column, 1, false) != null)
+                    return false;
+
                 // Drop it and leave.
-                this.dropBall (<Ball> entity, NORMAL_DROP_SPEED, false);
+                this.dropBall (entity, NORMAL_DROP_SPEED, false);
                 return true;
             }
 
