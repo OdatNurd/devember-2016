@@ -351,6 +351,29 @@ module nurdz.game
             for (let i = 0 ; i < MAZE_WIDTH * MAZE_HEIGHT ; i++)
                 this._contents[i] = null;
 
+            // Clear the unplayed ball arrays as well. No hiding in this case
+            // because this gets called during initialization, where there might
+            // not be any valid arrays yet.
+            this.clearUnplayedBalls (false);
+        }
+
+        /**
+         * Clear the unplayed balls from the data storage for them; this affects
+         * both players.
+         *
+         * If the hide parameter is true, this will first tell any balls that
+         * still exist as an unplayed ball to hide itself before the array is
+         * cleaned up, so that the balls are also visually removed.
+         */
+        clearUnplayedBalls (hide : boolean) : void
+        {
+            // SHould we hide any?
+            if (hide)
+            {
+                this.hideBallsInArray (this._playerBalls);
+                this.hideBallsInArray (this._computerBalls);
+            }
+
             // Ensure that the ball arrays for both players are fully empty.
             for (let i = 0 ; i < MAZE_WIDTH - 2 ; i++)
             {
@@ -358,6 +381,7 @@ module nurdz.game
                 this._computerBalls[i] = null;
             }
         }
+
 
         /**
          * Given an array of balls which is the full size of the content area of

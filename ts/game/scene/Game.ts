@@ -646,6 +646,13 @@ module nurdz.game
                     this._computer.ai_startingTurn ();
                     break;
 
+                // When we are entering the state for removing all blocked
+                // balls, make sure that the maze contents discards all unplayed
+                // balls so that they visually leave the screen.
+                case GameState.REMOVE_BLOCKED_BALLS:
+                    this._maze.contents.clearUnplayedBalls (true);
+                    break;
+
                 // When we enter the final ball drop, hide the player and
                 // computer characters.
                 case GameState.FINAL_BALL_DROP:

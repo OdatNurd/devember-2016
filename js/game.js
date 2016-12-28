@@ -554,6 +554,25 @@ var nurdz;
                 // Clear cells at all locations.
                 for (var i = 0; i < game.MAZE_WIDTH * game.MAZE_HEIGHT; i++)
                     this._contents[i] = null;
+                // Clear the unplayed ball arrays as well. No hiding in this case
+                // because this gets called during initialization, where there might
+                // not be any valid arrays yet.
+                this.clearUnplayedBalls(false);
+            };
+            /**
+             * Clear the unplayed balls from the data storage for them; this affects
+             * both players.
+             *
+             * If the hide parameter is true, this will first tell any balls that
+             * still exist as an unplayed ball to hide itself before the array is
+             * cleaned up, so that the balls are also visually removed.
+             */
+            MazeContents.prototype.clearUnplayedBalls = function (hide) {
+                // SHould we hide any?
+                if (hide) {
+                    this.hideBallsInArray(this._playerBalls);
+                    this.hideBallsInArray(this._computerBalls);
+                }
                 // Ensure that the ball arrays for both players are fully empty.
                 for (var i = 0; i < game.MAZE_WIDTH - 2; i++) {
                     this._playerBalls[i] = null;
@@ -5246,6 +5265,12 @@ var nurdz;
                         this._maze.contents.showComputerBalls();
                         // Tell the computer that they're starting their turn now.
                         this._computer.ai_startingTurn();
+                        break;
+                    // When we are entering the state for removing all blocked
+                    // balls, make sure that the maze contents discards all unplayed
+                    // balls so that they visually leave the screen.
+                    case game.GameState.REMOVE_BLOCKED_BALLS:
+                        this._maze.contents.clearUnplayedBalls(true);
                         break;
                     // When we enter the final ball drop, hide the player and
                     // computer characters.
