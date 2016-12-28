@@ -742,10 +742,11 @@ var nurdz;
          */
         var TELEPORT_MIN_DISTANCE = 3;
         /**
-         * The minimum and maximum number of arrows that are generated per row in
-         * the maze.
+         * The relative probabilty of the number of arrows that appear in a column.
+         * One of these elements is randomly selected in order to determine the
+         * number of arrows in a row.
          */
-        var ARROWS_PER_ROW = [3, 8];
+        var ARROW_PROBABILITY = [1, 1, 2, 2, 2, 2, 3, 3, 4, 5];
         /**
          * The chance (percentage) that a row will contain any gray bricks at all.
          */
@@ -819,7 +820,7 @@ var nurdz;
                  *
                  * @returns {number} the maximum number of arrows in a maze
                  */
-                get: function () { return (game.MAZE_HEIGHT - 4) * ARROWS_PER_ROW[1]; },
+                get: function () { return (game.MAZE_WIDTH - 2) * Math.max.apply(null, ARROW_PROBABILITY); },
                 enumerable: true,
                 configurable: true
             });
@@ -913,6 +914,19 @@ var nurdz;
                 return false;
             };
             /**
+             * This takes a probabilty array, which is an array of numbers, and will
+             * randomly return one of the values in the array. The idea is that the
+             * array would contain the same number some number of times to try and
+             * set the probability that a particular outcome will happen.
+             *
+             * @param   {Array<number>} probabiltyArray the probabilty array
+             *
+             * @returns {number}                        the number selected
+             */
+            MazeGenerator.prototype.randomProbabilty = function (probabiltyArray) {
+                return probabiltyArray[game.Utils.randomIntInRange(0, probabiltyArray.length - 1)];
+            };
+            /**
              * Randomly select a column in the maze for the purposes of generating
              * maze contents.
              *
@@ -990,55 +1004,57 @@ var nurdz;
                 }
             };
             /**
-             * Generate arrow entities into the maze. We generate a random number of
-             * arrows per row in the maze, where the number of items is constrained
-             * to a range of possible arrows per row.
+             * Generate arrow entities into the maze. Each column has a random
+             * number of arrows, up to a specified maximum number (but always at
+             * least one). The facing of the arrows is completely random.
              *
-             * NOTE:
-             *    The current generation scheme for this is that we scan row by
-             *    row inserting a given number of arrows per row, where the number
-             *    is randomly generated. Currently the arrows are 75% normal and
-             *    25% automatic, and their facing is randomly selected.
+             * All arrows generated are normal arrows (changing direction only when
+             * they direct a ball in another direction), but if the parameter is
+             * true, there is a set number of arrows that are generated as automatic
+             * arrows instead.
+             *
+             * @param includeAutomatic true if some generated arrows should be
+             * automatic arrows (self switching) or false otherwise
              */
-            MazeGenerator.prototype.genArrows = function () {
-                // Iterate over all of the rows that can possibly contain arrows. We
-                // start two rows down to make room for the initial ball locations
-                // and the empty balls, and we stop 2 rows short to account for the
-                // border of the maze and the goal row.
-                for (var row = 2; row < game.MAZE_HEIGHT - 2; row++) {
-                    // First, we need to determine how many arrows we will generate
-                    // for this row.
-                    var arrowCount = game.Utils.randomIntInRange(ARROWS_PER_ROW[0], ARROWS_PER_ROW[1]);
-                    // Now keep generating arrows into this row until we have
-                    // generated enough.
+            MazeGenerator.prototype.genArrows = function (includeAutomatic) {
+                // Iterate over all of the columns that can possibly contain arrows.
+                for (var x = 1; x < game.MAZE_WIDTH - 1; x++) {
+                    // Determine how many arrows will generate in this column; there
+                    // is always at least one.
+                    var arrowCount = this.randomProbabilty(ARROW_PROBABILITY);
+                    // Generate them now.
                     while (arrowCount > 0) {
-                        // Generate a column randomly. If this location is already
-                        // filled, or the tile above it is a black hole,  try again.
-                        var column = this.genRandomMazeColumn();
-                        var cell = this._contents.getCellAt(column, row);
-                        if (this._contents.getCellAt(column, row) != null ||
-                            (this._contents.cellNameAt(column, row - 1) == "blackHole"))
+                        // Generate a row We start 3 rows down (0 offset) to leave
+                        // room for the initial ball placement and a single row of
+                        // potential unobstructed movement.
+                        var y = game.Utils.randomIntInRange(2, game.MAZE_HEIGHT - 3);
+                        // Get the contents at this location; if this location is
+                        // already filled, or the tile above it is a black hole,
+                        // then try again (a black hole stops this arrow from being
+                        // useful).
+                        if (this._contents.getCellAt(x, y) != null ||
+                            this._contents.cellNameAt(x, y - 1) == "blackHole")
                             continue;
-                        // This cell contains an arrow; resurrect one from the object
-                        // pool.
+                        // Get an arrow from the pool; leave if we can't.
                         var arrow = this._maze.getArrow();
                         if (arrow == null) {
                             console.log("Ran out of arrows generating maze");
                             return;
                         }
-                        // Now randomly set the direction to be left or right as
-                        // appropriate.
-                        if (game.Utils.randomIntInRange(0, 100) > 50)
+                        // Randomly set the initial facing direction.
+                        if (game.Utils.randomIntInRange(0, 100) % 2 == 0)
                             arrow.arrowDirection = game.ArrowDirection.ARROW_LEFT;
                         else
                             arrow.arrowDirection = game.ArrowDirection.ARROW_RIGHT;
-                        // Randomly select the arrow type.
-                        if (game.Utils.randomIntInRange(0, 100) > 25)
-                            arrow.arrowType = game.ArrowType.ARROW_NORMAL;
-                        else
+                        // If we are supposed to generate automatic arrows and this
+                        // is randomly selected to be one, then this is an automatic
+                        // arrow; otherwise it is normal.
+                        if (includeAutomatic && game.Utils.randomIntInRange(0, 100) < 25)
                             arrow.arrowType = game.ArrowType.ARROW_AUTOMATIC;
+                        else
+                            arrow.arrowType = game.ArrowType.ARROW_NORMAL;
                         // Add it to the maze and count it as placed.
-                        this._contents.setCellAt(column, row, arrow);
+                        this._contents.setCellAt(x, y, arrow);
                         arrowCount--;
                     }
                 }
@@ -1177,16 +1193,19 @@ var nurdz;
              * Generate a new maze into the maze we were given at construction time.
              *
              * This will throw away all content and generate new content. This takes
-             * entities from the actor pools exposed by the Maze object that owns us,
-             * but does not take care to reap any objects in the pools first; that
-             * is up to the caller.
+             * entities from the actor pools exposed by the Maze object that owns
+             * us, but does not take care to reap any objects in the pools first;
+             * that is up to the caller.
+             *
+             * @param includeAutomatic true if arrows can be generated as
+             * automatically flipping, or false otherwise.
              */
-            MazeGenerator.prototype.generate = function () {
+            MazeGenerator.prototype.generate = function (includeAutomatic) {
                 // Empty the maze of all of its contents.
                 this.emptyMaze();
                 // Now generate the contents of the maze.
                 this.genBlackHoles();
-                this.genArrows();
+                this.genArrows(includeAutomatic);
                 this.genGrayBricks();
                 this.genBonusBricks();
                 // Now we can place the balls in.
@@ -4698,7 +4717,7 @@ var nurdz;
                 this._ballMoveFinalized = false;
                 this._droppingFinalBall = false;
                 // Now generate the contents of the maze.
-                this._generator.generate();
+                this._generator.generate(true);
                 // Reset the scores
                 game.resetScores();
                 // If there is a listener, tell it now that the generation has

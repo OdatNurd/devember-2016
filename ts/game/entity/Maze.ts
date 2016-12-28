@@ -1225,7 +1225,7 @@ module nurdz.game
             this._droppingFinalBall = false;
 
             // Now generate the contents of the maze.
-            this._generator.generate ();
+            this._generator.generate (true);
 
             // Reset the scores
             resetScores ();
