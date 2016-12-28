@@ -744,19 +744,15 @@ var nurdz;
         /**
          * The relative probabilty of the number of arrows that appear in a column.
          * One of these elements is randomly selected in order to determine the
-         * number of arrows in a row.
+         * number of arrows in a column.
          */
         var ARROW_PROBABILITY = [1, 1, 2, 2, 2, 2, 3, 3, 4, 5];
         /**
-         * The chance (percentage) that a row will contain any gray bricks at all.
+         * The relative probabilty of the number of gray bricks that appear in a
+         * column. One of these elements is randomly selected in order to determine
+         * the number of gray bricks in a column.
          */
-        var GRAY_BRICK_CHANCE = 50;
-        /**
-         * The minimum and maximum number of gray bricks that are generated per row.
-         * This is only used after GRAY_BRICK_CHANCE has been used to determine if
-         * there will be any bricks at all.
-         */
-        var GRAY_BRICKS_PER_ROW = [1, 3];
+        var GRAY_BRICK_PROBABILITY = [0, 0, 0, 0, 0, 1, 1, 1, 2, 2];
         /**
          * The chance (percentage) that a row will contain any bonus bricks.
          */
@@ -831,7 +827,7 @@ var nurdz;
                  *
                  * @returns {number} the maximum number of gray bricks in a maze
                  */
-                get: function () { return (game.MAZE_HEIGHT - 4) * GRAY_BRICKS_PER_ROW[1]; },
+                get: function () { return (game.MAZE_HEIGHT - 4) * Math.max.apply(null, GRAY_BRICK_PROBABILITY); },
                 enumerable: true,
                 configurable: true
             });
@@ -1024,7 +1020,7 @@ var nurdz;
                     var arrowCount = this.randomProbabilty(ARROW_PROBABILITY);
                     // Generate them now.
                     while (arrowCount > 0) {
-                        // Generate a row We start 3 rows down (0 offset) to leave
+                        // Generate a row. We start 3 rows down (0 offset) to leave
                         // room for the initial ball placement and a single row of
                         // potential unobstructed movement.
                         var y = game.Utils.randomIntInRange(2, game.MAZE_HEIGHT - 3);
@@ -1071,29 +1067,26 @@ var nurdz;
              * randomly generated and might be 0.
              */
             MazeGenerator.prototype.genGrayBricks = function () {
-                // Iterate over all of the rows that can possibly contain bricks. We
-                // start two rows down to make room for the initial ball locations
-                // and the empty balls, and we stop 2 rows short to account for the
-                // border of the maze and the goal row.
-                for (var row = 2; row < game.MAZE_HEIGHT - 2; row++) {
-                    // See if we should bother generating any bricks in this row
-                    // at all.
-                    if (game.Utils.randomIntInRange(0, 100) > GRAY_BRICK_CHANCE)
-                        continue;
-                    // First, we need to determine how many bricks we will generate
-                    // for this row.
-                    var brickCount = game.Utils.randomIntInRange(GRAY_BRICKS_PER_ROW[0], GRAY_BRICKS_PER_ROW[1]);
+                // Iterate over all of the columns that can possibly contain gray
+                // bricks.
+                for (var x = 1; x < game.MAZE_WIDTH - 1; x++) {
+                    // Determine how many bricks we will generate in this column;
+                    // there may be zero.
+                    var brickCount = this.randomProbabilty(GRAY_BRICK_PROBABILITY);
                     // Now keep generating bricks into this row until we have
                     // generated enough.
                     while (brickCount > 0) {
-                        // Generate a column randomly. If this location is already
-                        // filled or the square above is an arrow, try again.
-                        var column = this.genRandomMazeColumn();
-                        if (this._contents.getCellAt(column, row) != null ||
-                            (this._contents.cellNameAt(column, row - 1) == "arrow"))
+                        // Generate a row. We start 3 rows down (0 offset) to leave
+                        // room for the initial ball placement and a single row of
+                        // potential unobstructed movement.
+                        var y = game.Utils.randomIntInRange(2, game.MAZE_HEIGHT - 3);
+                        // Get the contents at this location; if this location is
+                        // already filled, or the tile above it is an arrow, then
+                        // try again (a arrow stops this brick from being useful).
+                        if (this._contents.getCellAt(x, y) != null ||
+                            this._contents.cellNameAt(x, y - 1) == "arrow")
                             continue;
-                        // This cell contains brick; resurrect one from the object
-                        // pool.
+                        // Get a brick from the pool; leave if we can't.
                         var brick = this._maze.getGrayBrick();
                         if (brick == null) {
                             console.log("Ran out of gray bricks generating maze");
@@ -1101,7 +1094,7 @@ var nurdz;
                         }
                         // Add it to the maze, mark it to appear, and count it as
                         // placed.
-                        this._contents.setCellAt(column, row, brick);
+                        this._contents.setCellAt(x, y, brick);
                         brick.appear();
                         brickCount--;
                     }
