@@ -30,16 +30,11 @@ module nurdz.game
     const GRAY_BRICK_PROBABILITY = [0, 0, 0, 0, 0, 1, 1, 1, 2, 2];
 
     /**
-     * The chance (percentage) that a row will contain any bonus bricks.
+     * The relative probabilty of the number of gray bricks that appear in a
+     * column. One of these elements is randomly selected in order to determine
+     * the number of gray bricks in a column.
      */
-    const BONUS_BRICK_CHANCE = 40;
-
-    /**
-     * The minimum and maximum number of gray bricks that are generated per row.
-     * This is only used after BONUS_BRICK_CHANCE has been used to determine if
-     * there will be any bricks at all.
-     */
-    const BONUS_BRICKS_PER_ROW = [1, 2];
+    const BONUS_BRICK_PROBABILITY = [0, 0, 0, 0, 0, 0, 0, 1, 1, 2];
 
     /**
      * This class contains the code used to generate the content of a new maze.
@@ -119,7 +114,7 @@ module nurdz.game
          * @returns {number} the maximum number of bonus bricks in a maze
          */
         get maxBonusBricks () : number
-        { return (MAZE_HEIGHT - 4) * BONUS_BRICKS_PER_ROW[1]; }
+        { return (MAZE_HEIGHT - 4) * Math.max.apply (null, BONUS_BRICK_PROBABILITY); }
 
         /**
          * Construct a new generator object that can generate mazes into the
@@ -461,34 +456,31 @@ module nurdz.game
          */
         private genBonusBricks () : void
         {
-            // Iterate over all of the rows that can possibly contain bricks. We
-            // start two rows down to make room for the initial ball locations
-            // and the empty balls, and we stop 2 rows short to account for the
-            // border of the maze and the goal row.
-            for (let row = 2 ; row < MAZE_HEIGHT - 2 ; row++)
+            // Iterate over all of the columns that can possibly contain gray
+            // bricks.
+            for (let x = 1 ; x < MAZE_WIDTH - 1 ; x++)
             {
-                // See if we should bother generating any bricks in this row
-                // at all.
-                if (Utils.randomIntInRange (0, 100) > BONUS_BRICK_CHANCE)
-                    continue;
-
-                // First, we need to determine how many bricks we will generate
-                // for this row.
-                let brickCount = Utils.randomIntInRange (BONUS_BRICKS_PER_ROW[0], BONUS_BRICKS_PER_ROW[1]);
+                // Determine how many bricks we will generate in this column;
+                // there may be zero.
+                let brickCount = this.randomProbabilty (BONUS_BRICK_PROBABILITY);
 
                 // Now keep generating bricks into this row until we have
                 // generated enough.
                 while (brickCount > 0)
                 {
-                    // Generate a column randomly. If this location is already
-                    // filled or the square above is an arrow, try again.
-                    let column = this.genRandomMazeColumn ();
-                    if (this._contents.getCellAt (column, row) != null ||
-                        (this._contents.cellNameAt (column, row - 1) == "arrow"))
+                    // Generate a row. We start 3 rows down (0 offset) to leave
+                    // room for the initial ball placement and a single row of
+                    // potential unobstructed movement.
+                    let y = Utils.randomIntInRange (2, MAZE_HEIGHT - 3);
+
+                    // Get the contents at this location; if this location is
+                    // already filled, or the tile above it is an arrow, then
+                    // try again (a arrow stops this brick from being useful).
+                    if (this._contents.getCellAt (x, y) != null ||
+                        this._contents.cellNameAt (x, y - 1) == "arrow")
                         continue;
 
-                    // This cell contains brick; resurrect one from the object
-                    // pool.
+                    // Get a brick from the pool; leave if we can't.
                     let brick = this._maze.getBonusBrick ();
                     if (brick == null)
                     {
@@ -498,7 +490,7 @@ module nurdz.game
 
                     // Add it to the maze, mark it to appear, and count it as
                     // placed.
-                    this._contents.setCellAt (column, row, brick);
+                    this._contents.setCellAt (x, y, brick);
                     brick.appear ();
                     brickCount--;
                 }
