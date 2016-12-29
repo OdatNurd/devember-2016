@@ -696,6 +696,28 @@ module nurdz.game
             let below = this._contents.getBlockingCellAt (position.x, position.y + 1, isSimulation);
             if (below == null)
             {
+                // It's possible for a ball to "block" a teleport exit if it
+                // exits and then can't drop any farther. When this happens the
+                // ball overwrites the teleport with itself. Although the
+                // teleport is still visually there and this exit can be
+                // selected, it cannot be entered.
+                //
+                // If we get here, we will drop the ball down, so if the cell at
+                // this location appears to be empty and it is also a teleport
+                // destination, put the teleport back.
+                //
+                // This has to be done here because the firs thing this method
+                // does is check and see if the tile beneath the ball is a
+                // teleport, so if we do this check and fix the maze too soon,
+                // we will teleport when we don't want to.
+                if (this._contents.getCellAt (ball.mapPosition.x, ball.mapPosition.y) == null &&
+                    this._blackHole.hasDestination (ball.mapPosition))
+                {
+                    this._contents.setCellAt (ball.mapPosition.x, ball.mapPosition.y,
+                                              this._blackHole);
+                }
+
+                // Say we dropped, then update the position and leave.
                 ball.moveType = BallMoveType.BALL_MOVE_DROP;
                 position.y++;
                 return true;

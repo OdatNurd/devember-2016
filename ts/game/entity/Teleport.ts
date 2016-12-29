@@ -111,6 +111,20 @@ module nurdz.game
         }
 
         /**
+         * Perform a check to see if this teleport instance contains the
+         * destination point provided.
+         *
+         * @param   {Point}   destination the destination to check
+         *
+         * @returns {boolean}             true if this teleport entity includes
+         * the given point in it's destination list.
+         */
+        hasDestination (destination : Point) : boolean
+        {
+            return this.indexOfDestination (destination) != -1;
+        }
+
+        /**
          * Add a potential destination to this teleport instance. This can be
          * invoked more than once, in which case when activated the teleport
          * will randomly select the destination from those provided.
