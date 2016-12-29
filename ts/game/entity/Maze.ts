@@ -360,7 +360,7 @@ module nurdz.game
             // Fill the actor pool for balls with a complete set of balls; this
             // only ever happens once and is the one case where we always know
             // exactly how many entities of a type we need.
-            for (let i = 0 ; i < (MAZE_WIDTH - 2) * 2 ; i++)
+            for (let i = 0 ; i < ((MAZE_WIDTH - 2) * 2) + 5 ; i++)
                 this._balls.addEntity (new Ball (stage), false);
         }
 

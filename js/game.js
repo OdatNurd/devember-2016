@@ -3934,7 +3934,7 @@ var nurdz;
                 // Fill the actor pool for balls with a complete set of balls; this
                 // only ever happens once and is the one case where we always know
                 // exactly how many entities of a type we need.
-                for (var i = 0; i < (game.MAZE_WIDTH - 2) * 2; i++)
+                for (var i = 0; i < ((game.MAZE_WIDTH - 2) * 2) + 5; i++)
                     _this._balls.addEntity(new game.Ball(stage), false);
                 return _this;
             }
