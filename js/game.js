@@ -3457,6 +3457,54 @@ var nurdz;
                     this._destinations.splice(index, 1);
             };
             /**
+             * Given a (possibly null) entity, determine if we could teleport to its
+             * location or not. This is basically a helper to make the code easier
+             * to read, even though the test is quite simple.
+             *
+             * @param   {MazeCell} entity the destination entity to check
+             *
+             * @returns {boolean}         true if it would be OK to jump the ball
+             * here or false otherwise.
+             */
+            Teleport.prototype.canTeleportToEntity = function (entity) {
+                // It's always OK to jump to an empty cell and it's usually OK to
+                // jump to an entity that is of the same type as us (although other
+                // code will determine if the location is not the source of the
+                // jump).
+                return (entity == null || entity.name == this.name);
+            };
+            /**
+             * Checks to see if this entity has any unblocked destinations or not.
+             * This will use the maze given to scan and see if any of the positions
+             * that it contains are a valid, unblocked jump destination.
+             *
+             * The position provided is the "sending" end of this black hole, which
+             * cannot be a possible destination even if it's not blocked.
+             *
+             * @param   {Maze}    maze           the maze to check
+             * @param   {Point}   sourcePosition the position where the teleport
+             * will start
+             *
+             * @returns {boolean}                true if it is possible for this
+             * teleport to jump a ball to a non-blocked location, false otherwise
+             */
+            Teleport.prototype.hasUnblockedDestination = function (maze, sourcePosition) {
+                // Iterate over all of the destinations in our list.
+                for (var index = 0; index < this._destinations.length; index++) {
+                    // Get this destination and the content of the cell at that
+                    // position.
+                    var thisDest = this._destinations[index];
+                    var destCell = maze.contents.getCellAt(thisDest.x, thisDest.y);
+                    // If the destination entity is a valid teleport location and
+                    // it's not at the source position, we could teleport here.
+                    if (this.canTeleportToEntity(destCell) &&
+                        sourcePosition.equals(thisDest) == false)
+                        return true;
+                }
+                // If we get here, none of the positions are valid.
+                return false;
+            };
+            /**
              * We don't block the ball because we change its position when it gets
              * on top of us instead of when it touches us.
              *
@@ -3482,22 +3530,24 @@ var nurdz;
              * find one that is not blocked
              */
             Teleport.prototype.ballTouch = function (maze, ball, location) {
-                // If there are no destinations stored, we can't teleport, so do
-                // nothing.
-                if (this.length == 0)
+                // If there are no destinations stored or we have no unblocked
+                // destinations, we can't do anything.
+                if (this.length == 0 || this.hasUnblockedDestination(maze, location) == false) {
+                    console.log("Teleport has no unblocked destinations.");
                     return null;
-                // There are some destinations registered; get one out randomly.
+                }
+                // There are some destinations registered; get one out randomly and
+                // get the maze cell at that position.
                 var newPos = this.destination;
-                // As long as the new position is the same as the position that was
-                // given to us, select a new position (if possible), so that we
-                // don't try to teleport the ball to where it already is.
-                while (newPos.equals(location)) {
-                    // If there is only a single destination, leave; we can't
-                    // teleport because the ball is already there.
-                    if (this.length == 1)
-                        return null;
-                    // Try again.
+                var destCell = maze.contents.getCellAt(newPos.x, newPos.y);
+                // As long as the cell given is a not a valid destination or the
+                // position is the position we were given, keep generating.
+                while (this.canTeleportToEntity(destCell) == false ||
+                    newPos.equals(location)) {
+                    // Try again. We know this won't infinitely loop because we did
+                    // the test above to verify that we could find a location.
                     newPos = this.destination;
+                    destCell = maze.contents.getCellAt(newPos.x, newPos.y);
                 }
                 // Indicate the new position
                 return newPos;
