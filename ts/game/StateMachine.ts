@@ -13,6 +13,13 @@ module nurdz.game
         NO_STATE,
 
         /**
+         * This state is set when it's the start of a new round. This checks to
+         * see if the game is over or not, and either proceeds to generation of
+         * a new maze or goes to the end of the game state.
+         */
+        BEGIN_ROUND,
+
+        /**
          * This state is set while the maze is undergoing generation. The Maze
          * entity doing the generation will inform the registered event listener
          * when the generation is completed, at which point it will switch away
@@ -84,6 +91,13 @@ module nurdz.game
          * the game over state.
          */
         FINAL_BALL_DROP,
+
+        /**
+         * We were dropping final balls, but we have determined that there are
+         * no more balls to drop. In this case we advance to the next round of
+         * the game.
+         */
+        END_ROUND,
 
         /**
          * All of the gray bricks have been removed, all of the final ball drops
