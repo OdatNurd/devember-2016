@@ -68,6 +68,14 @@ module nurdz.game
 
         // Start the game with empty scores.
         resetScores ();
+
+        // Log what's happening.
+        console.log(
+            String.format (
+                "DEBUG: Starting a new game with round count of {0} and {1} half balls",
+                maxRounds,
+                (halfBalls ? "with" : "without")
+            ));
     }
 
     /**

@@ -64,6 +64,8 @@ var nurdz;
             game.halfBalls = (totalRounds <= 0) ? true : false;
             // Start the game with empty scores.
             resetScores();
+            // Log what's happening.
+            console.log(String.format("DEBUG: Starting a new game with round count of {0} and {1} half balls", game.maxRounds, (game.halfBalls ? "with" : "without")));
         }
         game.newGame = newGame;
         /**
