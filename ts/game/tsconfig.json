@@ -26,6 +26,7 @@
         "entity/Teleport.ts",
         "entity/Arrow.ts",
         "entity/Maze.ts",
+        "scene/Title.ts",
         "scene/Game.ts",
         "main.ts"
     ]

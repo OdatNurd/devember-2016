@@ -5173,6 +5173,193 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * The font that is used for the title font.
+         */
+        var TITLE_FONT = "96px Arial,Serif";
+        /**
+         * The font that is used for our informative text.
+         */
+        var INFO_FONT = "32px Arial,Serif";
+        /**
+         * The font that is used to display our menu text.
+         */
+        var MENU_FONT = "40px Arial,Serif";
+        /**
+         * This class represents the title screen. It allows the user to select the level that the game will
+         * be played at.
+         */
+        var TitleScreen = (function (_super) {
+            __extends(TitleScreen, _super);
+            /**
+             * Construct the title screen scene.
+             *
+             * @param stage the stage that controls us
+             */
+            function TitleScreen(stage) {
+                var _this = 
+                // Let the super do some setup
+                _super.call(this, "titleScreen", stage) || this;
+                // Set up our menu.
+                _this._menu = new game.Menu(stage, "Arial,Serif", 40);
+                _this._menu.addItem("Game type: Short", new game.Point(150, 400));
+                _this._menu.addItem("Start Game", new game.Point(150, 450));
+                // Make sure it gets render and update requests.
+                _this.addActor(_this._menu);
+                // default level.
+                _this._totalRounds = 0;
+                return _this;
+            }
+            /**
+             * Get the name for the type of game that has the current number of
+             * rounds we're currently set to.
+             *
+             * @returns {string} the game type for this number of rounds.
+             */
+            TitleScreen.prototype.gameTypeForRounds = function () {
+                switch (this._totalRounds) {
+                    case 0:
+                        return "Short";
+                    case 1:
+                        return "Normal";
+                    default:
+                        return "Long";
+                }
+            };
+            /**
+             * This helper updates our menu to show what the currently selected level is.
+             */
+            TitleScreen.prototype.updateMenu = function () {
+                var item = this._menu.getItem(0);
+                if (item)
+                    item.text = "Game type: " + this.gameTypeForRounds();
+            };
+            /**
+             * Render the name of the game to the screen.
+             */
+            TitleScreen.prototype.renderTitle = function () {
+                this._renderer.translateAndRotate(this._stage.width / 2, 45);
+                // Set the font and indicate that the text should be centered in both directions.
+                this._renderer.context.font = TITLE_FONT;
+                this._renderer.context.textAlign = "center";
+                this._renderer.context.textBaseline = "middle";
+                // Draw the text and restore the context.
+                this._renderer.drawTxt("A-Maze-Balls", 0, 0, 'white');
+                this._renderer.restore();
+            };
+            /**
+             * Render our info text to the screen.
+             */
+            TitleScreen.prototype.renderInfoText = function () {
+                // The info text that we generate to the screen to explain what we are.
+                var infoText = [
+                    "A simple Bolo Ball clone",
+                    "",
+                    "Coded during #devember 2016 by Terence Martin",
+                    "for game development practice",
+                    "",
+                    "Feel free to use this code as you see fit. See the",
+                    "LICENSE file for details"
+                ];
+                // Save the context state and then set our font and vertical font alignment.
+                this._renderer.translateAndRotate(game.TILE_SIZE, 132);
+                this._renderer.context.font = INFO_FONT;
+                this._renderer.context.textBaseline = "middle";
+                // Draw the text now
+                for (var i = 0, y = 0; i < infoText.length; i++, y += game.TILE_SIZE)
+                    this._renderer.drawTxt(infoText[i], 0, y, '#c8c8c8');
+                // We can restore now.
+                this._renderer.restore();
+            };
+            /**
+             * Invoked to render us. We clear the screen, show some intro text, and we allow the user to
+             * select a starting level.
+             */
+            TitleScreen.prototype.render = function () {
+                // Clear the screen and render all of our text.
+                this._renderer.clear('black');
+                this.renderTitle();
+                this.renderInfoText();
+                // Now let the super draw everything else, including our menu
+                _super.prototype.render.call(this);
+            };
+            /**
+             * Start a new game using the currently set total number of rounds.
+             */
+            TitleScreen.prototype.startGame = function () {
+                // First, set up for a new game of a set number of levels. Due to
+                // the hacky nature of this, the short and normal games have the
+                // right number of rounds, but the long game has 2 rounds instead of
+                // 3 due to design decisions made not by me.
+                game.newGame(this._totalRounds != 2 ? this._totalRounds : 3);
+                this._stage.switchToScene("game");
+            };
+            /**
+             * Triggers on a key press
+             *
+             * @param eventObj key event object
+             * @returns {boolean} true if we handled the key or false otherwise.
+             */
+            TitleScreen.prototype.inputKeyDown = function (eventObj) {
+                // If the super handles the key, we're done.
+                if (_super.prototype.inputKeyDown.call(this, eventObj))
+                    return true;
+                switch (eventObj.keyCode) {
+                    // Previous menu selection (wraps around)
+                    case game.KeyCodes.KEY_UP:
+                        this._menu.selectPrevious();
+                        return true;
+                    // Next menu selection (wraps around)
+                    case game.KeyCodes.KEY_DOWN:
+                        this._menu.selectNext();
+                        return true;
+                    // Change the game type
+                    case game.KeyCodes.KEY_LEFT:
+                        if (this._menu.selected == 0) {
+                            if (this._totalRounds > 0) {
+                                this._totalRounds--;
+                                this.updateMenu();
+                            }
+                            return true;
+                        }
+                        return false;
+                    // Change the game type.
+                    case game.KeyCodes.KEY_RIGHT:
+                        if (this._menu.selected == 0) {
+                            if (this._totalRounds < 2) {
+                                this._totalRounds++;
+                                this.updateMenu();
+                            }
+                            return true;
+                        }
+                        return false;
+                    // Select the current menu item; on level increase it, on start
+                    // game, do that.
+                    case game.KeyCodes.KEY_ENTER:
+                        if (this._menu.selected == 0) {
+                            this._totalRounds++;
+                            if (this._totalRounds > 2)
+                                this._totalRounds = 0;
+                            this.updateMenu();
+                            return true;
+                        }
+                        else {
+                            this.startGame();
+                            return true;
+                        }
+                }
+                // Not handled.
+                return false;
+            };
+            return TitleScreen;
+        }(game.Scene));
+        game.TitleScreen = TitleScreen;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * When we are in the state that we're removing blocked balls from the maze,
          * this is the delay (in ticks) for telling the next ball when it should
          * start to vanish.
@@ -5286,9 +5473,6 @@ var nurdz;
                 // the virtual cell on top of the maze.
                 this._player.referencePoint = this._maze.position.copyTranslatedXY(0, -this._maze.cellSize);
                 this._computer.referencePoint = this._maze.position.copyTranslatedXY(0, -this._maze.cellSize);
-                // Start a new short game. This should actually happen from the title
-                // screen, but this is good enough for now.
-                game.newGame(0);
                 // When we become active, we're always going to start a new game,
                 // so make sure that the maze is clear, our player entities are
                 // hidden, and then set our state to the begin round state.
@@ -5872,8 +6056,9 @@ var nurdz;
                 setupButton(stage, "controlBtn");
                 // Register all of our scenes.
                 stage.addScene("game", new nurdz.game.GameScene(stage));
+                stage.addScene("title", new nurdz.game.TitleScreen(stage));
                 // Switch to the initial scene, add a dot to display and then run the game.
-                stage.switchToScene("game");
+                stage.switchToScene("title");
                 stage.run();
             }
             catch (error) {

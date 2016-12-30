@@ -162,10 +162,6 @@ module nurdz.game
             this._player.referencePoint = this._maze.position.copyTranslatedXY (0, -this._maze.cellSize);
             this._computer.referencePoint = this._maze.position.copyTranslatedXY (0, -this._maze.cellSize);
 
-            // Start a new short game. This should actually happen from the title
-            // screen, but this is good enough for now.
-            newGame (0);
-
             // When we become active, we're always going to start a new game,
             // so make sure that the maze is clear, our player entities are
             // hidden, and then set our state to the begin round state.
