@@ -868,6 +868,9 @@ var nurdz;
             MazeGenerator.prototype.emptyMaze = function () {
                 // Clear all cells.
                 this._contents.clearCells();
+                // Clear all destinations on the existing teleport.
+                if (this._teleport)
+                    this._teleport.clearDestinations();
                 // Now the left and right sides need to be solid bricks.
                 for (var y = 0; y < game.MAZE_HEIGHT; y++) {
                     this._contents.setCellAt(0, y, this._wall);
@@ -4332,7 +4335,6 @@ var nurdz;
                     // we will teleport when we don't want to.
                     if (this._contents.getCellAt(ball.mapPosition.x, ball.mapPosition.y) == null &&
                         this._blackHole.hasDestination(ball.mapPosition)) {
-                        console.log("Fixing broken Teleport");
                         this._contents.setCellAt(ball.mapPosition.x, ball.mapPosition.y, this._blackHole);
                     }
                     // Say we dropped, then update the position and leave.

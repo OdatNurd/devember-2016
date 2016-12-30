@@ -146,6 +146,10 @@ module nurdz.game
             // Clear all cells.
             this._contents.clearCells ();
 
+            // Clear all destinations on the existing teleport.
+            if (this._teleport)
+                this._teleport.clearDestinations ();
+
             // Now the left and right sides need to be solid bricks.
             for (let y = 0 ; y < MAZE_HEIGHT ; y++)
             {
