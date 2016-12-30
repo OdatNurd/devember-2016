@@ -471,8 +471,11 @@ module nurdz.game
          * Currently this fill up the top row with balls for the player only,
          * but it should also store balls for the computer into another data
          * structure.
+         *
+         * @param {boolean} halfBalls true if we should generate half of the
+         * usual number of balls, to make for a shorter game.
          */
-        private placeBalls () : void
+        private placeBalls (halfBalls : boolean) : void
         {
             // Get the arrays that store the player and comptuer balls from
             // the contents object.
@@ -486,6 +489,11 @@ module nurdz.game
             // balls for our purposes.
             for (let ballIndex = 0 ; ballIndex < MAZE_WIDTH - 2 ; ballIndex++)
             {
+                // If we are rendering half balls and this is not an even numbered
+                // column, skip it.
+                if (halfBalls && ballIndex % 2 != 0)
+                    continue;
+
                 // Get the balls from the pool
                 playerBalls[ballIndex] = this._maze.getBall ();
                 computerBalls[ballIndex] = this._maze.getBall ();
@@ -515,10 +523,10 @@ module nurdz.game
          * us, but does not take care to reap any objects in the pools first;
          * that is up to the caller.
          *
-         * @param includeAutomatic true if arrows can be generated as
-         * automatically flipping, or false otherwise.
+         * @param {boolean} halfBalls        true if half the usual number of balls should be generated per player
+         * @param {boolean} includeAutomatic true if arrows should be generated as automatically flipping
          */
-        generate (includeAutomatic : boolean) : void
+        generate (halfBalls : boolean, includeAutomatic : boolean) : void
         {
             // Empty the maze of all of its contents.
             this.emptyMaze ();
@@ -530,7 +538,7 @@ module nurdz.game
             this.genBonusBricks ();
 
             // Now we can place the balls in.
-            this.placeBalls ();
+            this.placeBalls (halfBalls);
         }
     }
 }

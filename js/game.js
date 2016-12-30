@@ -22,6 +22,12 @@ var nurdz;
          */
         game.BALL_POSITION_MULTIPLIER = 2;
         /**
+         * True if we should generate a level with only half of the normal number
+         * of balls. This will only generate a ball into the even numbered columns
+         * in the maze. This makes for a shorter game.
+         */
+        game.halfBalls = false;
+        /**
          * The number of points the human player has.
          */
         var humanScore = 0;
@@ -1136,8 +1142,11 @@ var nurdz;
              * Currently this fill up the top row with balls for the player only,
              * but it should also store balls for the computer into another data
              * structure.
+             *
+             * @param {boolean} halfBalls true if we should generate half of the
+             * usual number of balls, to make for a shorter game.
              */
-            MazeGenerator.prototype.placeBalls = function () {
+            MazeGenerator.prototype.placeBalls = function (halfBalls) {
                 // Get the arrays that store the player and comptuer balls from
                 // the contents object.
                 var playerBalls = this._contents.playerBalls;
@@ -1148,6 +1157,10 @@ var nurdz;
                 // This always works because the ball pool always has exactly enough
                 // balls for our purposes.
                 for (var ballIndex = 0; ballIndex < game.MAZE_WIDTH - 2; ballIndex++) {
+                    // If we are rendering half balls and this is not an even numbered
+                    // column, skip it.
+                    if (halfBalls && ballIndex % 2 != 0)
+                        continue;
                     // Get the balls from the pool
                     playerBalls[ballIndex] = this._maze.getBall();
                     computerBalls[ballIndex] = this._maze.getBall();
@@ -1173,10 +1186,10 @@ var nurdz;
              * us, but does not take care to reap any objects in the pools first;
              * that is up to the caller.
              *
-             * @param includeAutomatic true if arrows can be generated as
-             * automatically flipping, or false otherwise.
+             * @param {boolean} halfBalls        true if half the usual number of balls should be generated per player
+             * @param {boolean} includeAutomatic true if arrows should be generated as automatically flipping
              */
-            MazeGenerator.prototype.generate = function (includeAutomatic) {
+            MazeGenerator.prototype.generate = function (halfBalls, includeAutomatic) {
                 // Empty the maze of all of its contents.
                 this.emptyMaze();
                 // Now generate the contents of the maze.
@@ -1185,7 +1198,7 @@ var nurdz;
                 this.genGrayBricks();
                 this.genBonusBricks();
                 // Now we can place the balls in.
-                this.placeBalls();
+                this.placeBalls(halfBalls);
             };
             return MazeGenerator;
         }());
@@ -4780,7 +4793,7 @@ var nurdz;
                 this._ballMoveFinalized = false;
                 this._droppingFinalBall = false;
                 // Now generate the contents of the maze.
-                this._generator.generate(true);
+                this._generator.generate(game.halfBalls, true);
                 // Reset the scores
                 game.resetScores();
                 // If there is a listener, tell it now that the generation has

@@ -18,6 +18,13 @@ module nurdz.game
     export const BALL_POSITION_MULTIPLIER = 2;
 
     /**
+     * True if we should generate a level with only half of the normal number
+     * of balls. This will only generate a ball into the even numbered columns
+     * in the maze. This makes for a shorter game.
+     */
+    export let halfBalls : boolean = false;
+
+    /**
      * The number of points the human player has.
      */
     let humanScore : number = 0;
