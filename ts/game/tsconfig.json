@@ -16,6 +16,8 @@
         "MazeDebugger.ts",
         "ComputerAI.ts",
         "StateMachine.ts",
+        "entity/Pointer.ts",
+        "entity/Menu.ts",
         "entity/Player.ts",
         "entity/MazeCell.ts",
         "entity/Marker.ts",

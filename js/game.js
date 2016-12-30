@@ -2092,6 +2092,251 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * This entity represents a simplistic pointer, which is just a tile sized entity that appears to
+         * slowly flash and points downwards. It's used for our debug logic.
+         */
+        var Pointer = (function (_super) {
+            __extends(Pointer, _super);
+            /**
+             * Create the pointer object to be owned by the stage.
+             *
+             * @param stage the stage that owns this pointer
+             * @param x the X location of the pointer
+             * @param y the Y location of the pointer`
+             * @param rotation the rotation of the pointer initially.
+             */
+            function Pointer(stage, x, y, rotation) {
+                if (rotation === void 0) { rotation = 0; }
+                var _this = _super.call(this, "Cursor", stage, x, y, game.TILE_SIZE, game.TILE_SIZE, 1, {
+                    visible: true,
+                    rotation: rotation
+                }) || this;
+                /**
+                 * The index into the color list that indicates what color to render ourselves.
+                 *
+                 * @type {number}
+                 */
+                _this._colorIndex = 0;
+                /**
+                 * The list of colors that we use to display ourselves.
+                 *
+                 * @type {Array<string>}
+                 */
+                _this._colors = ['#ffffff', '#aaaaaa'];
+                /**
+                 * The polygon that represents us.
+                 *
+                 * @type {Polygon}
+                 */
+                _this._poly = [
+                    [-(game.TILE_SIZE / 2) + 4, -(game.TILE_SIZE / 2) + 4],
+                    [(game.TILE_SIZE / 2) - 4, 0],
+                    [-(game.TILE_SIZE / 2) + 4, (game.TILE_SIZE / 2) - 4],
+                ];
+                return _this;
+            }
+            Object.defineProperty(Pointer.prototype, "properties", {
+                get: function () { return this._properties; },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Called every frame to update ourselves. This causes our color to change.
+             *
+             * @param stage the stage that the actor is on
+             * @param tick the game tick; this is a count of how many times the game loop has executed
+             */
+            Pointer.prototype.update = function (stage, tick) {
+                if (tick % 7 == 0) {
+                    this._colorIndex++;
+                    if (this._colorIndex == this._colors.length)
+                        this._colorIndex = 0;
+                }
+            };
+            /**
+             * Render ourselves as an arrow rotated in the direction that we are rotated for.
+             *
+             * @param x the X location of where to draw ourselves
+             * @param y the Y location of where to draw ourselves
+             * @param renderer the renderer to use to draw ourselves
+             */
+            Pointer.prototype.render = function (x, y, renderer) {
+                // Only render if we're visible.
+                if (this._properties.visible) {
+                    // Get ready for rendering. The X, Y we get is our upper left corner but in order to
+                    // render properly we need it to be our center.
+                    renderer.translateAndRotate(x + (game.TILE_SIZE / 2), y + (game.TILE_SIZE / 2), this._properties.rotation);
+                    renderer.fillPolygon(this._poly, this._colors[this._colorIndex]);
+                    renderer.restore();
+                }
+            };
+            return Pointer;
+        }(game.Entity));
+        game.Pointer = Pointer;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
+         * This class represents a menu. This is responsible for rendering menu items and handling key input
+         * while a menu is active.
+         */
+        var Menu = (function (_super) {
+            __extends(Menu, _super);
+            /**
+             * Construct a new menu which renders its menu text with the font name and size provided.
+             *
+             * @param stage the stage that will display this menu
+             * @param fontName the font name to render the menu with
+             * @param fontSize the size of the font to use to render items, in pixels
+             * @param sound the sound to play when the menu selection changes.
+             */
+            function Menu(stage, fontName, fontSize, sound) {
+                if (sound === void 0) { sound = null; }
+                var _this = 
+                // Simple super call. We don't have a visual position per se.
+                _super.call(this, "Menu", stage, 0, 0, 0, 0) || this;
+                // Store the values provided.
+                _this._fontName = fontName;
+                _this._fontSize = fontSize;
+                _this._selectSound = sound;
+                // Combine them together into a single string for later use
+                _this._fontFullSpec = _this._fontSize + "px " + _this._fontName;
+                // The menu starts out empty.
+                _this._items = [];
+                _this._selected = 0;
+                // Set up the pointer.
+                _this._pointer = new game.Pointer(stage, 0, 0);
+                return _this;
+            }
+            Object.defineProperty(Menu.prototype, "selected", {
+                /**
+                 * Return the menu item index at the currently selected location.
+                 *
+                 * @returns {number}
+                 */
+                get: function () { return this._selected; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Menu.prototype, "length", {
+                /**
+                 * Return the number of items that are currently in the menu.
+                 *
+                 * @returns {number}
+                 */
+                get: function () { return this._items.length; },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Change the location of the menu pointer to point to the currently selected menu item.
+             */
+            Menu.prototype.updateMenuPointer = function () {
+                if (this._items.length > 0)
+                    this._pointer.setStagePositionXY(this._items[this._selected].position.x, this._items[this._selected].position.y);
+            };
+            /**
+             * Add a new menu item to the list of menu items managed by this menu instance.
+             *
+             * @param text the text of the menu item
+             * @param position the position on the screen of this item.
+             */
+            Menu.prototype.addItem = function (text, position) {
+                // Insert the menu item
+                this._items.push({
+                    text: text,
+                    position: position
+                });
+                // If the current length of the items array is now 1, the first item is finally here, so
+                // position our pointer.
+                if (this._items.length == 1)
+                    this.updateMenuPointer();
+            };
+            /**
+             * Return the menu item at the provided index, which will be null if the index provided is out of
+             * range of the number of items currently maintained in the menu.
+             *
+             * @param index the index of the item to get
+             * @returns {MenuItem} the menu item at the provided index or null if the index is not valid.
+             */
+            Menu.prototype.getItem = function (index) {
+                if (index < 0 || index >= this._items.length)
+                    return null;
+                return this._items[index];
+            };
+            /**
+             * Change the selected menu item to the previous item, if possible.
+             *
+             * If a sound is associated with the menu, it will be played.
+             */
+            Menu.prototype.selectPrevious = function () {
+                this._selected--;
+                if (this._selected < 0)
+                    this._selected = this._items.length - 1;
+                this.updateMenuPointer();
+                if (this._selectSound != null)
+                    this._selectSound.play();
+            };
+            /**
+             * Change the selected menu item to the next item, if possible.
+             *
+             * If a sound is associated with the menu, it will be played.
+             */
+            Menu.prototype.selectNext = function () {
+                this._selected++;
+                if (this._selected >= this._items.length)
+                    this._selected = 0;
+                this.updateMenuPointer();
+                if (this._selectSound != null)
+                    this._selectSound.play();
+            };
+            /**
+             * Update the state of the menu based on the current tick; we use this to visually mark the
+             * currently selected menu item.
+             *
+             * @param stage the stage that owns us
+             * @param tick the current update tick
+             */
+            Menu.prototype.update = function (stage, tick) {
+                // Make sure our pointer updates
+                this._pointer.update(stage, tick);
+            };
+            /**
+             * Render ourselves using the provided renderer. This will render out the text as well as the
+             * current pointer.
+             *
+             * The position provided to us is ignored; we already have an idea of where exactly our contents
+             * will render.
+             */
+            Menu.prototype.render = function (x, y, renderer) {
+                // Render the pointer at its current position.
+                this._pointer.render(this._pointer.position.x, this._pointer.position.y, renderer);
+                // Save the context and set up our font and font rendering.
+                renderer.context.save();
+                renderer.context.font = this._fontFullSpec;
+                renderer.context.textBaseline = "middle";
+                // Render all of the text items. We offset them by the width of the pointer that indicates
+                // which item is the current item, with a vertical offset that is half of its height. This
+                // makes the point on the pointer align with the center of the text.
+                for (var i = 0; i < this._items.length; i++) {
+                    var item = this._items[i];
+                    renderer.drawTxt(item.text, item.position.x + game.TILE_SIZE, item.position.y + (game.TILE_SIZE / 2), 'white');
+                }
+                renderer.restore();
+            };
+            return Menu;
+        }(game.Actor));
+        game.Menu = Menu;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * This is used to indicate what type of player this is. This is just for
          * visual identification on the board.
          */
