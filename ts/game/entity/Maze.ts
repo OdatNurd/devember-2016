@@ -1253,8 +1253,11 @@ module nurdz.game
             this._ballMoveFinalized = false;
             this._droppingFinalBall = false;
 
-            // Now generate the contents of the maze.
-            this._generator.generate (halfBalls, true);
+            // Now generate the contents of the maze. The indication for the use
+            // of half balls comes from when the game was set that way at start
+            // time. On the last round of a multi round game, we generate
+            // automatic arrows too.
+            this._generator.generate (halfBalls, isLastRound ());
 
             // Reset the scores
             resetScores ();

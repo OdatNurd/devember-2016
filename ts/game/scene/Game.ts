@@ -162,9 +162,18 @@ module nurdz.game
             this._player.referencePoint = this._maze.position.copyTranslatedXY (0, -this._maze.cellSize);
             this._computer.referencePoint = this._maze.position.copyTranslatedXY (0, -this._maze.cellSize);
 
-            // If there is no current state, it's time to generate a new level.
-            if (this.state == GameState.NO_STATE)
-                this.state = GameState.MAZE_GENERATION;
+            // Start a new short game. This should actually happen from the title
+            // screen, but this is good enough for now.
+            newGame (0);
+
+            // When we become active, we're always going to start a new game,
+            // so make sure that the maze is clear, our player entities are
+            // hidden, and then set our state to the begin round state.
+            this._player.visible = false;
+            this._computer.visible = false;
+            this._maze.resetMazeEntities ();
+            this._maze.generator.emptyMaze ();
+            this.state = GameState.BEGIN_ROUND;
         }
 
         /**
@@ -677,6 +686,16 @@ module nurdz.game
             // Handle based on state.
             switch (this.state)
             {
+                // It is the start of a new round; if the game is over now,
+                // switch to the game over state. Otherwise, we can swap to the
+                // maze generation state for this round.
+                case GameState.BEGIN_ROUND:
+                    if (isGameOver ())
+                        this.state = GameState.GAME_OVER;
+                    else
+                        this.state = GameState.MAZE_GENERATION;
+                    break;
+
                 // It is becoming the player's turn; check to see if there is
                 // a valid play for them; if yes, make it their turn. Otherwise,
                 // make it the computer turn.
@@ -748,7 +767,15 @@ module nurdz.game
                 // automatically.
                 case GameState.FINAL_BALL_DROP:
                     if (this._maze.dropNextFinalBall () == false)
-                        this.state = GameState.GAME_OVER;
+                        this.state = GameState.END_ROUND;
+                    break;
+
+                // It's the end of the round; go to the next round and then skip
+                // back to the begin round code, which will see what we should
+                // be doing.
+                case GameState.END_ROUND:
+                    nextRound ();
+                    this.state = GameState.BEGIN_ROUND;
                     break;
             }
         }

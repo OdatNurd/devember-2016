@@ -4869,8 +4869,11 @@ var nurdz;
                 // No ball has finished moving and no gray bricks have been removed.
                 this._ballMoveFinalized = false;
                 this._droppingFinalBall = false;
-                // Now generate the contents of the maze.
-                this._generator.generate(game.halfBalls, true);
+                // Now generate the contents of the maze. The indication for the use
+                // of half balls comes from when the game was set that way at start
+                // time. On the last round of a multi round game, we generate
+                // automatic arrows too.
+                this._generator.generate(game.halfBalls, game.isLastRound());
                 // Reset the scores
                 game.resetScores();
                 // If there is a listener, tell it now that the generation has
@@ -5036,9 +5039,17 @@ var nurdz;
                 // the virtual cell on top of the maze.
                 this._player.referencePoint = this._maze.position.copyTranslatedXY(0, -this._maze.cellSize);
                 this._computer.referencePoint = this._maze.position.copyTranslatedXY(0, -this._maze.cellSize);
-                // If there is no current state, it's time to generate a new level.
-                if (this.state == game.GameState.NO_STATE)
-                    this.state = game.GameState.MAZE_GENERATION;
+                // Start a new short game. This should actually happen from the title
+                // screen, but this is good enough for now.
+                game.newGame(0);
+                // When we become active, we're always going to start a new game,
+                // so make sure that the maze is clear, our player entities are
+                // hidden, and then set our state to the begin round state.
+                this._player.visible = false;
+                this._computer.visible = false;
+                this._maze.resetMazeEntities();
+                this._maze.generator.emptyMaze();
+                this.state = game.GameState.BEGIN_ROUND;
             };
             /**
              * Modify the passed in player to either turn to face the direction that
@@ -5467,6 +5478,15 @@ var nurdz;
             GameScene.prototype.stateLogic = function () {
                 // Handle based on state.
                 switch (this.state) {
+                    // It is the start of a new round; if the game is over now,
+                    // switch to the game over state. Otherwise, we can swap to the
+                    // maze generation state for this round.
+                    case game.GameState.BEGIN_ROUND:
+                        if (game.isGameOver())
+                            this.state = game.GameState.GAME_OVER;
+                        else
+                            this.state = game.GameState.MAZE_GENERATION;
+                        break;
                     // It is becoming the player's turn; check to see if there is
                     // a valid play for them; if yes, make it their turn. Otherwise,
                     // make it the computer turn.
@@ -5530,7 +5550,14 @@ var nurdz;
                     // automatically.
                     case game.GameState.FINAL_BALL_DROP:
                         if (this._maze.dropNextFinalBall() == false)
-                            this.state = game.GameState.GAME_OVER;
+                            this.state = game.GameState.END_ROUND;
+                        break;
+                    // It's the end of the round; go to the next round and then skip
+                    // back to the begin round code, which will see what we should
+                    // be doing.
+                    case game.GameState.END_ROUND:
+                        game.nextRound();
+                        this.state = game.GameState.BEGIN_ROUND;
                         break;
                 }
             };
