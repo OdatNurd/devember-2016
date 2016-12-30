@@ -25,6 +25,18 @@ module nurdz.game
     export let halfBalls : boolean = false;
 
     /**
+     * The current round number in the game. This advances every time the last
+     * ball is dropped at the end of a round.
+     */
+    export let currentRound : number = 1;
+
+    /**
+     * The maximum number of rounds in the game. Once the current round exceeds
+     * this value, the game is officially over.
+     */
+    export let maxRounds : number = 1;
+
+    /**
      * The number of points the human player has.
      */
     let humanScore : number = 0;
@@ -33,6 +45,68 @@ module nurdz.game
      * The number of poitns the computer player has.
      */
     let computerScore : number = 0;
+
+    /**
+     * Set up a new game to be played over the given number of total rounds. A
+     * value of 0 or smaller means that we will be playing only a single round,
+     * but with half balls.
+     *
+     * This will set the current round to 1 and reset the scores.
+     *
+     * @param {number} totalRounds the total number of rounds; can be 0 to
+     * indicate a 1 round game played with half balls.
+     */
+    export function newGame (totalRounds : number) : void
+    {
+        // Start at round one and store the total rounds given. When the total
+        // rounds is 0 or smaller, assume 1.
+        currentRound = 1;
+        maxRounds = (totalRounds > 0) ? totalRounds : 1;
+
+        // We want to use half balls only when total rounds is 0 or smaller.
+        halfBalls = (totalRounds <= 0) ? true : false;
+
+        // Start the game with empty scores.
+        resetScores ();
+    }
+
+    /**
+     * Skip the round counter to indicate that we're in the next round now.
+     */
+    export function nextRound () : void
+    {
+        currentRound++;
+    }
+
+    /**
+     * Check to see if we think the game should be over right now. This is based
+     * purely on the current round number, so this should only be checked after
+     * modifying that value.
+     *
+     * @returns {boolean} true if the game is now over, false otherwise
+     */
+    export function isGameOver () : boolean
+    {
+        return currentRound > maxRounds;
+    }
+
+    /**
+     * Return an indication as to whether this is the last round of the game or
+     * not. This always returns false if the maximum number of rounds is not
+     * greater than 1, because the use of this function is for determing last
+     * round setup, which only happens for a game longer than one round.
+     *
+     * @returns {boolean} true if this is the last round
+     */
+    export function isLastRound () : boolean
+    {
+        // Never the last round for a single round game
+        if (maxRounds == 1)
+            return false;
+
+        // This is the last round when we meet or exceed the last round.
+        return currentRound >= maxRounds;
+    }
 
     /**
      * Reset the score values for both players.
