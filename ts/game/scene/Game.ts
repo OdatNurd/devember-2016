@@ -493,9 +493,9 @@ module nurdz.game
          */
         mazeGenerationComplete () : void
         {
-            // For now, after maze generation it is always the human player's
-            // turn.
-            this.state = GameState.CHECK_VALID_PLAY_PLAYER;
+            // Skip to the state were we select what player will start the
+            // game.
+            this.state = GameState.SELECT_START_PLAYER;
         }
 
         /**
@@ -698,6 +698,15 @@ module nurdz.game
                         this.state = GameState.GAME_OVER;
                     else
                         this.state = GameState.MAZE_GENERATION;
+                    break;
+
+                // We need to select a player to start off this round. Here we
+                // just randomly select one.
+                case GameState.SELECT_START_PLAYER:
+                    if (Utils.randomIntInRange (1, 100) % 2 == 0)
+                        this.state = GameState.CHECK_VALID_PLAY_PLAYER;
+                    else
+                        this.state = GameState.CHECK_VALID_PLAY_COMPUTER;
                     break;
 
                 // It is becoming the player's turn; check to see if there is

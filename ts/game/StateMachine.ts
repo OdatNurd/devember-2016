@@ -28,6 +28,14 @@ module nurdz.game
         MAZE_GENERATION,
 
         /**
+         * We have finished generating a maze, so it's time to randomly select
+         * the player that will start the game. In this state we select the
+         * player and then transition to the state that checks to see if that
+         * player can make a move, which will start their turn.
+         */
+        SELECT_START_PLAYER,
+
+        /**
          * We want it to be the human player's turn. In this state we check to
          * see if the human (or computer) can take a turn. If yes, the
          * appropriate player state is swapped to. Otherwise we skip to the

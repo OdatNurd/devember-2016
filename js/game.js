@@ -1892,32 +1892,39 @@ var nurdz;
              */
             GameState[GameState["MAZE_GENERATION"] = 2] = "MAZE_GENERATION";
             /**
+             * We have finished generating a maze, so it's time to randomly select
+             * the player that will start the game. In this state we select the
+             * player and then transition to the state that checks to see if that
+             * player can make a move, which will start their turn.
+             */
+            GameState[GameState["SELECT_START_PLAYER"] = 3] = "SELECT_START_PLAYER";
+            /**
              * We want it to be the human player's turn. In this state we check to
              * see if the human (or computer) can take a turn. If yes, the
              * appropriate player state is swapped to. Otherwise we skip to the
              * state where we start removing gray bricks.
              */
-            GameState[GameState["CHECK_VALID_PLAY_PLAYER"] = 3] = "CHECK_VALID_PLAY_PLAYER";
+            GameState[GameState["CHECK_VALID_PLAY_PLAYER"] = 4] = "CHECK_VALID_PLAY_PLAYER";
             /**
              * We have determined that the player has at least one play to make, so
              * they can take a turn now. In this state, the controls available to
              * the player to make a move are enabled.
              */
-            GameState[GameState["PLAYER_TURN"] = 4] = "PLAYER_TURN";
+            GameState[GameState["PLAYER_TURN"] = 5] = "PLAYER_TURN";
             /**
              * We want it to be the computer player's turn. In this state we check
              * to see if the computer (or human) can take a turn. If yes, the
              * appropriate player state is swapped to. Otherwise we skip to the
              * state where we start removing gray bricks.
              */
-            GameState[GameState["CHECK_VALID_PLAY_COMPUTER"] = 5] = "CHECK_VALID_PLAY_COMPUTER";
+            GameState[GameState["CHECK_VALID_PLAY_COMPUTER"] = 6] = "CHECK_VALID_PLAY_COMPUTER";
             /**
              * The computer is taking its turn now. This state encompasses the
              * entirety of the computer taking it's turn, from selecting the move to
              * arriving at the correct position and pushing the ball. The update()
              * method in the Player entity is used to control this entire process.
              */
-            GameState[GameState["COMPUTER_TURN"] = 6] = "COMPUTER_TURN";
+            GameState[GameState["COMPUTER_TURN"] = 7] = "COMPUTER_TURN";
             /**
              * Either the human player or the AI has pushed a ball. This state
              * remains in effect until the ball has finished moving, in which case
@@ -1925,21 +1932,21 @@ var nurdz;
              * to take their turn or to the state where we start the end of round
              * proceedings. round.
              */
-            GameState[GameState["BALL_DROPPING"] = 7] = "BALL_DROPPING";
+            GameState[GameState["BALL_DROPPING"] = 8] = "BALL_DROPPING";
             /**
              * ALl of the possible plays have been made. In this state we are
              * finding and removing all balls that can't possibly move any farther
              * because they are not sitting on top of a gray brick that will vanish
              * and allow them to fall.
              */
-            GameState[GameState["REMOVE_BLOCKED_BALLS"] = 8] = "REMOVE_BLOCKED_BALLS";
+            GameState[GameState["REMOVE_BLOCKED_BALLS"] = 9] = "REMOVE_BLOCKED_BALLS";
             /**
              * All of the possible plays have been made and all blocked ball have
              * beem removed. In this state we are removing all of the gray bricks
              * that are in the maze by vanishing them away. Once that is done we
              * transition to the state where we start dropping the final balls.
              */
-            GameState[GameState["REMOVE_GRAY_BRICKS"] = 9] = "REMOVE_GRAY_BRICKS";
+            GameState[GameState["REMOVE_GRAY_BRICKS"] = 10] = "REMOVE_GRAY_BRICKS";
             /**
              * All of the gray bricks have been removed, so we are now in the
              * process of finding all balls that can still drop and dropping them.
@@ -1947,19 +1954,19 @@ var nurdz;
              * we either cycle back to the generation state for the next round or to
              * the game over state.
              */
-            GameState[GameState["FINAL_BALL_DROP"] = 10] = "FINAL_BALL_DROP";
+            GameState[GameState["FINAL_BALL_DROP"] = 11] = "FINAL_BALL_DROP";
             /**
              * We were dropping final balls, but we have determined that there are
              * no more balls to drop. In this case we advance to the next round of
              * the game.
              */
-            GameState[GameState["END_ROUND"] = 11] = "END_ROUND";
+            GameState[GameState["END_ROUND"] = 12] = "END_ROUND";
             /**
              * All of the gray bricks have been removed, all of the final ball drops
              * have finished, and we have no more rounds to play; the game is just
              * over now.
              */
-            GameState[GameState["GAME_OVER"] = 12] = "GAME_OVER";
+            GameState[GameState["GAME_OVER"] = 13] = "GAME_OVER";
         })(GameState = game.GameState || (game.GameState = {}));
         /**
          * This class represents the state of the game in the current game. This is
@@ -5763,9 +5770,9 @@ var nurdz;
              * a maze. We use this to switch the state so that the game can start.
              */
             Game.prototype.mazeGenerationComplete = function () {
-                // For now, after maze generation it is always the human player's
-                // turn.
-                this.state = game.GameState.CHECK_VALID_PLAY_PLAYER;
+                // Skip to the state were we select what player will start the
+                // game.
+                this.state = game.GameState.SELECT_START_PLAYER;
             };
             /**
              * This gets invoked when either the player or the computer has selected
@@ -5938,6 +5945,14 @@ var nurdz;
                             this.state = game.GameState.GAME_OVER;
                         else
                             this.state = game.GameState.MAZE_GENERATION;
+                        break;
+                    // We need to select a player to start off this round. Here we
+                    // just randomly select one.
+                    case game.GameState.SELECT_START_PLAYER:
+                        if (game.Utils.randomIntInRange(1, 100) % 2 == 0)
+                            this.state = game.GameState.CHECK_VALID_PLAY_PLAYER;
+                        else
+                            this.state = game.GameState.CHECK_VALID_PLAY_COMPUTER;
                         break;
                     // It is becoming the player's turn; check to see if there is
                     // a valid play for them; if yes, make it their turn. Otherwise,
