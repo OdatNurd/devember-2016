@@ -109,6 +109,25 @@ module nurdz.game
         }
 
         /**
+         * This is invoked once per update loop while this scene is the active
+         * scene
+         *
+         * @param {number} tick the game tick; this is a count of how many times
+         * the game loop has executed
+         */
+        update (tick : number) : void
+        {
+            // Let the super do it's business, which updates all of our registered
+            // actors.
+            super.update (tick);
+
+            // If we have a game sceen, invoke it's update method so that
+            // things will animate like they should.
+            if (this._gameScene != null)
+                this._gameScene.update (tick);
+        }
+
+        /**
          * Called to render our scene. We piggyback render on the scene that
          * came before us so that we can display extra stuff on the stage
          * without having to fully replicate everything that the other scene was
