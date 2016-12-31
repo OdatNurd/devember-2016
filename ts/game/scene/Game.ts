@@ -664,6 +664,12 @@ module nurdz.game
                     this._player.visible = false;
                     this._computer.visible = false;
                     break;
+
+                // The game is over, so swap to that scene now.
+                case GameState.GAME_OVER:
+                    this._stage.switchToScene ("gameOver");
+                    break;
+
             }
         }
 

@@ -77,8 +77,9 @@ module nurdz.main
             setupButton (stage, "controlBtn");
 
             // Register all of our scenes.
-            stage.addScene ("game", new game.Game (stage));
             stage.addScene ("title", new game.TitleScreen (stage));
+            stage.addScene ("game", new game.Game (stage));
+            stage.addScene ("gameOver", new game.GameOver (stage));
 
             // Switch to the initial scene, add a dot to display and then run the game.
             stage.switchToScene ("title");

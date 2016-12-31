@@ -28,6 +28,7 @@
         "entity/Maze.ts",
         "scene/Title.ts",
         "scene/Game.ts",
+        "scene/GameOver.ts",
         "main.ts"
     ]
 }

@@ -5894,6 +5894,10 @@ var nurdz;
                         this._player.visible = false;
                         this._computer.visible = false;
                         break;
+                    // The game is over, so swap to that scene now.
+                    case game.GameState.GAME_OVER:
+                        this._stage.switchToScene("gameOver");
+                        break;
                 }
             };
             /**
@@ -5999,6 +6003,136 @@ var nurdz;
 })(nurdz || (nurdz = {}));
 var nurdz;
 (function (nurdz) {
+    var game;
+    (function (game) {
+        /**
+         * The font that is used to display the main "Game Over" text.
+         */
+        var MAIN_FONT = "32px Arial, Serif";
+        /**
+         * This class represents the game over screen. This is just a simple scene
+         * that jumps back to another scene after telling you that the game is over.
+         *
+         * This may be overkill in this particular prototype, but this is a good
+         * example of one method of de-cluttering the code by not having 100% of all
+         * visual logic in one place.
+         */
+        var GameOver = (function (_super) {
+            __extends(GameOver, _super);
+            /**
+             * Construct a new scene, giving it a name and a controlling stage.
+             *
+             * @param stage the stage that controls us.
+             */
+            function GameOver(stage) {
+                var _this = _super.call(this, "gameOver", stage) || this;
+                // Set up our menu
+                _this._menu = new game.Menu(stage, "Arial,Serif", 20, null);
+                _this._menu.addItem("Play again", new game.Point(325, 50));
+                _this._menu.addItem("Quit", new game.Point(325, 80));
+                // No game scene by default
+                _this._gameScene = null;
+                // Make sure it gets render and update requests.
+                _this.addActor(_this._menu);
+                return _this;
+            }
+            /**
+             * This gets triggered when the stage changes from some other scene to
+             * our scene. We get told what the previously active scene was. We use
+             * this to capture the game scene so that we can get it to render
+             * itself.
+             *
+             * @param previousScene the previous scene
+             */
+            GameOver.prototype.activating = function (previousScene) {
+                // Chain to the super so we get debug messages (otherwise not
+                // needed) about the scene change
+                _super.prototype.activating.call(this, previousScene);
+                // Store the scene that preceeded us, if it was not the default
+                // scene
+                if (previousScene["_name"] != "defaultScene")
+                    this._gameScene = previousScene;
+            };
+            /**
+             * Display some text centered horizontally and vertically around the
+             * point provided, using the given font and color.
+             *
+             * @param x the x position of the center of the location to draw the
+             * text
+             * @param y the y position of the center of the locaiton to draw the
+             * text
+             * @param text the text to render
+             * @param font the font to use to render the text
+             * @param color the color to render with
+             */
+            GameOver.prototype.displayText = function (x, y, text, font, color) {
+                // Put the origin at the text position.
+                this._renderer.translateAndRotate(x, y);
+                // Set the font and indicate that the text should be centered in both directions.
+                this._renderer.context.font = font;
+                this._renderer.context.textAlign = "center";
+                this._renderer.context.textBaseline = "middle";
+                // Draw the text and restore the context.
+                this._renderer.drawTxt(text, 0, 0, color);
+                this._renderer.restore();
+            };
+            /**
+             * Called to render our scene. We piggyback render on the scene that
+             * came before us so that we can display extra stuff on the stage
+             * without having to fully replicate everything that the other scene was
+             * doing.
+             */
+            GameOver.prototype.render = function () {
+                // If we know what the game scene is, then allow it to render first,
+                // setting up the stage for us. As a fallback, clear the stage when
+                // we don't know how this works.
+                if (this._gameScene != null)
+                    this._gameScene.render();
+                else
+                    this._renderer.clear('black');
+                // Display our game over and press a key to restart text.
+                this.displayText(this._stage.width / 2, 32, "Game Over", MAIN_FONT, 'white');
+                // Get the menu to update
+                _super.prototype.render.call(this);
+            };
+            /**
+             * Invoked to handle a key press. We use this to tell the stage to
+             * switch to the game scene again from our scene.
+             *
+             * @param eventObj the event that tells us what key was pressed.
+             *
+             * @returns {boolean} always true
+             */
+            GameOver.prototype.inputKeyDown = function (eventObj) {
+                // If the super handles the key, we're done.
+                if (_super.prototype.inputKeyDown.call(this, eventObj))
+                    return true;
+                switch (eventObj.keyCode) {
+                    // Previous menu item (wraps around)
+                    case game.KeyCodes.KEY_UP:
+                        this._menu.selectPrevious();
+                        return true;
+                    // Next menu item (wraps around)
+                    case game.KeyCodes.KEY_DOWN:
+                        this._menu.selectNext();
+                        return true;
+                    // Select menu item; switches to either the title screen or the game screen depending on
+                    // the item selected.
+                    case game.KeyCodes.KEY_ENTER:
+                        if (this._menu.selected == 0)
+                            game.newGame(game.maxRounds);
+                        this._stage.switchToScene(this._menu.selected == 0 ? "game" : "title");
+                        return true;
+                }
+                return false;
+            };
+            return GameOver;
+        }(game.Scene));
+        game.GameOver = GameOver;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
     var main;
     (function (main) {
         /**
@@ -6055,8 +6189,9 @@ var nurdz;
                 // Set up the button that will stop the game if something goes wrong.
                 setupButton(stage, "controlBtn");
                 // Register all of our scenes.
-                stage.addScene("game", new nurdz.game.Game(stage));
                 stage.addScene("title", new nurdz.game.TitleScreen(stage));
+                stage.addScene("game", new nurdz.game.Game(stage));
+                stage.addScene("gameOver", new nurdz.game.GameOver(stage));
                 // Switch to the initial scene, add a dot to display and then run the game.
                 stage.switchToScene("title");
                 stage.run();
