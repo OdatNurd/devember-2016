@@ -263,6 +263,16 @@ module nurdz.game
                         this._maze.pushBall (this._player.mapPosition.x);
                     return true;
 
+                // When the player presses the L key, we swap to showing the
+                // computer balls instead of the player balls. We also swap to
+                // a new state whose purposes is to make sure that we can only
+                // come back to this state and block player movement in the
+                // interim.
+                case KeyCodes.KEY_L:
+                    this._maze.contents.showComputerBalls ();
+                    this.state = GameState.PLAYER_VIEW_COMPUTER_BALLS;
+                    return true;
+
                 // The question mark key; this is not in ts-game-engine yet.
                 case 191:
                     // If we're in debugging mode, don't handle the key here and
@@ -358,22 +368,33 @@ module nurdz.game
                     return this._debugger.debugAddBrick ();
 
                 // Add an arrow to the maze at the current debug cursor; this
-                // only works if the cell is currentlye empty. This will add a
+                // only works if the cell is currently empty. This will add a
                 // normal arrow by default, but this can be toggled with the
                 // 'T" key'.
                 case KeyCodes.KEY_A:
                     return this._debugger.debugAddArrow ();
 
                 // Add a teleport to the maze at the current debug cursor; this
-                // only works if the cell is currentlye empty. This just adds an
+                // only works if the cell is currently empty. This just adds an
                 // extra exit point to the black hole system.
                 case KeyCodes.KEY_H:
                     return this._debugger.debugAddTeleport ();
 
-                // Add a ball to the maze at the current debug cursor; this only
-                // works if the cell is currently empty. This will add a player
-                // ball by default, but this can be toggled with the 'T' key.
+                // If we are viewing the computer balls, swap back to player
+                // balls and re-enable the player controls. Otherwise this key
+                // will add a ball if we're in debug mode.
                 case KeyCodes.KEY_L:
+                    // If we are in the view computer ball state, then swap back
+                    // to player balls and reset the state back to the player
+                    // turn so that they can move again.
+                    if (this.state == GameState.PLAYER_VIEW_COMPUTER_BALLS)
+                    {
+                        this._maze.contents.showPlayerBalls ();
+                        this.state = GameState.PLAYER_TURN;
+                        return true;
+                    }
+
+                    // Not viewing the computer balls, so maybe add a ball?
                     return this._debugger.debugAddBall ();
 
                 // Vanish away all of the gray or bonus bricks that are still
@@ -390,16 +411,6 @@ module nurdz.game
                 // The question mark key; this is not in ts-game-engine yet.
                 case 191:
                     return this._debugger.debugShowContents ();
-
-                // For debugging purposes, this key swaps to human balls
-                case KeyCodes.KEY_Z:
-                    this._maze.contents.showPlayerBalls ();
-                    return true;
-
-                // For debugging purposes, this key swaps to computer balls.
-                case KeyCodes.KEY_X:
-                    this._maze.contents.showComputerBalls ();
-                    return true;
             }
 
             // We did not handle it

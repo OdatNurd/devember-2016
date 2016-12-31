@@ -1912,19 +1912,26 @@ var nurdz;
              */
             GameState[GameState["PLAYER_TURN"] = 5] = "PLAYER_TURN";
             /**
+             * It is the player's turn, but they have pressed the key to see what
+             * balls the computer has. In this state no controls work so the player
+             * can't take a turn. When they press the button again, we skip to show
+             * the player balls and make it their turn again.
+             */
+            GameState[GameState["PLAYER_VIEW_COMPUTER_BALLS"] = 6] = "PLAYER_VIEW_COMPUTER_BALLS";
+            /**
              * We want it to be the computer player's turn. In this state we check
              * to see if the computer (or human) can take a turn. If yes, the
              * appropriate player state is swapped to. Otherwise we skip to the
              * state where we start removing gray bricks.
              */
-            GameState[GameState["CHECK_VALID_PLAY_COMPUTER"] = 6] = "CHECK_VALID_PLAY_COMPUTER";
+            GameState[GameState["CHECK_VALID_PLAY_COMPUTER"] = 7] = "CHECK_VALID_PLAY_COMPUTER";
             /**
              * The computer is taking its turn now. This state encompasses the
              * entirety of the computer taking it's turn, from selecting the move to
              * arriving at the correct position and pushing the ball. The update()
              * method in the Player entity is used to control this entire process.
              */
-            GameState[GameState["COMPUTER_TURN"] = 7] = "COMPUTER_TURN";
+            GameState[GameState["COMPUTER_TURN"] = 8] = "COMPUTER_TURN";
             /**
              * Either the human player or the AI has pushed a ball. This state
              * remains in effect until the ball has finished moving, in which case
@@ -1932,21 +1939,21 @@ var nurdz;
              * to take their turn or to the state where we start the end of round
              * proceedings. round.
              */
-            GameState[GameState["BALL_DROPPING"] = 8] = "BALL_DROPPING";
+            GameState[GameState["BALL_DROPPING"] = 9] = "BALL_DROPPING";
             /**
              * ALl of the possible plays have been made. In this state we are
              * finding and removing all balls that can't possibly move any farther
              * because they are not sitting on top of a gray brick that will vanish
              * and allow them to fall.
              */
-            GameState[GameState["REMOVE_BLOCKED_BALLS"] = 9] = "REMOVE_BLOCKED_BALLS";
+            GameState[GameState["REMOVE_BLOCKED_BALLS"] = 10] = "REMOVE_BLOCKED_BALLS";
             /**
              * All of the possible plays have been made and all blocked ball have
              * beem removed. In this state we are removing all of the gray bricks
              * that are in the maze by vanishing them away. Once that is done we
              * transition to the state where we start dropping the final balls.
              */
-            GameState[GameState["REMOVE_GRAY_BRICKS"] = 10] = "REMOVE_GRAY_BRICKS";
+            GameState[GameState["REMOVE_GRAY_BRICKS"] = 11] = "REMOVE_GRAY_BRICKS";
             /**
              * All of the gray bricks have been removed, so we are now in the
              * process of finding all balls that can still drop and dropping them.
@@ -1954,19 +1961,19 @@ var nurdz;
              * we either cycle back to the generation state for the next round or to
              * the game over state.
              */
-            GameState[GameState["FINAL_BALL_DROP"] = 11] = "FINAL_BALL_DROP";
+            GameState[GameState["FINAL_BALL_DROP"] = 12] = "FINAL_BALL_DROP";
             /**
              * We were dropping final balls, but we have determined that there are
              * no more balls to drop. In this case we advance to the next round of
              * the game.
              */
-            GameState[GameState["END_ROUND"] = 12] = "END_ROUND";
+            GameState[GameState["END_ROUND"] = 13] = "END_ROUND";
             /**
              * All of the gray bricks have been removed, all of the final ball drops
              * have finished, and we have no more rounds to play; the game is just
              * over now.
              */
-            GameState[GameState["GAME_OVER"] = 13] = "GAME_OVER";
+            GameState[GameState["GAME_OVER"] = 14] = "GAME_OVER";
         })(GameState = game.GameState || (game.GameState = {}));
         /**
          * This class represents the state of the game in the current game. This is
@@ -5579,6 +5586,15 @@ var nurdz;
                         if (this._player.playerDirection == game.PlayerDirection.DIRECTION_DOWN)
                             this._maze.pushBall(this._player.mapPosition.x);
                         return true;
+                    // When the player presses the L key, we swap to showing the
+                    // computer balls instead of the player balls. We also swap to
+                    // a new state whose purposes is to make sure that we can only
+                    // come back to this state and block player movement in the
+                    // interim.
+                    case game.KeyCodes.KEY_L:
+                        this._maze.contents.showComputerBalls();
+                        this.state = game.GameState.PLAYER_VIEW_COMPUTER_BALLS;
+                        return true;
                     // The question mark key; this is not in ts-game-engine yet.
                     case 191:
                         // If we're in debugging mode, don't handle the key here and
@@ -5659,20 +5675,29 @@ var nurdz;
                     case game.KeyCodes.KEY_B:
                         return this._debugger.debugAddBrick();
                     // Add an arrow to the maze at the current debug cursor; this
-                    // only works if the cell is currentlye empty. This will add a
+                    // only works if the cell is currently empty. This will add a
                     // normal arrow by default, but this can be toggled with the
                     // 'T" key'.
                     case game.KeyCodes.KEY_A:
                         return this._debugger.debugAddArrow();
                     // Add a teleport to the maze at the current debug cursor; this
-                    // only works if the cell is currentlye empty. This just adds an
+                    // only works if the cell is currently empty. This just adds an
                     // extra exit point to the black hole system.
                     case game.KeyCodes.KEY_H:
                         return this._debugger.debugAddTeleport();
-                    // Add a ball to the maze at the current debug cursor; this only
-                    // works if the cell is currently empty. This will add a player
-                    // ball by default, but this can be toggled with the 'T' key.
+                    // If we are viewing the computer balls, swap back to player
+                    // balls and re-enable the player controls. Otherwise this key
+                    // will add a ball if we're in debug mode.
                     case game.KeyCodes.KEY_L:
+                        // If we are in the view computer ball state, then swap back
+                        // to player balls and reset the state back to the player
+                        // turn so that they can move again.
+                        if (this.state == game.GameState.PLAYER_VIEW_COMPUTER_BALLS) {
+                            this._maze.contents.showPlayerBalls();
+                            this.state = game.GameState.PLAYER_TURN;
+                            return true;
+                        }
+                        // Not viewing the computer balls, so maybe add a ball?
                         return this._debugger.debugAddBall();
                     // Vanish away all of the gray or bonus bricks that are still
                     // visible.
@@ -5686,14 +5711,6 @@ var nurdz;
                     // The question mark key; this is not in ts-game-engine yet.
                     case 191:
                         return this._debugger.debugShowContents();
-                    // For debugging purposes, this key swaps to human balls
-                    case game.KeyCodes.KEY_Z:
-                        this._maze.contents.showPlayerBalls();
-                        return true;
-                    // For debugging purposes, this key swaps to computer balls.
-                    case game.KeyCodes.KEY_X:
-                        this._maze.contents.showComputerBalls();
-                        return true;
                 }
                 // We did not handle it
                 return false;

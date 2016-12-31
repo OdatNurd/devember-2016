@@ -51,6 +51,14 @@ module nurdz.game
         PLAYER_TURN,
 
         /**
+         * It is the player's turn, but they have pressed the key to see what
+         * balls the computer has. In this state no controls work so the player
+         * can't take a turn. When they press the button again, we skip to show
+         * the player balls and make it their turn again.
+         */
+        PLAYER_VIEW_COMPUTER_BALLS,
+
+        /**
          * We want it to be the computer player's turn. In this state we check
          * to see if the computer (or human) can take a turn. If yes, the
          * appropriate player state is swapped to. Otherwise we skip to the
