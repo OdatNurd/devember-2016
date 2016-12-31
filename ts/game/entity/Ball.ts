@@ -1,6 +1,14 @@
 module nurdz.game
 {
     /**
+     * How many update ticks a lerp should take to move the ball from it's
+     * original to final destination. This should be some number smaller than
+     * the time it takes a ball to vanish, or it will be gone before it gets
+     * there.
+     */
+    const LERP_DURATION = 8;
+
+    /**
      * This is used to indicate what type of ball this is. This is just for
      * visual identification on the board.
      */
@@ -77,6 +85,25 @@ module nurdz.game
          * save the simulation state.
          */
         private _savedScore : number;
+
+        /**
+         * When we are told to do a lerp to a new location on the screen, this
+         * stores the position that we originally started at.
+         */
+        private _lerpStartPos : Point;
+
+        /**
+         * When we are told to do a lerp to a new location on the screen, this
+         * stores the position that we want to ultimately end up at.
+         */
+        private _lerpEndPos : Point;
+
+        /**
+         * When we are doing a lerp, this is the engine tick that the lerp
+         * started at. A negative value here indicates that we are not currently
+         * trying to do a lerp.
+         */
+        private _startLerpTick : number;
 
         /**
          * Get the type of ball that this is; this is used to set a visual
@@ -216,6 +243,69 @@ module nurdz.game
             // Create the point for our saved position during simulations.
             this._savedPosition = new Point (0, 0);
             this._savedScore = 0;
+
+            // No lerp to begin with.
+            this._startLerpTick = -1;
+        }
+
+        /**
+         * Initiate a lerp operation for this ball. The ball will start to move
+         * from its current location on the screen to the location provided over
+         * a predefined duration time. Once there the lerp will stop.
+         *
+         * Attempts to modify the ball position manually while the lerp is
+         * active will cause visual artifacts because the update loop will be
+         * manually updating the position along the way
+         *
+         * @param {Point} position the final destination location
+         */
+        lerpTo (position : Point) : void
+        {
+            // Copy the current and final positions
+            this._lerpStartPos = this._position.copy ();
+            this._lerpEndPos = position.copy ();
+
+            // Save the current tick so we can time how long this is going for.
+            this._startLerpTick = this._stage.tick;
+        }
+
+        /**
+         * This is called every frame update (tick tells us how many times this
+         * has happened) to allow us to update ourselves.
+         *
+         * This invokes the superclass method, and then makes sure to also
+         * invoke the update method for our animated MazeCell entities, so that
+         * their animations will play as expected.
+         *
+         * @param {Stage}  stage the stage that we are on
+         * @param {number} tick  the current engine tick; this advances once for
+         * each frame update
+         */
+        update (stage : Stage, tick : number) : void
+        {
+            // Let the super do it's thing for us.
+            super.update (stage, tick);
+
+            // Are we lerping?
+            if (this._startLerpTick > 0)
+            {
+                // Create the normalized value that tells us where along the
+                // position line we currently are.
+                let lerp = Utils.normalize (tick, this._startLerpTick,
+                                                  this._startLerpTick + LERP_DURATION);
+
+                // Now use that value to shift our X and Y values. We make sure
+                // to clamp the values down so that we can accurately tell when
+                // we're done.
+                this._position.x = Math.floor (Utils.linearInterpolate (lerp,
+                                     this._lerpStartPos.x, this._lerpEndPos.x));
+                this._position.y = Math.floor (Utils.linearInterpolate (lerp,
+                                     this._lerpStartPos.y, this._lerpEndPos.y));
+
+                // If we have arrived at the final position, we're done now.
+                if (this._position.equals (this._lerpEndPos))
+                    this._startLerpTick = -1;
+            }
         }
 
         /**

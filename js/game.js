@@ -3124,6 +3124,13 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * How many update ticks a lerp should take to move the ball from it's
+         * original to final destination. This should be some number smaller than
+         * the time it takes a ball to vanish, or it will be gone before it gets
+         * there.
+         */
+        var LERP_DURATION = 8;
+        /**
          * This is used to indicate what type of ball this is. This is just for
          * visual identification on the board.
          */
@@ -3197,6 +3204,8 @@ var nurdz;
                 // Create the point for our saved position during simulations.
                 _this._savedPosition = new game.Point(0, 0);
                 _this._savedScore = 0;
+                // No lerp to begin with.
+                _this._startLerpTick = -1;
                 return _this;
             }
             Object.defineProperty(Ball.prototype, "ballType", {
@@ -3296,6 +3305,54 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
+            /**
+             * Initiate a lerp operation for this ball. The ball will start to move
+             * from its current location on the screen to the location provided over
+             * a predefined duration time. Once there the lerp will stop.
+             *
+             * Attempts to modify the ball position manually while the lerp is
+             * active will cause visual artifacts because the update loop will be
+             * manually updating the position along the way
+             *
+             * @param {Point} position the final destination location
+             */
+            Ball.prototype.lerpTo = function (position) {
+                // Copy the current and final positions
+                this._lerpStartPos = this._position.copy();
+                this._lerpEndPos = position.copy();
+                // Save the current tick so we can time how long this is going for.
+                this._startLerpTick = this._stage.tick;
+            };
+            /**
+             * This is called every frame update (tick tells us how many times this
+             * has happened) to allow us to update ourselves.
+             *
+             * This invokes the superclass method, and then makes sure to also
+             * invoke the update method for our animated MazeCell entities, so that
+             * their animations will play as expected.
+             *
+             * @param {Stage}  stage the stage that we are on
+             * @param {number} tick  the current engine tick; this advances once for
+             * each frame update
+             */
+            Ball.prototype.update = function (stage, tick) {
+                // Let the super do it's thing for us.
+                _super.prototype.update.call(this, stage, tick);
+                // Are we lerping?
+                if (this._startLerpTick > 0) {
+                    // Create the normalized value that tells us where along the
+                    // position line we currently are.
+                    var lerp = game.Utils.normalize(tick, this._startLerpTick, this._startLerpTick + LERP_DURATION);
+                    // Now use that value to shift our X and Y values. We make sure
+                    // to clamp the values down so that we can accurately tell when
+                    // we're done.
+                    this._position.x = Math.floor(game.Utils.linearInterpolate(lerp, this._lerpStartPos.x, this._lerpEndPos.x));
+                    this._position.y = Math.floor(game.Utils.linearInterpolate(lerp, this._lerpStartPos.y, this._lerpEndPos.y));
+                    // If we have arrived at the final position, we're done now.
+                    if (this._position.equals(this._lerpEndPos))
+                        this._startLerpTick = -1;
+                }
+            };
             /**
              * Set the visual state of the ball to idle; this is the normal state,
              * in which the ball just sits there, looking pretty.
