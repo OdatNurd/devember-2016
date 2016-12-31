@@ -161,7 +161,7 @@ module nurdz.game
                 // the item selected.
                 case KeyCodes.KEY_ENTER:
                     if (this._menu.selected == 0)
-                        newGame (maxRounds);
+                        replayLastGame ();
                     this._stage.switchToScene (this._menu.selected == 0 ? "game" : "title");
                     return true;
             }

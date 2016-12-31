@@ -38,6 +38,11 @@ var nurdz;
          */
         game.maxRounds = 1;
         /**
+         * Every time newGame is invoked, this is used to store the total rounds
+         * that were given to the method so that we can replay it easily.
+         */
+        var lastGameType = 1;
+        /**
          * The number of points the human player has.
          */
         var humanScore = 0;
@@ -56,6 +61,9 @@ var nurdz;
          * indicate a 1 round game played with half balls.
          */
         function newGame(totalRounds) {
+            // Save the information that is used to set this for the next time a
+            // replay happens.
+            lastGameType = totalRounds;
             // Start at round one and store the total rounds given. When the total
             // rounds is 0 or smaller, assume 1.
             game.currentRound = 1;
@@ -68,6 +76,15 @@ var nurdz;
             console.log(String.format("DEBUG: Starting a new game with round count of {0} and {1} half balls", game.maxRounds, (game.halfBalls ? "with" : "without")));
         }
         game.newGame = newGame;
+        /**
+         * This sets everything up to the same game type specified the last time a
+         * new game was started. This can be used to replay the same type of game
+         * again without having to track how the game was set up.
+         */
+        function replayLastGame() {
+            newGame(lastGameType);
+        }
+        game.replayLastGame = replayLastGame;
         /**
          * Skip the round counter to indicate that we're in the next round now.
          */
@@ -6120,7 +6137,7 @@ var nurdz;
                     // the item selected.
                     case game.KeyCodes.KEY_ENTER:
                         if (this._menu.selected == 0)
-                            game.newGame(game.maxRounds);
+                            game.replayLastGame();
                         this._stage.switchToScene(this._menu.selected == 0 ? "game" : "title");
                         return true;
                 }

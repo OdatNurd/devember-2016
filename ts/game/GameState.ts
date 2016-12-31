@@ -37,6 +37,12 @@ module nurdz.game
     export let maxRounds : number = 1;
 
     /**
+     * Every time newGame is invoked, this is used to store the total rounds
+     * that were given to the method so that we can replay it easily.
+     */
+    let lastGameType : number = 1;
+
+    /**
      * The number of points the human player has.
      */
     let humanScore : number = 0;
@@ -58,6 +64,10 @@ module nurdz.game
      */
     export function newGame (totalRounds : number) : void
     {
+        // Save the information that is used to set this for the next time a
+        // replay happens.
+        lastGameType = totalRounds;
+
         // Start at round one and store the total rounds given. When the total
         // rounds is 0 or smaller, assume 1.
         currentRound = 1;
@@ -76,6 +86,16 @@ module nurdz.game
                 maxRounds,
                 (halfBalls ? "with" : "without")
             ));
+    }
+
+    /**
+     * This sets everything up to the same game type specified the last time a
+     * new game was started. This can be used to replay the same type of game
+     * again without having to track how the game was set up.
+     */
+    export function replayLastGame () : void
+    {
+        newGame (lastGameType);
     }
 
     /**
