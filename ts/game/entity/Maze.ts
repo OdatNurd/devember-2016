@@ -1066,7 +1066,7 @@ module nurdz.game
                     // becomes set to true doesn't happen until the ball is
                     // visibly gone.
                     if (pos.y == MAZE_HEIGHT - 2 || this._droppingFinalBall == true)
-                        this._droppingBall.vanish ();
+                        this._droppingBall.scoreStart ();
                     else
                         this._ballMoveFinalized = true;
 

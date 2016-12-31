@@ -184,6 +184,20 @@ module nurdz.game
     }
 
     /**
+     * Given a ball that is being scored for any reason, trigger a lerp on it
+     * that starts at the current location on the screen and terminates at the
+     * location where the score for this ball is displayed.
+     *
+     * @param   {Ball}  ball the ball which will update the score
+     */
+    function lerpBallPos (ball : Ball) : void
+    {
+        ball.lerpTo ((ball.player == PlayerType.PLAYER_HUMAN)
+            ? humanScorePos
+            : computerScorePos);
+    }
+
+    /**
      * Score points due to a ball reaching the goal line (the bottom of the
      * maze).
      *
@@ -192,6 +206,7 @@ module nurdz.game
     export function goalBallScore (ball : Ball) : void
     {
         adjustScore (ball.player, GOAL_BALL_SCORE);
+        lerpBallPos (ball);
     }
 
     /**
@@ -203,6 +218,7 @@ module nurdz.game
     export function partialBallScore (ball : Ball) : void
     {
         adjustScore (ball.player, ball.mapPosition.y * BALL_POSITION_MULTIPLIER);
+        lerpBallPos (ball);
     }
 
     /**

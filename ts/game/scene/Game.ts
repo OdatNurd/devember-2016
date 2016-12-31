@@ -547,12 +547,18 @@ module nurdz.game
         {
             // Did the ball reach the goal?
             if (ball.mapPosition.y == MAZE_HEIGHT - 2)
+            {
                 goalBallScore (ball);
+                ball.scoreEnd ();
+            }
 
             // The ball did not reach the goal, but if this is a final ball drop
             // then score partial points for the ending position of the ball.
             else if (isFinal == true)
+            {
                 partialBallScore (ball);
+                ball.scoreEnd ();
+            }
 
             // Now that the ball is done, where we go depends on where we came
             // from.

@@ -161,6 +161,18 @@ var nurdz;
         }
         game.bonusBrickScore = bonusBrickScore;
         /**
+         * Given a ball that is being scored for any reason, trigger a lerp on it
+         * that starts at the current location on the screen and terminates at the
+         * location where the score for this ball is displayed.
+         *
+         * @param   {Ball}  ball the ball which will update the score
+         */
+        function lerpBallPos(ball) {
+            ball.lerpTo((ball.player == game.PlayerType.PLAYER_HUMAN)
+                ? humanScorePos
+                : computerScorePos);
+        }
+        /**
          * Score points due to a ball reaching the goal line (the bottom of the
          * maze).
          *
@@ -168,6 +180,7 @@ var nurdz;
          */
         function goalBallScore(ball) {
             adjustScore(ball.player, game.GOAL_BALL_SCORE);
+            lerpBallPos(ball);
         }
         game.goalBallScore = goalBallScore;
         /**
@@ -178,6 +191,7 @@ var nurdz;
          */
         function partialBallScore(ball) {
             adjustScore(ball.player, ball.mapPosition.y * game.BALL_POSITION_MULTIPLIER);
+            lerpBallPos(ball);
         }
         game.partialBallScore = partialBallScore;
         /**
@@ -5097,7 +5111,7 @@ var nurdz;
                         // becomes set to true doesn't happen until the ball is
                         // visibly gone.
                         if (pos.y == game.MAZE_HEIGHT - 2 || this._droppingFinalBall == true)
-                            this._droppingBall.vanish();
+                            this._droppingBall.scoreStart();
                         else
                             this._ballMoveFinalized = true;
                         // Now clear the flag so we know we're done.
@@ -5927,10 +5941,14 @@ var nurdz;
              */
             Game.prototype.ballDropComplete = function (ball, isFinal) {
                 // Did the ball reach the goal?
-                if (ball.mapPosition.y == game.MAZE_HEIGHT - 2)
+                if (ball.mapPosition.y == game.MAZE_HEIGHT - 2) {
                     game.goalBallScore(ball);
-                else if (isFinal == true)
+                    ball.scoreEnd();
+                }
+                else if (isFinal == true) {
                     game.partialBallScore(ball);
+                    ball.scoreEnd();
+                }
                 // Now that the ball is done, where we go depends on where we came
                 // from.
                 switch (this.priorState) {
