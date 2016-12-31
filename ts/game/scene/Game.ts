@@ -692,6 +692,8 @@ module nurdz.game
                 // switch to the game over state. Otherwise, we can swap to the
                 // maze generation state for this round.
                 case GameState.BEGIN_ROUND:
+                    this._player.jumpTo (1);
+                    this._computer.jumpTo (MAZE_WIDTH - 1);
                     if (isGameOver ())
                         this.state = GameState.GAME_OVER;
                     else
