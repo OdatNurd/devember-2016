@@ -53,6 +53,16 @@ module nurdz.game
     let computerScore : number = 0;
 
     /**
+     * The location where the human score is displayed
+     */
+    const humanScorePos = new Point (16, 32);
+
+    /**
+     * THe location where the computer score is displayed
+     */
+    const computerScorePos = new Point (STAGE_WIDTH - (5 * 32), 32);
+
+    /**
      * Set up a new game to be played over the given number of total rounds. A
      * value of 0 or smaller means that we will be playing only a single round,
      * but with half balls.
@@ -203,7 +213,7 @@ module nurdz.game
      */
     export function renderScores (renderer : Renderer) : void
     {
-        renderer.drawTxt (humanScore+"", 16, 32, "white");
-        renderer.drawTxt (computerScore+"", STAGE_WIDTH - (5 * 32), 32, "yellow");
+        renderer.drawTxt (humanScore+"", humanScorePos.x, humanScorePos.y, "white");
+        renderer.drawTxt (computerScore+"", computerScorePos.x, computerScorePos.y, "yellow");
     }
 }

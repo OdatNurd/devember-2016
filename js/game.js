@@ -51,6 +51,14 @@ var nurdz;
          */
         var computerScore = 0;
         /**
+         * The location where the human score is displayed
+         */
+        var humanScorePos = new game.Point(16, 32);
+        /**
+         * THe location where the computer score is displayed
+         */
+        var computerScorePos = new game.Point(game.STAGE_WIDTH - (5 * 32), 32);
+        /**
          * Set up a new game to be played over the given number of total rounds. A
          * value of 0 or smaller means that we will be playing only a single round,
          * but with half balls.
@@ -179,8 +187,8 @@ var nurdz;
          * @param {Renderer} renderer the renderer to use to blit the text.
          */
         function renderScores(renderer) {
-            renderer.drawTxt(humanScore + "", 16, 32, "white");
-            renderer.drawTxt(computerScore + "", game.STAGE_WIDTH - (5 * 32), 32, "yellow");
+            renderer.drawTxt(humanScore + "", humanScorePos.x, humanScorePos.y, "white");
+            renderer.drawTxt(computerScore + "", computerScorePos.x, computerScorePos.y, "yellow");
         }
         game.renderScores = renderScores;
     })(game = nurdz.game || (nurdz.game = {}));
