@@ -1259,9 +1259,6 @@ module nurdz.game
             // automatic arrows too.
             this._generator.generate (halfBalls, isLastRound ());
 
-            // Reset the scores
-            resetScores ();
-
             // If there is a listener, tell it now that the generation has
             // completed.
             if (this._listener != null)
