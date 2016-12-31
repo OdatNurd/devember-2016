@@ -18,9 +18,9 @@ module nurdz.game
      * This scene represents the game screen, where the game will actually be
      * played.
      */
-    export class GameScene extends Scene
-                           implements StateMachineChangeListener,
-                                      MazeEventListener
+    export class Game extends Scene
+                      implements StateMachineChangeListener,
+                                 MazeEventListener
     {
         /**
          * Override the type of our renderer to be a canvas renderer.

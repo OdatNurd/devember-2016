@@ -5375,8 +5375,8 @@ var nurdz;
          * This scene represents the game screen, where the game will actually be
          * played.
          */
-        var GameScene = (function (_super) {
-            __extends(GameScene, _super);
+        var Game = (function (_super) {
+            __extends(Game, _super);
             /**
              * Construct a new game screen scene that will display on the provided
              * stage.
@@ -5389,7 +5389,7 @@ var nurdz;
              *
              * @constructor
              */
-            function GameScene(stage) {
+            function Game(stage) {
                 var _this = 
                 // Create the scene via our super class.
                 _super.call(this, "gameScreen", stage) || this;
@@ -5423,7 +5423,7 @@ var nurdz;
                 _this._debugger = _this._maze.debugger;
                 return _this;
             }
-            Object.defineProperty(GameScene.prototype, "state", {
+            Object.defineProperty(Game.prototype, "state", {
                 /**
                  * Get the current state of the game.
                  *
@@ -5443,7 +5443,7 @@ var nurdz;
                 enumerable: true,
                 configurable: true
             });
-            Object.defineProperty(GameScene.prototype, "priorState", {
+            Object.defineProperty(Game.prototype, "priorState", {
                 /**
                  * Get the state that we were in prior to the current state.
                  *
@@ -5463,7 +5463,7 @@ var nurdz;
              *
              * @param {Scene} previousScene the scene that was active before us
              */
-            GameScene.prototype.activating = function (previousScene) {
+            Game.prototype.activating = function (previousScene) {
                 // Let the super work its magic.
                 _super.prototype.activating.call(this, previousScene);
                 // Set up what our font should be while this screen is active.
@@ -5493,7 +5493,7 @@ var nurdz;
              * @param {Player}          player    the player entity to turn or move
              * @param {PlayerDirection} direction the direction to turn or move in
              */
-            GameScene.prototype.playerTurnOrMove = function (player, direction) {
+            Game.prototype.playerTurnOrMove = function (player, direction) {
                 // If the player is not facing in the direction provided, then
                 // turn them and leave.
                 if (player.playerDirection != direction) {
@@ -5530,7 +5530,7 @@ var nurdz;
              * @returns {boolean}                true if we handled the key, false
              * otherwise.
              */
-            GameScene.prototype.handlePlayerKey = function (eventObj) {
+            Game.prototype.handlePlayerKey = function (eventObj) {
                 // If our current state does not indicate that it is the player's
                 // turn, then do nothing.
                 if (this.state != game.GameState.PLAYER_TURN)
@@ -5588,7 +5588,7 @@ var nurdz;
              * @returns {boolean}                true if we handled the key, false
              * otherwise
              */
-            GameScene.prototype.inputKeyDown = function (eventObj) {
+            Game.prototype.inputKeyDown = function (eventObj) {
                 // If this is a key the super class knows how to handle, then let it
                 // handle it and we'll just leave.
                 if (_super.prototype.inputKeyDown.call(this, eventObj))
@@ -5689,7 +5689,7 @@ var nurdz;
              * @returns {boolean} true if the mouse event was handled, false
              * otherwise
              */
-            GameScene.prototype.inputMouseClick = function (eventObj) {
+            Game.prototype.inputMouseClick = function (eventObj) {
                 // Calculate where on the stage the mouse clicked. If this is inside
                 // of the maze, localize the point to the bounds of the maze and
                 // have the maze handle it.
@@ -5706,7 +5706,7 @@ var nurdz;
              * @param eventObj the event that represents the mouse movement.
              * @returns {boolean} true if we handled this event or false if not.
              */
-            GameScene.prototype.inputMouseMove = function (eventObj) {
+            Game.prototype.inputMouseMove = function (eventObj) {
                 // Get the current mouse position, and then update tracking with it.
                 this._mouse = this._stage.calculateMousePos(eventObj, this._mouse);
                 // If we're tracking a debug location, tell the maze about this
@@ -5723,7 +5723,7 @@ var nurdz;
              * @param {number} tick the game tick; this is a count of how many times
              * the game loop has executed
              */
-            GameScene.prototype.update = function (tick) {
+            Game.prototype.update = function (tick) {
                 // Let the super do it's business, which updates all of our registered
                 // actors.
                 _super.prototype.update.call(this, tick);
@@ -5735,7 +5735,7 @@ var nurdz;
             /**
              * This is invoked every frame to render the current scene to the stage.
              */
-            GameScene.prototype.render = function () {
+            Game.prototype.render = function () {
                 // Clear the screen, then let our super render for us so that all
                 // entities get painted.
                 this._renderer.fillRect(0, 0, this._stage.width, this._stage.height, '#000');
@@ -5747,7 +5747,7 @@ var nurdz;
              * This gets invoked by our maze entity when it has finished generating
              * a maze. We use this to switch the state so that the game can start.
              */
-            GameScene.prototype.mazeGenerationComplete = function () {
+            Game.prototype.mazeGenerationComplete = function () {
                 // For now, after maze generation it is always the human player's
                 // turn.
                 this.state = game.GameState.CHECK_VALID_PLAY_PLAYER;
@@ -5762,7 +5762,7 @@ var nurdz;
              *
              * @param {Ball} ball the ball entity that is being pushed.
              */
-            GameScene.prototype.startBallPush = function (ball) {
+            Game.prototype.startBallPush = function (ball) {
                 // Set the state to indicate that a ball is being dropped.
                 this.state = game.GameState.BALL_DROPPING;
             };
@@ -5784,7 +5784,7 @@ var nurdz;
              * @param {boolean} isFInal true if this ball was part of a final ball
              * drop
              */
-            GameScene.prototype.ballDropComplete = function (ball, isFinal) {
+            Game.prototype.ballDropComplete = function (ball, isFinal) {
                 // Did the ball reach the goal?
                 if (ball.mapPosition.y == game.MAZE_HEIGHT - 2)
                     game.goalBallScore(ball);
@@ -5826,7 +5826,7 @@ var nurdz;
              *
              * @param {Ball} ball the ball that being removed
              */
-            GameScene.prototype.blockedBallRemoved = function (ball) {
+            Game.prototype.blockedBallRemoved = function (ball) {
                 // This is a blocked ball that can no longer move, so apply a
                 // partial score value now.
                 game.partialBallScore(ball);
@@ -5837,7 +5837,7 @@ var nurdz;
              *
              * This triggers the start of the final ball drop.
              */
-            GameScene.prototype.grayBrickRemovalComplete = function () {
+            Game.prototype.grayBrickRemovalComplete = function () {
                 // Swap states to the final ball drop
                 this.state = game.GameState.FINAL_BALL_DROP;
             };
@@ -5858,7 +5858,7 @@ var nurdz;
              * @param {StateMachine} machine  the machine whose state changed
              * @param {GameState}    newState the newly set state
              */
-            GameScene.prototype.stateChanged = function (machine, newState) {
+            Game.prototype.stateChanged = function (machine, newState) {
                 // Record the stat change.
                 console.log("DEBUG: State changed to: " + game.GameState[newState]);
                 switch (newState) {
@@ -5906,7 +5906,7 @@ var nurdz;
              * such logic without requiring a bunch of sentinel boolean values to
              * flag that it has been done.
              */
-            GameScene.prototype.stateLogic = function () {
+            Game.prototype.stateLogic = function () {
                 // Handle based on state.
                 switch (this.state) {
                     // It is the start of a new round; if the game is over now,
@@ -5992,9 +5992,9 @@ var nurdz;
                         break;
                 }
             };
-            return GameScene;
+            return Game;
         }(game.Scene));
-        game.GameScene = GameScene;
+        game.Game = Game;
     })(game = nurdz.game || (nurdz.game = {}));
 })(nurdz || (nurdz = {}));
 var nurdz;
@@ -6055,7 +6055,7 @@ var nurdz;
                 // Set up the button that will stop the game if something goes wrong.
                 setupButton(stage, "controlBtn");
                 // Register all of our scenes.
-                stage.addScene("game", new nurdz.game.GameScene(stage));
+                stage.addScene("game", new nurdz.game.Game(stage));
                 stage.addScene("title", new nurdz.game.TitleScreen(stage));
                 // Switch to the initial scene, add a dot to display and then run the game.
                 stage.switchToScene("title");
