@@ -100,6 +100,14 @@ module nurdz.game
         REMOVE_GRAY_BRICKS,
 
         /**
+         * All of the gray bricks have been removed, so we are getting ready to
+         * commence the final drop. In this state we're just showing a billboard
+         * to tell the player what will happen, and then we can proceed to the
+         * actual final drop.
+         */
+        BEGIN_FINAL_DROP,
+
+        /**
          * All of the gray bricks have been removed, so we are now in the
          * process of finding all balls that can still drop and dropping them.
          * We remain in this state until all balls have been dropped, and then

@@ -627,8 +627,8 @@ module nurdz.game
          */
         grayBrickRemovalComplete () : void
         {
-            // Swap states to the final ball drop
-            this.state = GameState.FINAL_BALL_DROP;
+            // Swap states to the start of the final ball drop.
+            this.state = GameState.BEGIN_FINAL_DROP;
         }
 
         /**
@@ -716,6 +716,14 @@ module nurdz.game
                 // display a billboard to let the player know.
                 case GameState.REMOVE_GRAY_BRICKS:
                     this._billboard.show ("Removing Bricks");
+                    break;
+
+                // We are getting ready to start the final ball drop, so first
+                // display a billboard. This has to happen in a different state
+                // because the code transitions back to the FINAL_BALL_DROP
+                // state after every ball it drops.
+                case GameState.BEGIN_FINAL_DROP:
+                    this._billboard.show ("Final Drop");
                     break;
 
                 // When we enter the final ball drop, hide the player and
@@ -862,6 +870,21 @@ module nurdz.game
                         if (this._maze.removeNextGrayBrick () == false)
                             this.grayBrickRemovalComplete ();
                     }
+                    break;
+
+                // We are going to start the final ball drop in the game.
+                // Here we are just waiting for the player to have time to read
+                // the billboard.
+                case GameState.BEGIN_FINAL_DROP:
+                    // If we have not been in this state long enough yet,
+                    // do nothing.
+                    if (this._state.hasElapsed (60) == false)
+                        break;
+
+                    // Hide the billboard and switch to the final drop state
+                    // to get things rolling (well, dropping).
+                    this._billboard.hide ();
+                    this.state = GameState.FINAL_BALL_DROP;
                     break;
 
                 // We are dropping the final balls through the maze now. Select
