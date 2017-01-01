@@ -6208,6 +6208,7 @@ var nurdz;
                     // balls so that they visually leave the screen.
                     case game.GameState.REMOVE_BLOCKED_BALLS:
                         this._maze.contents.clearUnplayedBalls(true);
+                        this._billboard.show("Removing Balls");
                         break;
                     // When we enter the final ball drop, hide the player and
                     // computer characters.
@@ -6298,6 +6299,14 @@ var nurdz;
                     // timer to remove a blocked ball every so often, until we
                     // determine that there are none left.
                     case game.GameState.REMOVE_BLOCKED_BALLS:
+                        // If we have not been in this state long enough yet,
+                        // do nothing.
+                        if (this._state.hasElapsed(60) == false)
+                            break;
+                        // We can (probably redundantly) hide the billboard now.
+                        this._billboard.hide();
+                        // We have waited long enough, so every so often remove
+                        // another ball.
                         if (this._state.timerTrigger(ROUND_BALL_VANISH_TIME)) {
                             // Try to remove a ball; this returns false when there
                             // are no more balls to remove AND all balls we were
