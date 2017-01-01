@@ -190,7 +190,7 @@ module nurdz.game
      *
      * @param   {Ball}  ball the ball which will update the score
      */
-    function lerpBallPos (ball : Ball) : void
+    export function lerpBallToScore (ball : Ball) : void
     {
         ball.lerpTo ((ball.player == PlayerType.PLAYER_HUMAN)
             ? humanScorePos
@@ -206,7 +206,6 @@ module nurdz.game
     export function goalBallScore (ball : Ball) : void
     {
         adjustScore (ball.player, GOAL_BALL_SCORE);
-        lerpBallPos (ball);
     }
 
     /**
@@ -218,7 +217,6 @@ module nurdz.game
     export function partialBallScore (ball : Ball) : void
     {
         adjustScore (ball.player, ball.mapPosition.y * BALL_POSITION_MULTIPLIER);
-        lerpBallPos (ball);
     }
 
     /**

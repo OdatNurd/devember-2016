@@ -222,15 +222,11 @@ module nurdz.game
             this.addAnimation ("p_idle_gone",    1, false, [14]);
             this.addAnimation ("p_vanish",      10, false, [10, 11, 12, 13, 14]);
             this.addAnimation ("p_appear",      10, false, [14, 13, 12, 11, 10]);
-            this.addAnimation ("p_score_start", 10, false, [10, 11, 12]);
-            this.addAnimation ("p_score_end",   10, false, [12, 12, 12, 13, 14]);
 
             this.addAnimation ("c_idle",         1, false, [15]);
             this.addAnimation ("c_idle_gone",    1, false, [19]);
             this.addAnimation ("c_vanish",      10, false, [15, 16, 17, 18, 19]);
             this.addAnimation ("c_appear",      10, false, [19, 18, 17, 16, 15]);
-            this.addAnimation ("c_score_start", 10, false, [15, 16, 17]);
-            this.addAnimation ("c_score_end",   10, false, [17, 17, 17, 18, 19]);
 
             // The ball is not hidden by default (the first animation in the list
             // is the one that plays by default).
@@ -346,43 +342,6 @@ module nurdz.game
             this.playAnimation (this._ballType == BallType.BALL_PLAYER
                 ? "p_vanish"
                 : "c_vanish");
-            this._hidden = true;
-        }
-
-        /**
-         * Set the visual state of the ball to a partial vanish; this plays an
-         * animation that causes the ball to vanish half way and then stop.
-         *
-         * This is identical to the vanish state, but the ball ends up not fully
-         * vanished (but still considered hidden).
-         *
-         * This is meant to be paired with scoreEnd() to add the ability to
-         * insert an action that happens in the middle of the animation.
-         */
-        scoreStart () : void
-        {
-            this.playAnimation (this._ballType == BallType.BALL_PLAYER
-                ? "p_score_start"
-                : "c_score_start");
-            this._hidden = true;
-        }
-
-        /**
-         * Set the visual state of the ball to the rest of a partial vanish;
-         * this plays an animation that causes the ball to finish fully
-         * vanishing and then stop.
-         *
-         * This is identical to the vanish state in that the ball finally ends
-         * up fully vanished.
-         *
-         * This is meant to be paired with scoreStart() to add the ability to
-         * insert an action that happens in the middle of the animation.
-         */
-        scoreEnd () : void
-        {
-            this.playAnimation (this._ballType == BallType.BALL_PLAYER
-                ? "p_score_end"
-                : "c_score_end");
             this._hidden = true;
         }
 

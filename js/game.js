@@ -167,11 +167,12 @@ var nurdz;
          *
          * @param   {Ball}  ball the ball which will update the score
          */
-        function lerpBallPos(ball) {
+        function lerpBallToScore(ball) {
             ball.lerpTo((ball.player == game.PlayerType.PLAYER_HUMAN)
                 ? humanScorePos
                 : computerScorePos);
         }
+        game.lerpBallToScore = lerpBallToScore;
         /**
          * Score points due to a ball reaching the goal line (the bottom of the
          * maze).
@@ -180,7 +181,6 @@ var nurdz;
          */
         function goalBallScore(ball) {
             adjustScore(ball.player, game.GOAL_BALL_SCORE);
-            lerpBallPos(ball);
         }
         game.goalBallScore = goalBallScore;
         /**
@@ -191,7 +191,6 @@ var nurdz;
          */
         function partialBallScore(ball) {
             adjustScore(ball.player, ball.mapPosition.y * game.BALL_POSITION_MULTIPLIER);
-            lerpBallPos(ball);
         }
         game.partialBallScore = partialBallScore;
         /**
@@ -3210,14 +3209,10 @@ var nurdz;
                 _this.addAnimation("p_idle_gone", 1, false, [14]);
                 _this.addAnimation("p_vanish", 10, false, [10, 11, 12, 13, 14]);
                 _this.addAnimation("p_appear", 10, false, [14, 13, 12, 11, 10]);
-                _this.addAnimation("p_score_start", 10, false, [10, 11, 12]);
-                _this.addAnimation("p_score_end", 10, false, [12, 12, 12, 13, 14]);
                 _this.addAnimation("c_idle", 1, false, [15]);
                 _this.addAnimation("c_idle_gone", 1, false, [19]);
                 _this.addAnimation("c_vanish", 10, false, [15, 16, 17, 18, 19]);
                 _this.addAnimation("c_appear", 10, false, [19, 18, 17, 16, 15]);
-                _this.addAnimation("c_score_start", 10, false, [15, 16, 17]);
-                _this.addAnimation("c_score_end", 10, false, [17, 17, 17, 18, 19]);
                 // The ball is not hidden by default (the first animation in the list
                 // is the one that plays by default).
                 _this._hidden = false;
@@ -3408,39 +3403,6 @@ var nurdz;
                 this.playAnimation(this._ballType == BallType.BALL_PLAYER
                     ? "p_vanish"
                     : "c_vanish");
-                this._hidden = true;
-            };
-            /**
-             * Set the visual state of the ball to a partial vanish; this plays an
-             * animation that causes the ball to vanish half way and then stop.
-             *
-             * This is identical to the vanish state, but the ball ends up not fully
-             * vanished (but still considered hidden).
-             *
-             * This is meant to be paired with scoreEnd() to add the ability to
-             * insert an action that happens in the middle of the animation.
-             */
-            Ball.prototype.scoreStart = function () {
-                this.playAnimation(this._ballType == BallType.BALL_PLAYER
-                    ? "p_score_start"
-                    : "c_score_start");
-                this._hidden = true;
-            };
-            /**
-             * Set the visual state of the ball to the rest of a partial vanish;
-             * this plays an animation that causes the ball to finish fully
-             * vanishing and then stop.
-             *
-             * This is identical to the vanish state in that the ball finally ends
-             * up fully vanished.
-             *
-             * This is meant to be paired with scoreStart() to add the ability to
-             * insert an action that happens in the middle of the animation.
-             */
-            Ball.prototype.scoreEnd = function () {
-                this.playAnimation(this._ballType == BallType.BALL_PLAYER
-                    ? "p_score_end"
-                    : "c_score_end");
                 this._hidden = true;
             };
             /**
@@ -5110,8 +5072,10 @@ var nurdz;
                         // reaped, so that the code that triggers when the flag
                         // becomes set to true doesn't happen until the ball is
                         // visibly gone.
-                        if (pos.y == game.MAZE_HEIGHT - 2 || this._droppingFinalBall == true)
-                            this._droppingBall.scoreStart();
+                        if (pos.y == game.MAZE_HEIGHT - 2 || this._droppingFinalBall == true) {
+                            this._droppingBall.vanish();
+                            game.lerpBallToScore(this._droppingBall);
+                        }
                         else
                             this._ballMoveFinalized = true;
                         // Now clear the flag so we know we're done.
@@ -5945,14 +5909,10 @@ var nurdz;
              */
             Game.prototype.ballDropComplete = function (ball, isFinal) {
                 // Did the ball reach the goal?
-                if (ball.mapPosition.y == game.MAZE_HEIGHT - 2) {
+                if (ball.mapPosition.y == game.MAZE_HEIGHT - 2)
                     game.goalBallScore(ball);
-                    ball.scoreEnd();
-                }
-                else if (isFinal == true) {
+                else if (isFinal == true)
                     game.partialBallScore(ball);
-                    ball.scoreEnd();
-                }
                 // Now that the ball is done, where we go depends on where we came
                 // from.
                 switch (this.priorState) {
@@ -5993,6 +5953,7 @@ var nurdz;
                 // This is a blocked ball that can no longer move, so apply a
                 // partial score value now.
                 game.partialBallScore(ball);
+                game.lerpBallToScore(ball);
             };
             /**
              * The Maze is telling us that it is now empty of gray bricks because it
