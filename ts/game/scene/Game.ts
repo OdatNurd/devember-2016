@@ -48,6 +48,12 @@ module nurdz.game
         private _computer : Player;
 
         /**
+         * The billboard that we use to tell the player what's happening as we
+         * change states. This can be hidden or displayed with any text we want.
+         */
+        private _billboard : Billboard;
+
+        /**
          * The debugger for our maze. We store a reference to make access easier.
          */
         private _debugger : MazeDebugger;
@@ -128,10 +134,15 @@ module nurdz.game
             // determine what moves to make.
             this._computer.maze = this._maze;
 
+            // Create the billboard. It starts with no text and hidden. It takes
+            // care to only render itself when visible.
+            this._billboard = new Billboard (stage, "kenvector_futureregular", 20);
+
             // Add all of our child entities so that they update and render.
             this.addActor (this._maze);
             this.addActor (this._player);
             this.addActor (this._computer);
+            this.addActor (this._billboard);
 
             // Start out with a default mouse location.
             this._mouse = new Point (0, 0);
@@ -644,6 +655,15 @@ module nurdz.game
 
             switch (newState)
             {
+                // We are entering a new round. Display the round number if the
+                // game is not over. This is the state that determines the game
+                // over state.
+                case GameState.BEGIN_ROUND:
+                    // Display text for this round, if the game is not over.
+                    if (isGameOver () == false)
+                        this._billboard.show ("Round " + currentRound);
+                    break;
+
                 // We are supposed to be generating a maze, so do that now.
                 case GameState.MAZE_GENERATION:
                     this._maze.generateMaze ();
@@ -709,12 +729,24 @@ module nurdz.game
                 // switch to the game over state. Otherwise, we can swap to the
                 // maze generation state for this round.
                 case GameState.BEGIN_ROUND:
-                    this._player.jumpTo (1);
-                    this._computer.jumpTo (MAZE_WIDTH - 1);
+                    // If the game is over, swap to the game over state and
+                    // stop. Nothing else to do here.
                     if (isGameOver ())
+                    {
                         this.state = GameState.GAME_OVER;
-                    else
+                        break;
+                    }
+
+                    // THe game is not over, so we're display the round number
+                    // in a billboard. When enough time has passed, we can
+                    // start the game by generating the maze.
+                    if (this._state.hasElapsed (60))
+                    {
+                        this._billboard.hide ();
+                        this._player.jumpTo (1);
+                        this._computer.jumpTo (MAZE_WIDTH - 1);
                         this.state = GameState.MAZE_GENERATION;
+                    }
                     break;
 
                 // We need to select a player to start off this round. Here we
