@@ -1,6 +1,6 @@
 module nurdz.game
 {
-        /**
+    /**
      * The total number of teleport entities that get generated randomly into
      * the maze.
      */

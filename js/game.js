@@ -859,9 +859,9 @@ var nurdz;
     var game;
     (function (game) {
         /**
-     * The total number of teleport entities that get generated randomly into
-     * the maze.
-     */
+         * The total number of teleport entities that get generated randomly into
+         * the maze.
+         */
         var TOTAL_TELEPORTERS = 5;
         /**
          * The minimum distance allowed between teleport entities and all other
@@ -5658,6 +5658,11 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * The time (in ticks) to display a billboard before continuing. 30 ticks
+         * is one second.
+         */
+        var BILLBOARD_TIMER = 60;
+        /**
          * When we are in the state that we're removing blocked balls from the maze,
          * this is the delay (in ticks) for telling the next ball when it should
          * start to vanish.
@@ -6286,7 +6291,7 @@ var nurdz;
                         // THe game is not over, so we're display the round number
                         // in a billboard. When enough time has passed, we can
                         // start the game by generating the maze.
-                        if (this._state.hasElapsed(60)) {
+                        if (this._state.hasElapsed(BILLBOARD_TIMER)) {
                             this._billboard.hide();
                             this._player.jumpTo(1);
                             this._computer.jumpTo(game.MAZE_WIDTH - 1);
@@ -6296,7 +6301,7 @@ var nurdz;
                     // If we have displayed the billboard long enough, hide it and
                     // start the game now.
                     case game.GameState.SELECT_START_PLAYER:
-                        if (this._state.hasElapsed(60)) {
+                        if (this._state.hasElapsed(BILLBOARD_TIMER)) {
                             this._billboard.hide();
                             this.state = this._state.nextState;
                         }
@@ -6347,7 +6352,7 @@ var nurdz;
                     // for the other player or the state where we are removing
                     // blocked balls.
                     case game.GameState.NO_MOVE_AVAILABLE:
-                        if (this._state.hasElapsed(60)) {
+                        if (this._state.hasElapsed(BILLBOARD_TIMER)) {
                             // Hide the billboard and go to the next state.
                             this._billboard.hide();
                             this.state = this._state.nextState;
@@ -6359,7 +6364,7 @@ var nurdz;
                     case game.GameState.REMOVE_BLOCKED_BALLS:
                         // If we have not been in this state long enough yet,
                         // do nothing.
-                        if (this._state.hasElapsed(60) == false)
+                        if (this._state.hasElapsed(BILLBOARD_TIMER) == false)
                             break;
                         // We can (probably redundantly) hide the billboard now.
                         this._billboard.hide();
@@ -6378,7 +6383,7 @@ var nurdz;
                     case game.GameState.REMOVE_GRAY_BRICKS:
                         // If we have not been in this state long enough yet,
                         // do nothing.
-                        if (this._state.hasElapsed(60) == false)
+                        if (this._state.hasElapsed(BILLBOARD_TIMER) == false)
                             break;
                         // We can (probably redundantly) hide the billboard now.
                         this._billboard.hide();
@@ -6397,7 +6402,7 @@ var nurdz;
                     case game.GameState.BEGIN_FINAL_DROP:
                         // If we have not been in this state long enough yet,
                         // do nothing.
-                        if (this._state.hasElapsed(60) == false)
+                        if (this._state.hasElapsed(BILLBOARD_TIMER) == false)
                             break;
                         // Hide the billboard and switch to the final drop state
                         // to get things rolling (well, dropping).

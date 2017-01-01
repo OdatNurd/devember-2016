@@ -1,6 +1,12 @@
 module nurdz.game
 {
     /**
+     * The time (in ticks) to display a billboard before continuing. 30 ticks
+     * is one second.
+     */
+    const BILLBOARD_TIMER = 60;
+
+    /**
      * When we are in the state that we're removing blocked balls from the maze,
      * this is the delay (in ticks) for telling the next ball when it should
      * start to vanish.
@@ -780,7 +786,7 @@ module nurdz.game
                     // THe game is not over, so we're display the round number
                     // in a billboard. When enough time has passed, we can
                     // start the game by generating the maze.
-                    if (this._state.hasElapsed (60))
+                    if (this._state.hasElapsed (BILLBOARD_TIMER))
                     {
                         this._billboard.hide ();
                         this._player.jumpTo (1);
@@ -792,7 +798,7 @@ module nurdz.game
                 // If we have displayed the billboard long enough, hide it and
                 // start the game now.
                 case GameState.SELECT_START_PLAYER:
-                    if (this._state.hasElapsed (60))
+                    if (this._state.hasElapsed (BILLBOARD_TIMER))
                     {
                         this._billboard.hide ();
                         this.state = this._state.nextState;
@@ -851,7 +857,7 @@ module nurdz.game
                 // for the other player or the state where we are removing
                 // blocked balls.
                 case GameState.NO_MOVE_AVAILABLE:
-                    if (this._state.hasElapsed (60))
+                    if (this._state.hasElapsed (BILLBOARD_TIMER))
                     {
                         // Hide the billboard and go to the next state.
                         this._billboard.hide ();
@@ -865,7 +871,7 @@ module nurdz.game
                 case GameState.REMOVE_BLOCKED_BALLS:
                     // If we have not been in this state long enough yet,
                     // do nothing.
-                    if (this._state.hasElapsed (60) == false)
+                    if (this._state.hasElapsed (BILLBOARD_TIMER) == false)
                         break;
 
                     // We can (probably redundantly) hide the billboard now.
@@ -888,7 +894,7 @@ module nurdz.game
                 case GameState.REMOVE_GRAY_BRICKS:
                     // If we have not been in this state long enough yet,
                     // do nothing.
-                    if (this._state.hasElapsed (60) == false)
+                    if (this._state.hasElapsed (BILLBOARD_TIMER) == false)
                         break;
 
                     // We can (probably redundantly) hide the billboard now.
@@ -911,7 +917,7 @@ module nurdz.game
                 case GameState.BEGIN_FINAL_DROP:
                     // If we have not been in this state long enough yet,
                     // do nothing.
-                    if (this._state.hasElapsed (60) == false)
+                    if (this._state.hasElapsed (BILLBOARD_TIMER) == false)
                         break;
 
                     // Hide the billboard and switch to the final drop state
