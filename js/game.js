@@ -5708,6 +5708,10 @@ var nurdz;
                     // come back to this state and block player movement in the
                     // interim.
                     case game.KeyCodes.KEY_L:
+                        // If the debugger wants to add a ball, then do that now
+                        // instead of the usual handling.
+                        if (this._debugger.debugAddBall() == true)
+                            return true;
                         this._maze.contents.showComputerBalls();
                         this.state = game.GameState.PLAYER_VIEW_COMPUTER_BALLS;
                         return true;
