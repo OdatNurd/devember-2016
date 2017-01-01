@@ -664,6 +664,22 @@ module nurdz.game
                         this._billboard.show ("Round " + currentRound);
                     break;
 
+                // We need to select a player to start off this round. Here we
+                // just randomly select one. The appropraite state is stored in
+                // the next state property and we just display a billboard here.
+                case GameState.SELECT_START_PLAYER:
+                    if (Utils.randomIntInRange (1, 100) % 2 == 0)
+                    {
+                        this._state.nextState = GameState.CHECK_VALID_PLAY_PLAYER;
+                        this._billboard.show ("Human Starts");
+                    }
+                    else
+                    {
+                        this._state.nextState = GameState.CHECK_VALID_PLAY_COMPUTER;
+                        this._billboard.show ("Computer Starts");
+                    }
+                    break;
+
                 // We are supposed to be generating a maze, so do that now.
                 case GameState.MAZE_GENERATION:
                     this._maze.generateMaze ();
@@ -749,13 +765,14 @@ module nurdz.game
                     }
                     break;
 
-                // We need to select a player to start off this round. Here we
-                // just randomly select one.
+                // If we have displayed the billboard long enough, hide it and
+                // start the game now.
                 case GameState.SELECT_START_PLAYER:
-                    if (Utils.randomIntInRange (1, 100) % 2 == 0)
-                        this.state = GameState.CHECK_VALID_PLAY_PLAYER;
-                    else
-                        this.state = GameState.CHECK_VALID_PLAY_COMPUTER;
+                    if (this._state.hasElapsed (60))
+                    {
+                        this._billboard.hide ();
+                        this.state = this._state.nextState;
+                    }
                     break;
 
                 // It is becoming the player's turn; check to see if there is

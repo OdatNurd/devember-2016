@@ -249,6 +249,7 @@ module nurdz.game
          */
         get nextState () : GameState
         { return this._nextState; }
+
         /**
          * Construct a new state machine.
          */
