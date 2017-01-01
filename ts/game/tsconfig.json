@@ -18,6 +18,7 @@
         "StateMachine.ts",
         "entity/Pointer.ts",
         "entity/Menu.ts",
+        "entity/Billboard.ts",
         "entity/Player.ts",
         "entity/MazeCell.ts",
         "entity/Marker.ts",

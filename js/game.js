@@ -2389,6 +2389,156 @@ var nurdz;
     var game;
     (function (game) {
         /**
+         * How wide our billboard is, in pixels.
+         */
+        var BILLBOARD_WIDTH = game.STAGE_WIDTH / 3;
+        /**
+         * How tall our billboard is, in pixels.
+         */
+        var BILLBOARD_HEIGHT = game.STAGE_HEIGHT / 5;
+        /**
+         * The color of the frame on the billboard
+         */
+        var BILLBOARD_FRAME_COLOR = "#1a5276";
+        /**
+         * The color of the background of the billboard.
+         */
+        var BILLBOARD_BACK_COLOR = "#515a5a";
+        /**
+         * This is a simple billboard entity; it renders itself as a box in the
+         * center of the screen with some text centered in it.
+         *
+         * This could be enhanced to be animated, styled, etc.
+         */
+        var Billboard = (function (_super) {
+            __extends(Billboard, _super);
+            /**
+             * Construct a new billboard entity which will render on the given stage
+             * using the provided font name and font size.
+             *
+             * A billboard starts with no empty text; You can set the text to
+             * whatever you desire.
+             *
+             * @param stage the stage that will display this menu
+             * @param fontName the font name to render the menu with
+             * @param fontSize the size of the font to use to render items, in
+             * pixels
+             */
+            function Billboard(stage, fontName, fontSize) {
+                var _this = 
+                // Our billboard is centered on the stage and of a defined size
+                // always.
+                _super.call(this, "billboard", stage, (game.STAGE_WIDTH / 2) - (BILLBOARD_WIDTH / 2), (game.STAGE_HEIGHT / 2) - (BILLBOARD_HEIGHT / 2), BILLBOARD_WIDTH, BILLBOARD_HEIGHT, 1, {}, {}) || this;
+                // Store the values provided.
+                _this._fontName = fontName;
+                _this._fontSize = fontSize;
+                // Combine them together into a single string for later use
+                _this._fontFullSpec = _this._fontSize + "px " + _this._fontName;
+                // Set some default text and start out hidden.
+                _this.text = "";
+                _this._visible = false;
+                return _this;
+            }
+            Object.defineProperty(Billboard.prototype, "text", {
+                /**
+                 * Get the text that the billboard is currently displaying
+                 *
+                 * @returns {string} the current billboard text
+                 */
+                get: function () { return this._text; },
+                /**
+                 * Set the text that the billboard should display.
+                 *
+                 * @param {string} newString the text to display on this billboard
+                 */
+                set: function (newString) { this.updateText(newString); },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Billboard.prototype, "visible", {
+                /**
+                 * Get an indication as to whether this billboard will render itself or
+                 * not.
+                 *
+                 * @returns {boolean} true if this billboard will render itself or false
+                 * otherwise
+                 */
+                get: function () { return this._visible; },
+                /**
+                 * Change the visiblity state of this billboard. When this is false, the
+                 * billboard does not render
+                 *
+                 * @param {boolean} newVisible the new state of the visibilty flag
+                 */
+                set: function (newVisible) { this._visible = newVisible; },
+                enumerable: true,
+                configurable: true
+            });
+            /**
+             * Update the text that should be displayed in this billboard, and
+             * recalculate all internal values needed to render it properly.
+             *
+             * This is a raw internal operation.
+             *
+             * @param {string} newText the new text
+             */
+            Billboard.prototype.updateText = function (newText) {
+                this._text = newText;
+            };
+            /**
+             * Display the billboard on the stage with the given text.
+             *
+             * This is essentially a shortcut for altering the text and making sure
+             * that the visibilty is on.
+             *
+             * @param {string} text the text to display in the billboard
+             */
+            Billboard.prototype.show = function (text) {
+                // Change the text using the accessor and be visible
+                this.text = text;
+                this._visible = true;
+            };
+            /**
+             * For orthogonality, this will hide the billboard by turning off its
+             * visibility. This leaves the text intact.
+             */
+            Billboard.prototype.hide = function () {
+                this.visible = false;
+            };
+            /**
+             * Render ourselves using the provided renderer. This will render out the text as well as the
+             * current pointer.
+             *
+             * The position provided to us is ignored; we already have an idea of where exactly our contents
+             * will render.
+             */
+            Billboard.prototype.render = function (x, y, renderer) {
+                if (this._visible == false)
+                    return;
+                // Draw the frame first.
+                renderer.fillRect(x, y, this._width, this._height, BILLBOARD_BACK_COLOR);
+                renderer.strokeRect(x, y, this._width, this._height, BILLBOARD_FRAME_COLOR, 4);
+                // Save the context and set up our font and font rendering. We want
+                // to horizontally and vertically center text around a point.
+                renderer.context.save();
+                renderer.context.font = this._fontFullSpec;
+                renderer.context.textAlign = "center";
+                renderer.context.textBaseline = "middle";
+                // Render our text at the center of the stage
+                renderer.drawTxt(this._text, game.STAGE_WIDTH / 2, game.STAGE_HEIGHT / 2, 'white');
+                // Restore the context now.
+                renderer.restore();
+            };
+            return Billboard;
+        }(game.Entity));
+        game.Billboard = Billboard;
+    })(game = nurdz.game || (nurdz.game = {}));
+})(nurdz || (nurdz = {}));
+var nurdz;
+(function (nurdz) {
+    var game;
+    (function (game) {
+        /**
          * This is used to indicate what type of player this is. This is just for
          * visual identification on the board.
          */
