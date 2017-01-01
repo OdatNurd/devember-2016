@@ -6210,6 +6210,11 @@ var nurdz;
                         this._maze.contents.clearUnplayedBalls(true);
                         this._billboard.show("Removing Balls");
                         break;
+                    // When we are entering the state for removing all gray bricks,
+                    // display a billboard to let the player know.
+                    case game.GameState.REMOVE_GRAY_BRICKS:
+                        this._billboard.show("Removing Bricks");
+                        break;
                     // When we enter the final ball drop, hide the player and
                     // computer characters.
                     case game.GameState.FINAL_BALL_DROP:
@@ -6318,6 +6323,14 @@ var nurdz;
                     // When we are in the remove gray bricks state, use the state
                     // timer to remove a brick every so often.
                     case game.GameState.REMOVE_GRAY_BRICKS:
+                        // If we have not been in this state long enough yet,
+                        // do nothing.
+                        if (this._state.hasElapsed(60) == false)
+                            break;
+                        // We can (probably redundantly) hide the billboard now.
+                        this._billboard.hide();
+                        // We have waited long enough, so every so often remove
+                        // another brick.
                         if (this._state.timerTrigger(ROUND_BRICK_VANISH_TIME)) {
                             // If there is no brick to remove, trigger the state
                             // change right away.
