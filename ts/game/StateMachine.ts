@@ -162,6 +162,14 @@ module nurdz.game
         private _previousState : GameState;
 
         /**
+         * The state that the machine should probably go to next. This can be
+         * set by code when it knows at some point that it will be going to
+         * a different state so that it doesn't have to keep track of that
+         * state itself.
+         */
+        private _nextState : GameState;
+
+        /**
          * The list of objects that are interested in being informed when the
          * state changes.
          */
@@ -222,13 +230,34 @@ module nurdz.game
         { return this._previousState; }
 
         /**
+         * Store a state for later retrieval in this property. This is useful
+         * when code in some state knows (in a transient location) what state
+         * should be next. It can store that state here for later retrieval
+         * without having to keep track of a bunch of extra values.
+         *
+         * @param {GameState} newState the state to switch to next;
+         * informational only
+         */
+        set nextState (newState : GameState)
+        { this._nextState = newState; }
+
+        /**
+         * Get the previously stored next state; this will return NO_STATE if
+         * no next state has been stored.
+         *
+         * @returns {GameState} [description]
+         */
+        get nextState () : GameState
+        { return this._nextState; }
+        /**
          * Construct a new state machine.
          */
         constructor ()
         {
-            // Set the current and previous states.
+            // Set the default states.
             this._currentState = GameState.NO_STATE;
             this._previousState = GameState.NO_STATE;
+            this._nextState = GameState.NO_STATE;
 
             // Default our tick value.
             this._ticksInState = 0;

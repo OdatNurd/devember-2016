@@ -2006,9 +2006,10 @@ var nurdz;
              * Construct a new state machine.
              */
             function StateMachine() {
-                // Set the current and previous states.
+                // Set the default states.
                 this._currentState = GameState.NO_STATE;
                 this._previousState = GameState.NO_STATE;
+                this._nextState = GameState.NO_STATE;
                 // Default our tick value.
                 this._ticksInState = 0;
                 // Create the listener array.
@@ -2057,6 +2058,27 @@ var nurdz;
                  * current state
                  */
                 get: function () { return this._previousState; },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(StateMachine.prototype, "nextState", {
+                /**
+                 * Get the previously stored next state; this will return NO_STATE if
+                 * no next state has been stored.
+                 *
+                 * @returns {GameState} [description]
+                 */
+                get: function () { return this._nextState; },
+                /**
+                 * Store a state for later retrieval in this property. This is useful
+                 * when code in some state knows (in a transient location) what state
+                 * should be next. It can store that state here for later retrieval
+                 * without having to keep track of a bunch of extra values.
+                 *
+                 * @param {GameState} newState the state to switch to next;
+                 * informational only
+                 */
+                set: function (newState) { this._nextState = newState; },
                 enumerable: true,
                 configurable: true
             });
