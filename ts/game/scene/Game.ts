@@ -653,6 +653,8 @@ module nurdz.game
             // Record the stat change.
             console.log ("DEBUG: State changed to: " + GameState[newState]);
 
+            // Handle the actions that should happen only when entering a state
+            // based on the state itself.
             switch (newState)
             {
                 // We are entering a new round. Display the round number if the
@@ -704,6 +706,14 @@ module nurdz.game
                     this._computer.ai_startingTurn ();
                     break;
 
+                // We are entering the state saying that one (or both) players
+                // have no moves available, so display a billboard to say that.
+                case GameState.NO_MOVE_AVAILABLE:
+                    // The player whose turn it was has no moves availble.
+                    // Display a billboard that says that.
+                    this._billboard.show ("No moves left");
+                    break;
+
                 // When we are entering the state for removing all blocked
                 // balls, make sure that the maze contents discards all unplayed
                 // balls so that they visually leave the screen.
@@ -737,7 +747,6 @@ module nurdz.game
                 case GameState.GAME_OVER:
                     this._stage.switchToScene ("gameOver");
                     break;
-
             }
         }
 
@@ -753,7 +762,7 @@ module nurdz.game
          */
         private stateLogic () : void
         {
-            // Handle based on state.
+            // Handle the per frame logic of every state based on the state.
             switch (this.state)
             {
                 // It is the start of a new round; if the game is over now,
@@ -802,9 +811,14 @@ module nurdz.game
                         // computer's turn. Otherwise, time to do the final ball
                         // drop.
                         if (this._maze.contents.hasPlayableComputerBall ())
-                            this.state = GameState.COMPUTER_TURN;
+                            this._state.nextState = GameState.COMPUTER_TURN;
                         else
-                            this.state = GameState.REMOVE_BLOCKED_BALLS;
+                            this._state.nextState = GameState.REMOVE_BLOCKED_BALLS;
+
+                        // Now we can skip to the state where we will wait for
+                        // the billboard before we go to the state we just
+                        // selected as the next state.
+                        this.state = GameState.NO_MOVE_AVAILABLE;
                     }
                     break;
 
@@ -820,9 +834,28 @@ module nurdz.game
                         // player's turn. Otherwise, time to do the final ball
                         // drop.
                         if (this._maze.contents.hasPlayableHumanBall ())
-                            this.state = GameState.PLAYER_TURN;
+                            this._state.nextState = GameState.PLAYER_TURN;
                         else
-                            this.state = GameState.REMOVE_BLOCKED_BALLS;
+                            this._state.nextState = GameState.REMOVE_BLOCKED_BALLS;
+
+                        // Now we can skip to the state where we will wait for
+                        // the billboard before we go to the state we just
+                        // selected as the next state.
+                        this.state = GameState.NO_MOVE_AVAILABLE;
+                    }
+                    break;
+
+                // We are idling to display a billboard because there are no
+                // moves available. If it's been long enough, swap to the state
+                // that we said we wanted to go to next. This could be the turn
+                // for the other player or the state where we are removing
+                // blocked balls.
+                case GameState.NO_MOVE_AVAILABLE:
+                    if (this._state.hasElapsed (60))
+                    {
+                        // Hide the billboard and go to the next state.
+                        this._billboard.hide ();
+                        this.state = this._state.nextState;
                     }
                     break;
 

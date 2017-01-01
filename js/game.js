@@ -1954,34 +1954,44 @@ var nurdz;
              */
             GameState[GameState["COMPUTER_TURN"] = 8] = "COMPUTER_TURN";
             /**
+             * In this state, the code to check and see if there is a valid play
+             * for either the human or computer player has determined that that
+             * player does not have a move because everything else is blocked.
+             *
+             * In this state, the nextState value stores where to go from here and
+             * we idle in this state for a while allowing for a billboard to be
+             * displayed to say what is happening.
+             */
+            GameState[GameState["NO_MOVE_AVAILABLE"] = 9] = "NO_MOVE_AVAILABLE";
+            /**
              * Either the human player or the AI has pushed a ball. This state
              * remains in effect until the ball has finished moving, in which case
              * the handling code will either cycle to the state for the next player
              * to take their turn or to the state where we start the end of round
              * proceedings. round.
              */
-            GameState[GameState["BALL_DROPPING"] = 9] = "BALL_DROPPING";
+            GameState[GameState["BALL_DROPPING"] = 10] = "BALL_DROPPING";
             /**
              * ALl of the possible plays have been made. In this state we are
              * finding and removing all balls that can't possibly move any farther
              * because they are not sitting on top of a gray brick that will vanish
              * and allow them to fall.
              */
-            GameState[GameState["REMOVE_BLOCKED_BALLS"] = 10] = "REMOVE_BLOCKED_BALLS";
+            GameState[GameState["REMOVE_BLOCKED_BALLS"] = 11] = "REMOVE_BLOCKED_BALLS";
             /**
              * All of the possible plays have been made and all blocked ball have
              * beem removed. In this state we are removing all of the gray bricks
              * that are in the maze by vanishing them away. Once that is done we
              * transition to the state where we start dropping the final balls.
              */
-            GameState[GameState["REMOVE_GRAY_BRICKS"] = 11] = "REMOVE_GRAY_BRICKS";
+            GameState[GameState["REMOVE_GRAY_BRICKS"] = 12] = "REMOVE_GRAY_BRICKS";
             /**
              * All of the gray bricks have been removed, so we are getting ready to
              * commence the final drop. In this state we're just showing a billboard
              * to tell the player what will happen, and then we can proceed to the
              * actual final drop.
              */
-            GameState[GameState["BEGIN_FINAL_DROP"] = 12] = "BEGIN_FINAL_DROP";
+            GameState[GameState["BEGIN_FINAL_DROP"] = 13] = "BEGIN_FINAL_DROP";
             /**
              * All of the gray bricks have been removed, so we are now in the
              * process of finding all balls that can still drop and dropping them.
@@ -1989,19 +1999,19 @@ var nurdz;
              * we either cycle back to the generation state for the next round or to
              * the game over state.
              */
-            GameState[GameState["FINAL_BALL_DROP"] = 13] = "FINAL_BALL_DROP";
+            GameState[GameState["FINAL_BALL_DROP"] = 14] = "FINAL_BALL_DROP";
             /**
              * We were dropping final balls, but we have determined that there are
              * no more balls to drop. In this case we advance to the next round of
              * the game.
              */
-            GameState[GameState["END_ROUND"] = 14] = "END_ROUND";
+            GameState[GameState["END_ROUND"] = 15] = "END_ROUND";
             /**
              * All of the gray bricks have been removed, all of the final ball drops
              * have finished, and we have no more rounds to play; the game is just
              * over now.
              */
-            GameState[GameState["GAME_OVER"] = 15] = "GAME_OVER";
+            GameState[GameState["GAME_OVER"] = 16] = "GAME_OVER";
         })(GameState = game.GameState || (game.GameState = {}));
         /**
          * This class represents the state of the game in the current game. This is
@@ -6168,6 +6178,8 @@ var nurdz;
             Game.prototype.stateChanged = function (machine, newState) {
                 // Record the stat change.
                 console.log("DEBUG: State changed to: " + game.GameState[newState]);
+                // Handle the actions that should happen only when entering a state
+                // based on the state itself.
                 switch (newState) {
                     // We are entering a new round. Display the round number if the
                     // game is not over. This is the state that determines the game
@@ -6209,6 +6221,13 @@ var nurdz;
                         this._maze.contents.showComputerBalls();
                         // Tell the computer that they're starting their turn now.
                         this._computer.ai_startingTurn();
+                        break;
+                    // We are entering the state saying that one (or both) players
+                    // have no moves available, so display a billboard to say that.
+                    case game.GameState.NO_MOVE_AVAILABLE:
+                        // The player whose turn it was has no moves availble.
+                        // Display a billboard that says that.
+                        this._billboard.show("No moves left");
                         break;
                     // When we are entering the state for removing all blocked
                     // balls, make sure that the maze contents discards all unplayed
@@ -6252,7 +6271,7 @@ var nurdz;
              * flag that it has been done.
              */
             Game.prototype.stateLogic = function () {
-                // Handle based on state.
+                // Handle the per frame logic of every state based on the state.
                 switch (this.state) {
                     // It is the start of a new round; if the game is over now,
                     // switch to the game over state. Otherwise, we can swap to the
@@ -6293,9 +6312,13 @@ var nurdz;
                             // computer's turn. Otherwise, time to do the final ball
                             // drop.
                             if (this._maze.contents.hasPlayableComputerBall())
-                                this.state = game.GameState.COMPUTER_TURN;
+                                this._state.nextState = game.GameState.COMPUTER_TURN;
                             else
-                                this.state = game.GameState.REMOVE_BLOCKED_BALLS;
+                                this._state.nextState = game.GameState.REMOVE_BLOCKED_BALLS;
+                            // Now we can skip to the state where we will wait for
+                            // the billboard before we go to the state we just
+                            // selected as the next state.
+                            this.state = game.GameState.NO_MOVE_AVAILABLE;
                         }
                         break;
                     // It is becoming the computer's turn; check to see if there is
@@ -6309,9 +6332,25 @@ var nurdz;
                             // player's turn. Otherwise, time to do the final ball
                             // drop.
                             if (this._maze.contents.hasPlayableHumanBall())
-                                this.state = game.GameState.PLAYER_TURN;
+                                this._state.nextState = game.GameState.PLAYER_TURN;
                             else
-                                this.state = game.GameState.REMOVE_BLOCKED_BALLS;
+                                this._state.nextState = game.GameState.REMOVE_BLOCKED_BALLS;
+                            // Now we can skip to the state where we will wait for
+                            // the billboard before we go to the state we just
+                            // selected as the next state.
+                            this.state = game.GameState.NO_MOVE_AVAILABLE;
+                        }
+                        break;
+                    // We are idling to display a billboard because there are no
+                    // moves available. If it's been long enough, swap to the state
+                    // that we said we wanted to go to next. This could be the turn
+                    // for the other player or the state where we are removing
+                    // blocked balls.
+                    case game.GameState.NO_MOVE_AVAILABLE:
+                        if (this._state.hasElapsed(60)) {
+                            // Hide the billboard and go to the next state.
+                            this._billboard.hide();
+                            this.state = this._state.nextState;
                         }
                         break;
                     // When we are in the remove blocked balls state, use the state

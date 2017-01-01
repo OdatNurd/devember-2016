@@ -75,6 +75,17 @@ module nurdz.game
         COMPUTER_TURN,
 
         /**
+         * In this state, the code to check and see if there is a valid play
+         * for either the human or computer player has determined that that
+         * player does not have a move because everything else is blocked.
+         *
+         * In this state, the nextState value stores where to go from here and
+         * we idle in this state for a while allowing for a billboard to be
+         * displayed to say what is happening.
+         */
+        NO_MOVE_AVAILABLE,
+
+        /**
          * Either the human player or the AI has pushed a ball. This state
          * remains in effect until the ball has finished moving, in which case
          * the handling code will either cycle to the state for the next player
